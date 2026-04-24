@@ -1,0 +1,27 @@
+name: Founder X Recap
+
+on:
+  schedule:
+    # 9:00 AM UTC (adjust to your timezone as needed)
+    - cron: "0 9 * * *"
+    # 5:00 PM UTC
+    - cron: "0 17 * * *"
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run founder recap
+        env:
+          X_HANDLE: aparnadhinak
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOOKBACK_HOURS: "12"
+        run: python scripts/founder_tweet_recap.py
