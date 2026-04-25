@@ -1,0 +1,26 @@
+name: AI Daily Briefing
+
+on:
+  schedule:
+    # 8:00 AM UTC — morning edition
+    - cron: "0 8 * * *"
+    # 6:00 PM UTC — evening edition
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run AI briefing
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOOKBACK_HOURS: "12"
+        run: python scripts/ai_daily_briefing.py
