@@ -1,0 +1,72 @@
+# GitHub Content Marketing Framework FY25 (Agent Context)
+
+## 🔑 How to Use This Document (Agent Notes)
+
+- This is a **strategic content framework**, not messaging or copy.
+- Use it to **align content to narrative, audience, and pillars**.
+- It defines the **why and direction**, not the execution.
+- Always pair this with:
+  - Messaging/positioning docs (for what to say)
+  - Execution frameworks (for what to produce)
+
+### What this is best for
+- Choosing a **content pillar** (Speed, Scale, Security)
+- Selecting a **target audience/persona**
+- Ensuring **narrative consistency across outputs**
+
+### What NOT to use it for
+- Writing copy directly
+- Making product claims
+- Acting as a source of truth for features
+
+### Key rule
+This document is a **constraint system** — not a generator.
+
+---
+
+## 🧠 Core Framework
+
+### North Star
+Developer expertise matters more than ever in the age of AI.
+
+### Key Message
+Software development is changing—fast.
+
+### Positioning
+GitHub defines the future of software development through better workflows: faster, collaborative, secure.
+
+---
+
+## 🧱 Content Pillars
+
+1. Speed → Ways of working faster  
+2. Scale → Ways of working at scale  
+3. Security → Ways of working more securely  
+
+---
+
+## 👤 Audiences
+
+- Builders (primary)
+- Learners
+- Drivers
+- Leaders
+
+---
+
+## 🎯 Objectives
+
+- Awareness
+- Education & acquisition
+- Retention & re-engagement
+
+---
+
+## ⚠️ Important
+
+This document must be combined with:
+- Product messaging
+- Audience insights
+- Business context
+
+It is not sufficient on its own.

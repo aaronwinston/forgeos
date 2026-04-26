@@ -1,0 +1,113 @@
+# GitHub Content Marketing Framework FY25
+
+## 🔑 How to Use This Document (Agent Context)
+
+- This is a **strategic content framework**, not messaging or copy.
+- Use it to **align outputs to narrative, audience, and pillars**.
+- It defines the **why and direction**, not execution.
+- Always combine with:
+  - Messaging/positioning docs (what to say)
+  - Execution frameworks (what to produce)
+
+### Best uses
+- Select a **pillar** (Speed, Scale, Security)
+- Choose a **persona**
+- Ensure **narrative consistency**
+
+### Do NOT use for
+- Writing copy directly
+- Making product claims
+- Acting as source of truth
+
+### Rule
+This document is a **constraint system, not a generator**.
+
+---
+
+## 🧠 Overview
+
+**Purpose:** Align content efforts across audiences, channels, and themes.
+
+**Goals:**
+- Define top-line messages
+- Provide scaffolding for planning
+- Unify content strategy
+
+**Important:** This document alone is not sufficient to build a campaign.
+
+---
+
+## 🌟 North Star
+
+Developer expertise matters more than ever in the age of AI.
+
+---
+
+## 💬 Key Message
+
+Software development is changing—fast.
+
+---
+
+## 🎯 Positioning
+
+GitHub defines the future of software development through workflows that are:
+- Faster
+- More collaborative
+- More secure
+
+---
+
+## 🧱 Thematic Pillars
+
+### 1. Ways of working faster
+- Velocity, flow, automation, AI, DevOps
+
+### 2. Ways of working at scale
+- Collaboration, architecture, cloud, AI
+
+### 3. Ways of working more securely
+- DevSecOps, governance, security automation
+
+---
+
+## 👤 Audiences
+
+- **Builders** (primary): engineers building software
+- **Learners**: new developers
+- **Drivers**: tooling decision-makers
+- **Leaders**: business stakeholders
+
+---
+
+## 🎯 Objectives
+
+- Awareness
+- Education & acquisition
+- Retention & engagement
+
+---
+
+## 📦 Products Mentioned
+
+- GitHub Copilot
+- GitHub Actions
+- GitHub Codespaces
+- GitHub Enterprise
+- Security products
+
+---
+
+## 🧭 Strategy Notes
+
+- Content should ladder to pillars
+- Must combine with product truths + audience insights
+- Should evolve over time
+
+---
+
+## ⚠️ Final Note
+
+Use this document to guide alignment and structure.
+
+Do NOT use it alone to generate content.

@@ -1,0 +1,74 @@
+# GitHub Copilot SDK Messaging & Positioning (Case Study)
+
+## 🔑 Key Takeaways
+
+- Strong example of technical product messaging for developers.
+- Clearly explains a complex concept (agent runtime) in practical terms.
+- Anchors on real developer pain (orchestration complexity).
+- Highly actionable: includes positioning, pillars, demos, and scripts.
+- ⚠️ Content will age quickly — use as structure, not source of truth.
+
+---
+
+## 🎯 Core Positioning
+
+Tagline: Agents for every app.
+
+Positioning:
+The Copilot SDK gives developers programmatic access to a production-tested agent execution engine, so they don’t have to build orchestration systems from scratch.
+
+---
+
+## 🧠 Core Insight
+
+“Agents are everywhere. Production-grade agents are not.”
+
+---
+
+## 🧱 Messaging Pillars
+
+- Proven runtime → don’t rebuild orchestration
+- Multi-model → flexibility without complexity
+- Decoupled execution → not tied to IDE
+- MCP-native → extensible with real context
+
+---
+
+## ⚔️ Competitive Framing
+
+- LLM APIs → generate text
+- Other SDKs → primitives
+- Copilot SDK → production-ready execution engine
+
+---
+
+## 💡 Developer Value
+
+- Skip building orchestration
+- Delegate execution, not prompts
+- Use multiple models easily
+- Embed agents anywhere
+
+---
+
+## 🧪 Use Cases
+
+- CLIs
+- SaaS tools
+- Internal systems
+- Desktop automation
+
+---
+
+## 🧭 Why this doc works
+
+- Clear problem → solution framing
+- Strong developer empathy
+- Concrete examples
+- Clean differentiation
+
+---
+
+## ⚠️ Final Note
+
+Use for structure and messaging quality only.
