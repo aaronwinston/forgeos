@@ -1,0 +1,125 @@
+# GitHub Copilot Messaging & Positioning Framework (Case Study)
+
+## 🔑 Key Takeaways (Why this document matters)
+
+- This is a strong example of a high-quality messaging & positioning framework.
+- It is developer-first, outcome-driven, and operational.
+- It shows what “good” looks like structurally (pillars, positioning, proof, execution).
+- ⚠️ The content is out of date and should NOT be used as a source of truth.
+- Use this as a case study for quality, not accuracy.
+
+---
+
+## 🏃 Cheat Sheet
+
+Purpose: Developer-first MPF to guide all Copilot marketing.
+
+### Competitive Context
+- Shift to PR velocity & workflow metrics
+- Rise of agentic workflows
+- GitHub integration = moat
+- Quality = security
+
+---
+
+## 🥇 Five Ways Copilot Wins
+1. Agentic workflows inside GitHub
+2. Context → outcomes
+3. Quality = security
+4. Platform leverage
+5. Clear free → paid ramp
+
+---
+
+## 🎯 Core Positioning
+
+Tagline: Less // TODO: more done.
+
+Positioning:
+For developers who’d rather commit code than chase TODOs, Copilot is the only GitHub-native AI agent that executes inside their workflow.
+
+---
+
+## 👤 Audience
+
+Developers = skeptical, evidence-first, workflow-loyal.
+
+---
+
+## 🧱 Messaging Pillars
+
+Speed → Build faster  
+Scale → Build at scale  
+Security → Build securely  
+
+---
+
+## ⚔️ Competitive Framing
+
+Copilot = integrated, workflow-native  
+Others = faster or simpler, but fragmented  
+
+---
+
+## 💬 Objection Handling
+
+- Faster tools → Copilot ships outcomes
+- Quotas → predictable usage
+- Privacy → enterprise controls
+
+---
+
+## 💰 Plan Strategy
+
+Free → Pro → Enterprise  
+Tie upgrades to productivity gains
+
+---
+
+## 📊 Proof Points
+
+- Faster shipping
+- Multi-file automation
+- Reduced vulnerabilities
+
+---
+
+## ✍️ Tone
+
+- Show, don’t tell
+- No hype
+- Outcome-first
+- Always GitHub-native
+
+---
+
+## 🚀 Actions
+
+- Demo-first homepage
+- Pillar-based nurture
+- Competitive campaigns
+- Live demos
+
+---
+
+## 🧠 Core Narrative
+
+Autocomplete → Agentic workflows  
+AI doesn’t just write code — it ships it
+
+---
+
+## 🧩 Why this document works
+
+- User-first
+- Clear narrative shift
+- Workflow-native framing
+- Features → outcomes → proof
+- Built for execution
+
+---
+
+## ⚠️ Final Note
+
+Use for structure and quality only.  
+Do NOT reuse content directly.

@@ -1,0 +1,73 @@
+# GitHub Copilot Feature Breakdown (Case Study)
+
+## 🔑 Key Takeaways
+
+- Excellent example of product storytelling via system design.
+- Introduces a simple mental model (Operate, Craft, Ship).
+- Maps features to real developer workflows.
+- Reinforces GitHub as the core moat.
+- ⚠️ Feature details will become outdated quickly.
+
+---
+
+## 🧠 Core Insight
+
+Copilot is not a tool — it’s a system that operates across the software lifecycle.
+
+---
+
+## 🧱 Mental Model
+
+Operate → fast execution (CLI)  
+Craft → refine and shape (IDE)  
+Ship → collaborate and merge (GitHub)  
+
+---
+
+## ⚙️ Operate (CLI)
+
+- Agent execution
+- Planning + subagents
+- Autopilot workflows
+- Tool control + safety
+
+---
+
+## ✍️ Craft (IDE)
+
+- Code refinement
+- Agent-assisted edits
+- Context-aware suggestions
+- Custom instructions
+
+---
+
+## 🚀 Ship (GitHub)
+
+- PR summaries
+- Code review
+- Async coding agents
+- Team workflows
+
+---
+
+## 🔗 Cross-Surface
+
+- MCP extensibility
+- Enterprise controls
+- Metrics + governance
+
+---
+
+## 🧭 Why this doc works
+
+- Simple mental model
+- Maps to real workflows
+- Shows system vs feature thinking
+- Reinforces platform advantage
+
+---
+
+## ⚠️ Final Note
+
+Use as a structural reference, not a source of truth.
