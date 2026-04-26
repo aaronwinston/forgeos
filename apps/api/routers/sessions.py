@@ -106,15 +106,21 @@ async def run_session(session_id: int, session: Session = Depends(get_session)):
                     db.commit()
         
         final_output = ""
-        async for chunk in execute_playbook(brief, playbook_name):
-            final_output += chunk
-            await on_update({
-                "type": "agent_update",
-                "agent": "playbook",
-                "status": "active",
-                "progress": int(len(final_output) / 100),
-                "output": final_output
-            })
+        with DBSession(engine) as db:
+            async for chunk in execute_playbook(
+                brief, 
+                playbook_name, 
+                pipeline_run_id=session_id,
+                db_session=db
+            ):
+                final_output += chunk
+                await on_update({
+                    "type": "agent_update",
+                    "agent": "playbook",
+                    "status": "active",
+                    "progress": int(len(final_output) / 100),
+                    "output": final_output
+                })
         
         with DBSession(engine) as db:
             sess = db.get(AgentSession, session_id)

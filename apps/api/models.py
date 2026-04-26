@@ -66,8 +66,10 @@ class ScrapeItem(SQLModel, table=True):
     surfaced_to_user_at: Optional[datetime] = None
     dismissed_at: Optional[datetime] = None
 
-class AgentSession(SQLModel, table=True):
+class PipelineRun(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    brief_id: int = Field(foreign_key="brief.id")
+    deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
     title: str
     type: str = Field(default="blog")
     audience: Optional[str] = None
@@ -75,14 +77,14 @@ class AgentSession(SQLModel, table=True):
     status: str = Field(default="pending")
     current_agent: Optional[str] = None
     progress: int = Field(default=0)
-    output: Optional[str] = None
     deleted: bool = Field(default=False)
+    started_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class PipelineStep(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    pipeline_run_id: int = Field(foreign_key="agentsession.id")
+    pipeline_run_id: int = Field(foreign_key="pipelinerun.id")
     agent_name: str
     input_text: str
     output_text: str
