@@ -10,12 +10,31 @@ Add files by dropping your own content — docs, notes, frameworks, examples —
 
 ```
 context/
+  00_orchestration/  # Routing rules — read this first before composing any output
   01_philosophy/     # Your beliefs and principles — the "why" behind decisions
   02_narrative/      # Messaging, competitive POV, campaign framing
   03_strategy/       # How you're approaching content, GTM, and AR right now
   04_execution/      # How work actually gets done — process and operating systems
-  05_patterns/       # What works — repeatable patterns in ads, pages, workflows
+  05_patterns/       # What works — repeatable patterns and case studies
+  06_influence/      # Analyst relations and perception-shaping work
+  07_research/       # Research-led authority systems and market intelligence
 ```
+
+---
+
+## Core rule
+
+Never generate important work from a single context file. Compose layers in order:
+
+1. `01_philosophy` — how to think
+2. `02_narrative` — what story to tell
+3. `03_strategy` — who it's for and why it matters
+4. `04_execution` — what to produce and how
+5. `05_patterns` — what great output looks like
+
+Then add `06_influence` for analyst/AR work, or `07_research` for data-backed content.
+
+See `00_orchestration/forgeos-context-orchestrator.md` for the full routing guide.
 
 ---
 
@@ -69,17 +88,45 @@ How work actually happens. Agents use this to produce plans that match operation
 
 ## 05_patterns/
 
-What works. Repeatable patterns agents can pull from when producing specific content types.
+What works. Repeatable patterns and case studies agents pull from when producing specific content types.
 
 | File | What it holds |
 |------|---------------|
 | `developer-ads.md` | Ad copy patterns, targeting approaches, what resonates with developers |
 | `landing-pages.md` | Page structure, headline formulas, CTA patterns, social proof for technical audiences |
 | `workflows.md` | Repeatable execution workflows — social amplification, case study production, launch week checklist |
+| `developer-ads-case-study.md` | Real example of developer ad execution with performance context |
+| `workflow-narrative-case-study.md` | Real example of workflow-driven narrative content |
+| `campaign-performance-readout.md` | Campaign performance analysis and patterns |
+
+---
+
+## 06_influence/
+
+Analyst relations and perception-shaping work. Agents check this for any AR briefing, inquiry response, or analyst-facing content.
+
+| File | What it holds |
+|------|---------------|
+| `analyst-relations-playbook.md` | Your philosophy on AR, what makes it effective, how you approach briefings and long-term analyst relationships |
+
+---
+
+## 07_research/
+
+Research-led authority systems and market intelligence. Agents check this for data-backed content, research reports, and evidence-grounded narratives.
+
+| File | What it holds |
+|------|---------------|
+| `market-research-playbook.md` | How you gather and use market signal, what sources you trust, how research informs strategy and content |
 
 ---
 
 ## How agents use this directory
+
+**Always start with the orchestrator:**
+```
+Read context/00_orchestration/forgeos-context-orchestrator.md before generating any substantial output.
+```
 
 When starting any task, agents check the relevant files based on content type:
 
@@ -88,15 +135,17 @@ When starting any task, agents check the relevant files based on content type:
 | Any writing task | `02_narrative/messaging-framework.md` |
 | Anything competitive | `02_narrative/competitive-pov.md` |
 | Active campaign content | `02_narrative/campaign-messaging.md` |
-| Launch or GTM content | `03_strategy/content-strategy.md`, `04_execution/gtm-operating-system.md` |
-| Analyst relations | `01_philosophy/analyst-relations-playbook.md`, `03_strategy/ar-strategy.md`, `02_narrative/competitive-pov.md` |
-| Strategy or editorial direction | `01_philosophy/developer-marketing-manifesto.md`, `03_strategy/content-strategy.md` |
-| Paid or landing page copy | `05_patterns/developer-ads.md`, `05_patterns/landing-pages.md` |
-| Post-launch content | `04_execution/post-launch-framework.md` |
+| Launch or GTM content | `03_strategy/strategy-blueprint.md`, `04_execution/gtm-operating-system.md` |
+| Analyst relations | `06_influence/analyst-relations-playbook.md`, `03_strategy/ar-strategy.md`, `02_narrative/competitive-pov.md` |
+| Strategy or editorial direction | `01_philosophy/developer-marketing-manifesto.md`, `03_strategy/content-strategy-framework.md` |
+| Paid or landing page copy | `05_patterns/developer-ads.md`, `05_patterns/developer-ads-case-study.md`, `05_patterns/landing-pages.md` |
+| Post-launch content | `04_execution/post-launch-framework.md`, `05_patterns/campaign-performance-readout.md` |
+| Research-backed content | `07_research/market-research-playbook.md` |
 
 **Instruction to include in any task prompt:**
 ```
-Before beginning, read context/README.md and check the relevant files for this task.
+Read context/00_orchestration/forgeos-context-orchestrator.md first.
+Then check the relevant context files for this task before drafting.
 ```
 
 ---
