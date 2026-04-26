@@ -134,3 +134,55 @@ and calls out individuals by name.
 | Newsletter | Conversational, editorial, informed insider |
 | Product copy | Clear benefit, no fluff, developer-voice |
 | Thought leadership | Opinionated but grounded, cites specifics |
+
+---
+
+## Real Writing Samples
+
+These are actual paragraphs Aaron has written. Use them to calibrate tone, rhythm, and structure — not to copy, but to match the register.
+
+### From: "From pixels to characters: The engineering behind GitHub Copilot CLI's animated ASCII banner" (GitHub Blog)
+
+**Opening — narrative entry, specific person, no preamble:**
+> Cameron opened an empty repository in VS Code and began asking GitHub Copilot for help. She was going to build a new CLI from scratch using only Copilot. Her screen was being recorded.
+>
+> It was a demo. A pretty good one, as it turned out. And at the end of it, a little animated Copilot mascot waved at her from inside the terminal window.
+
+**Technical setup — why before how:**
+> Most people think ASCII art is simple. A nostalgic remnant of the early internet, maybe. But building it as a polished, production-grade experience inside a terminal — one that has to work across macOS, Windows, and Linux, in dozens of different terminal emulators, with wildly inconsistent support for ANSI escape codes — is a different problem entirely.
+
+**Naming the hard thing directly:**
+> Terminals treat output as a stream of characters. There's no native concept of frames, sprites, or z-index. There's no canvas, no compositor, no consistent rendering model, and no standard animation framework. So when an animated Copilot mascot appeared, it looked playful. But behind it was serious engineering work.
+
+**Technical depth with specificity:**
+> Andy broke the engineering challenges into four broad categories: animation, color, character encoding, and terminal detection. Each one had its own rabbit hole. ANSI color consistency simply doesn't exist — some terminals support 24-bit color, some support 256 colors, some support only 16, and some support none at all. The code has to detect the environment and degrade gracefully.
+
+**Substantive closer with emotional resonance:**
+> In the back of my head, there was a voice saying "god damn, these people really care." That's a pretty awesome feeling. 6,000 lines of TypeScript — most of it dedicated not to visuals, but to handling terminal inconsistencies — for an animation that plays for a few seconds when you first open a CLI.
+
+---
+
+### From: LinkedIn farewell post (departing GitHub, joining Arize AI)
+
+**Warm, direct, specific over general:**
+> Just two months ago, I was in Bellevue with like 20–30 people talking about Universe. Just two months before that, I was in London for GitHub Connect. I've traveled to six or seven different countries in the name of GitHub. I've worked with some of the most thoughtful engineers I've ever encountered.
+
+**Vulnerable but not overwrought:**
+> I'm proud of the work we shipped. But to be sappy for a second: the people I got to work with were the best part. (Also random, but the emoji game on GitHub's Slack is second to none let's be real.)
+
+**Clean, understated close:**
+> Tomorrow, I start something new. More soon.
+
+---
+
+## How to use these samples
+
+When generating content in Aaron's voice:
+1. Read the samples above before writing
+2. Match the rhythm — setup sentences followed by a short, declarative punch
+3. Lead with the human or the specific moment, not the abstract claim
+4. Name real things: people, numbers, tools, moments
+5. Do not editorialize — let the specifics carry the weight
+6. When done, read your draft aloud: if it sounds like a press release, rewrite it
+
+When Aaron provides new writing, add examples to `examples/excellent/` and reference them here.
