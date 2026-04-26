@@ -1,0 +1,22 @@
+from pathlib import Path
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # Repo root is 3 levels up from apps/api/ (apps/api -> apps -> repo_root)
+    REPO_ROOT: Path = Path(__file__).parent.parent.parent
+    ANTHROPIC_API_KEY: str = ""
+    DATABASE_URL: str = "sqlite:///./forgeos.db"
+
+    # Canonical markdown directories (relative to REPO_ROOT)
+    SKILLS_DIR: str = "skills"
+    PLAYBOOKS_DIR: str = "playbooks"
+    CONTEXT_DIR: str = "context"
+    CORE_DIR: str = "core"
+    BRIEFS_DIR: str = "briefs"
+    RUBRICS_DIR: str = "rubrics"
+    PROMPTS_DIR: str = "prompts"
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
