@@ -1,3 +1,7 @@
+# instrumentation must be imported and called before any Anthropic clients are created
+import instrumentation
+instrumentation.setup_tracing()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler

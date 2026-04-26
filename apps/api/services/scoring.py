@@ -2,6 +2,7 @@ import anthropic
 import json
 import re
 from config import settings
+from instrumentation import get_tracer
 
 client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 REPO_ROOT = settings.REPO_ROOT
@@ -52,14 +53,32 @@ def score_item(title: str, body: str, source: str) -> tuple[float, str]:
     return 5.0, "Scoring failed"
 
 def score_items_batch(items: list[dict]) -> list[dict]:
-    scored = []
-    for item in items:
-        score, reasoning = score_item(
-            title=item.get("title", ""),
-            body=item.get("body", ""),
-            source=item.get("source", "")
-        )
-        item["score_relevance"] = score
-        item["score_reasoning"] = reasoning
-        scored.append(item)
-    return scored
+    tracer = get_tracer()
+    with (tracer.start_as_current_span("score_items_batch") if tracer else _nullcontext()) as span:
+        if span and tracer:
+            span.set_attribute("openinference.span.kind", "CHAIN")
+            span.set_attribute("input.value", f"Scoring {len(items)} items")
+
+        scored = []
+        for item in items:
+            score, reasoning = score_item(
+                title=item.get("title", ""),
+                body=item.get("body", ""),
+                source=item.get("source", "")
+            )
+            item["score_relevance"] = score
+            item["score_reasoning"] = reasoning
+            scored.append(item)
+
+        if span and tracer:
+            high_signal = sum(1 for i in scored if (i.get("score_relevance") or 0) >= 7)
+            span.set_attribute("output.value", f"Scored {len(scored)} items, {high_signal} above threshold")
+
+        return scored
+
+
+from contextlib import contextmanager
+
+@contextmanager
+def _nullcontext():
+    yield None
