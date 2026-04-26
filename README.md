@@ -1,3 +1,5 @@
+Brought to you by LLMs and espresso. Buyer beware. 
+
 # mktg-agents
 
 `mktg-agents` is an AI-native editorial, content, communications, analyst relations, and developer marketing operating system.
