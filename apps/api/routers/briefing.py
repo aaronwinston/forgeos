@@ -1,12 +1,5 @@
-import asyncio
-import re
-import json
 import time
 from fastapi import APIRouter, Depends
-import httpx
-import feedparser
-from bs4 import BeautifulSoup
-from anthropic import Anthropic
 from cache import briefing_cache
 from config import settings
 from database import get_session
@@ -15,7 +8,6 @@ from sqlmodel import Session, select
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/briefing", tags=["briefing"])
-client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 SOURCE_COLORS = {
     "hackernews": "#FF6600",

@@ -27,7 +27,7 @@ class SessionUpdate(BaseModel):
 
 @router.post("")
 def create_session(data: SessionCreate, session: Session = Depends(get_session)):
-    s = AgentSession(**data.dict())
+    s = PipelineRun(**data.dict())
     session.add(s)
     session.commit()
     session.refresh(s)
@@ -36,22 +36,22 @@ def create_session(data: SessionCreate, session: Session = Depends(get_session))
 @router.get("")
 def list_sessions(session: Session = Depends(get_session)):
     sessions = session.exec(
-        select(AgentSession)
-        .where(AgentSession.deleted == False)
-        .order_by(AgentSession.created_at.desc())
+        select(PipelineRun)
+        .where(PipelineRun.deleted == False)
+        .order_by(PipelineRun.created_at.desc())
     ).all()
     return sessions
 
 @router.get("/{session_id}")
 def get_session_by_id(session_id: int, session: Session = Depends(get_session)):
-    s = session.get(AgentSession, session_id)
+    s = session.get(PipelineRun, session_id)
     if not s or s.deleted:
         raise HTTPException(status_code=404, detail="Session not found")
     return s
 
 @router.put("/{session_id}")
 def update_session(session_id: int, data: SessionUpdate, session: Session = Depends(get_session)):
-    s = session.get(AgentSession, session_id)
+    s = session.get(PipelineRun, session_id)
     if not s or s.deleted:
         raise HTTPException(status_code=404, detail="Session not found")
     for field, value in data.dict(exclude_none=True).items():
@@ -64,7 +64,7 @@ def update_session(session_id: int, data: SessionUpdate, session: Session = Depe
 
 @router.delete("/{session_id}")
 def delete_session(session_id: int, session: Session = Depends(get_session)):
-    s = session.get(AgentSession, session_id)
+    s = session.get(PipelineRun, session_id)
     if not s:
         raise HTTPException(status_code=404, detail="Session not found")
     s.deleted = True
