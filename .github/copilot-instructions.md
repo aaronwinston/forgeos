@@ -27,7 +27,15 @@ This repo is an AI-native editorial operating system for Arize AI's content, dev
 
 ## How to orient yourself every session
 
-Before doing any writing work, read these files:
+**Start with the orchestrator.** Before doing any writing work, read:
+
+```
+context/00_orchestration/forgeos-context-orchestrator.md
+```
+
+This file tells you which context layers to compose for the task at hand. Never generate important work from a single context file.
+
+Then read these core standards:
 
 1. `core/VOICE.md` — Aaron's voice and style. This is the source of truth.
 2. `core/STYLE_GUIDE.md` — Specific rules and banned language.
@@ -35,15 +43,18 @@ Before doing any writing work, read these files:
 4. `core/CONTEXT.md` — Arize AI product knowledge, terminology, key narratives.
 5. `skills/README.md` — Index of all available skills.
 
-Then check the `context/` directory for curated files relevant to the task:
+Then compose the relevant context layers for the task:
 
-- `context/my-writing/` — Aaron's published writing. Read before drafting anything in his voice.
-- `context/arize/` — Internal product knowledge. Read before writing about any Arize product or feature.
-- `context/audience/` — ICP and persona docs. Read to calibrate technical depth and tone.
-- `context/approved-messaging/` — Locked copy. Pull exact phrasing from here instead of generating new variants.
-- `context/research/` — Source material. Use when the task involves citing, summarizing, or referencing external work.
+- `context/01_philosophy/` — foundational beliefs. Read for any strategic decision.
+- `context/02_narrative/messaging-framework.md` — approved messaging. Read before any content touches positioning.
+- `context/02_narrative/competitive-pov.md` — competitive differentiation. Read for any content with competitive surface area.
+- `context/03_strategy/` — current strategy context. Read before making editorial or strategic recommendations.
+- `context/04_execution/` — how work gets done. Read before producing launch plans or campaign briefs.
+- `context/05_patterns/` — what great output looks like. Read before producing ads, landing pages, or campaigns.
+- `context/06_influence/` — AR philosophy and approach. Read for any analyst-facing work.
+- `context/07_research/` — market intelligence. Read for research-backed or data-grounded content.
 
-See `context/README.md` for the full guide on what each folder contains and how to use it.
+See `context/README.md` for the full per-task lookup guide.
 
 ---
 

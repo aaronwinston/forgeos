@@ -1,17 +1,58 @@
-<!-- context/02_narrative/messaging-framework.md -->
-<!--
-What goes here: Arize's current messaging framework — the positioning statement, message
-house, primary claims, supporting pillars, and proof points. This is the structured
-strategic layer that all content should map back to.
+---
+title: Developer Workflow Messaging Framework
+slug: developer-workflow-messaging-framework
+layer: narrative
+type: narrative_source_of_truth
+use_for:
+  - campaign messaging
+  - positioning consistency
+  - pillar selection
+  - tone guardrails
+avoid:
+  - unverified product claims
+  - generic AI copy
+---
 
-Examples of what belongs here:
-- Positioning statement (for internal alignment, not ad copy)
-- Three to five message pillars with supporting proof
-- ICP-specific message variations (what resonates with AI engineers vs. AI PMs vs. enterprise buyers)
-- What this messaging explicitly rules out — what we do NOT say
-- Approved taglines and product one-liners
+# Developer Workflow Messaging Framework
 
-Agents use this to: ensure all content maps to the right message hierarchy, pull
-approved language instead of generating new variants, and flag when a draft drifts
-from the intended positioning.
--->
+## Core Narrative
+
+Developers and AI agents collaborate across workflows.
+
+The platform is not just where tooling is installed. It is where work happens, gets reviewed, becomes durable, and compounds across teams.
+
+## Positioning
+
+The best developer platform is the environment where intent becomes reviewed, testable, and shippable work.
+
+## Pillars
+
+### 1. Faster
+
+Reduce friction and help developers stay in flow.
+
+### 2. Bigger
+
+Scale useful workflows across teams, repos, tools, and systems.
+
+### 3. Safer
+
+Maintain code quality, trust, reviewability, and governance as work accelerates.
+
+## Messaging Rules
+
+- Show workflows, not features.
+- Evidence beats adjectives.
+- Reproducibility builds trust.
+- Diffs, PRs, tests, logs, and concrete artifacts are stronger than promises.
+- Avoid claims that depend on future product behavior.
+
+## Agent Instructions
+
+When writing messaging:
+
+1. Start with the workflow.
+2. Explain the outcome.
+3. Show the proof artifact.
+4. Tie the result back to speed, scale, or safety.
+5. Remove hype language.
