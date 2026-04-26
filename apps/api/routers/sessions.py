@@ -83,9 +83,10 @@ async def run_session(session_id: int, session: Session = Depends(get_session)):
     _session_queues[session_id] = queue
     
     brief = s.description or f"Create a {s.type} for {s.audience or 'our audience'}: {s.title}"
+    playbook_name = s.type or "blog-production"
     
     async def run():
-        from runner import run_agent_chain
+        from services.generation import execute_playbook
         from database import engine
         from sqlmodel import Session as DBSession
         
@@ -104,7 +105,16 @@ async def run_session(session_id: int, session: Session = Depends(get_session)):
                     db.add(sess)
                     db.commit()
         
-        final_output = await run_agent_chain(session_id, brief, on_update)
+        final_output = ""
+        async for chunk in execute_playbook(brief, playbook_name):
+            final_output += chunk
+            await on_update({
+                "type": "agent_update",
+                "agent": "playbook",
+                "status": "active",
+                "progress": int(len(final_output) / 100),
+                "output": final_output
+            })
         
         with DBSession(engine) as db:
             sess = db.get(AgentSession, session_id)
