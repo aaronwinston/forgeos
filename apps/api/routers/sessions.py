@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from database import get_session
-from models import PipelineRun
+from models import PipelineRun, Brief, Deliverable, Folder, Project
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -27,11 +27,70 @@ class SessionUpdate(BaseModel):
 
 @router.post("")
 def create_session(data: SessionCreate, session: Session = Depends(get_session)):
-    s = PipelineRun(**data.dict())
-    session.add(s)
+    # Ensure we have a default project
+    project = session.exec(
+        select(Project).where(Project.user_id == "aaron")
+    ).first()
+    if not project:
+        project = Project(user_id="aaron", name="Default Project")
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+    
+    # Ensure we have a default folder
+    folder = session.exec(
+        select(Folder).where(Folder.project_id == project.id)
+    ).first()
+    if not folder:
+        folder = Folder(project_id=project.id, name="Deliverables")
+        session.add(folder)
+        session.commit()
+        session.refresh(folder)
+    
+    # Create Brief
+    brief = Brief(
+        user_id="aaron",
+        project_id=project.id,
+        title=data.title,
+        audience=data.audience,
+        description=data.description,
+        brief_md=data.description or f"Create a {data.type} for {data.audience or 'our audience'}: {data.title}"
+    )
+    session.add(brief)
     session.commit()
-    session.refresh(s)
-    return s
+    session.refresh(brief)
+    
+    # Create Deliverable
+    deliverable = Deliverable(
+        folder_id=folder.id,
+        title=data.title,
+        content_type=data.type,
+        status="draft",
+        body_md=""
+    )
+    session.add(deliverable)
+    session.commit()
+    session.refresh(deliverable)
+    
+    # Create PipelineRun
+    pipeline_run = PipelineRun(
+        brief_id=brief.id,
+        deliverable_id=deliverable.id,
+        title=data.title,
+        type=data.type,
+        audience=data.audience,
+        description=data.description,
+        status="pending"
+    )
+    session.add(pipeline_run)
+    session.commit()
+    session.refresh(pipeline_run)
+    
+    return {
+        "pipeline_run": pipeline_run,
+        "brief": brief,
+        "deliverable": deliverable
+    }
 
 @router.get("")
 def list_sessions(session: Session = Depends(get_session)):
