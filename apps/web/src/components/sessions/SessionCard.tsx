@@ -18,6 +18,18 @@ export function SessionCard({ session }: { session: Session }) {
         <span className="capitalize">{session.type}</span>
         {session.audience && <><span>·</span><span>{session.audience}</span></>}
       </div>
+      <div className="space-y-2 mb-3">
+        {session.brief_id && (
+          <div className="text-xs text-fg-tertiary">
+            Brief <span className="text-brand-purple">#{session.brief_id}</span>
+          </div>
+        )}
+        {session.deliverable_id && (
+          <div className="text-xs text-fg-tertiary">
+            Deliverable <span className="text-brand-purple">#{session.deliverable_id}</span>
+          </div>
+        )}
+      </div>
       {session.status !== 'pending' && (
         <div>
           <div className="flex justify-between text-xs text-fg-tertiary mb-1">

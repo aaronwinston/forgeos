@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getSessionById, isApiError } from '@/lib/api';
-import type { Session } from '@/lib/api';
+import { getSessionById, getDeliverableById, isApiError } from '@/lib/api';
+import type { Session, Deliverable } from '@/lib/api';
 import { AgentChain } from '@/components/sessions/AgentChain';
 import { ChatInterface } from '@/components/sessions/ChatInterface';
 import { DocumentEditor } from '@/components/sessions/DocumentEditor';
@@ -12,11 +12,21 @@ export default function SessionPage() {
   const params = useParams();
   const id = Number(params.id);
   const [session, setSession] = useState<Session | null>(null);
+  const [deliverable, setDeliverable] = useState<Deliverable | null>(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     getSessionById(id).then(result => {
-      if (!isApiError(result)) setSession(result);
+      if (!isApiError(result)) {
+        setSession(result);
+        if (result.deliverable_id) {
+          getDeliverableById(result.deliverable_id).then(delResult => {
+            if (!isApiError(delResult)) {
+              setDeliverable(delResult);
+            }
+          });
+        }
+      }
       setLoading(false);
     });
   }, [id]);
@@ -49,6 +59,8 @@ export default function SessionPage() {
             <span className="text-xs text-fg-tertiary capitalize">{session.type}</span>
             {session.audience && <><span className="text-fg-tertiary">·</span><span className="text-xs text-fg-tertiary">{session.audience}</span></>}
           </div>
+          {session.brief_id && <div className="text-xs text-fg-tertiary mt-2">Brief ID: {session.brief_id}</div>}
+          {session.deliverable_id && <div className="text-xs text-fg-tertiary">Deliverable ID: {session.deliverable_id}</div>}
         </div>
         <StatusBadge status={session.status} />
       </div>
@@ -59,7 +71,7 @@ export default function SessionPage() {
           <ChatInterface sessionId={id} />
         </div>
         <div className="lg:col-span-2">
-          <DocumentEditor output={session.output} />
+          <DocumentEditor output={deliverable?.body_md} />
         </div>
       </div>
     </div>

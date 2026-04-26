@@ -2,6 +2,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface Session {
   id: number;
+  brief_id: number;
+  deliverable_id?: number;
   title: string;
   type: string;
   audience?: string;
@@ -9,7 +11,6 @@ export interface Session {
   status: 'pending' | 'active' | 'complete';
   current_agent?: string;
   progress: number;
-  output?: string;
   created_at: string;
   updated_at: string;
 }
@@ -86,6 +87,10 @@ export async function createSession(data: { title: string; type: string; audienc
 
 export async function getSessionById(id: number): Promise<Session | ApiError> {
   return apiFetch<Session>(`/api/sessions/${id}`);
+}
+
+export async function getDeliverableById(id: number): Promise<Deliverable | ApiError> {
+  return apiFetch<Deliverable>(`/api/deliverables/${id}`);
 }
 
 export async function updateSession(id: number, data: Partial<Session>): Promise<Session | ApiError> {
