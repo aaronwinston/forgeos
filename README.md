@@ -18,6 +18,14 @@ Two layers, one product.
 **The cockpit** is a Next.js app you run on localhost. Dashboard, briefing, projects, deliverables, chat, pipeline runs, engine editor. It writes back to the same markdown files. Your `git log` is the audit trail.
  
 The whole system is built on a single bet: that the gap between AI-generated slop and content that sounds like you came out of it is almost entirely a function of what's in the system prompt before the user types anything. So the engine is canonical. The cockpit is in service to it.
+
+## The name is earned, not invented.
+
+A forge is where raw material becomes something shaped and useful. The ore goes in rough. It comes out with form and purpose. The smith doesn't replace the material — she reveals what it was always capable of being.
+
+That is what this system is for. Not to replace the thinking. To give the thinking somewhere to go.
+
+Every marketer who uses ForgeOS brings their own ore: their company's story, their product's actual capabilities, their audience's real fears and real questions. The system provides the heat, the tools, the structure, and the quality bar. What comes out is content that sounds like it was written by someone with judgment — because the judgment was encoded into the system before the agents touched anything.
  
 ---
  
