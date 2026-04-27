@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     RUBRICS_DIR: str = "rubrics"
     PROMPTS_DIR: str = "prompts"
 
+    # Google Calendar integration
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_OAUTH_REDIRECT_URI: str = "http://localhost:8000/api/integrations/google/callback"
+
     class Config:
         env_file = ".env"
 
