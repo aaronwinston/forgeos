@@ -105,6 +105,7 @@ def _now_utc() -> datetime:
 
 @router.get("/events/upcoming")
 def get_upcoming_events(
+    auth: AuthContext = Depends(get_current_user),
     limit: int = 5,
     session: Session = Depends(get_session),
 ):
@@ -115,6 +116,7 @@ def get_upcoming_events(
     horizon = now + timedelta(days=7)
     events = session.exec(
         select(CalendarEvent)
+        .where(CalendarEvent.organization_id == auth.org_id)
         .where(CalendarEvent.start_at >= now)
         .where(CalendarEvent.start_at <= horizon)
         .where(CalendarEvent.status != "cancelled")
@@ -125,18 +127,19 @@ def get_upcoming_events(
 
 
 @router.get("/projects/{project_id}/folders")
-def list_project_folders(project_id: int, session: Session = Depends(get_session)):
+def list_project_folders(project_id: int, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """Return all folders for a project, used by NewEventModal to let the user
     choose where to place the deliverable instead of always falling back to auto-create.
     """
     folders = session.exec(
-        select(Folder).where(Folder.project_id == project_id).order_by(Folder.name)
+        select(Folder).where(Folder.project_id == project_id).where(Folder.organization_id == auth.org_id).order_by(Folder.name)
     ).all()
     return [{"id": f.id, "name": f.name, "parent_folder_id": f.parent_folder_id} for f in folders]
 
 
 @router.get("/events")
 def list_events(
+    auth: AuthContext = Depends(get_current_user),
     start: Optional[str] = None,
     end: Optional[str] = None,
     session: Session = Depends(get_session),
@@ -144,7 +147,7 @@ def list_events(
     """List events within an optional ISO date range [start, end].
     Defaults to all events when no params given.
     """
-    query = select(CalendarEvent)
+    query = select(CalendarEvent).where(CalendarEvent.organization_id == auth.org_id)
     if start:
         try:
             start_dt = datetime.fromisoformat(start)
@@ -163,7 +166,7 @@ def list_events(
 
 
 @router.post("/events", status_code=201)
-def create_event(data: CalendarEventCreate, session: Session = Depends(get_session)):
+def create_event(data: CalendarEventCreate, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """Create a CalendarEvent, optionally paired with a new Deliverable.
 
     Deliverable creation priority (evaluated in order):
@@ -195,22 +198,23 @@ def create_event(data: CalendarEventCreate, session: Session = Depends(get_sessi
         # Priority 2: explicit folder_id
         if resolved_folder_id is not None:
             folder = session.get(Folder, resolved_folder_id)
-            if not folder:
+            if not folder or folder.organization_id != auth.org_id:
                 raise HTTPException(status_code=404, detail="Folder not found")
 
         # Priority 3: project_id without folder_id — find or create default folder
         elif data.project_id is not None:
             project = session.get(Project, data.project_id)
-            if not project:
+            if not project or project.organization_id != auth.org_id:
                 raise HTTPException(status_code=404, detail="Project not found")
             # Find an existing "Content" folder, else create it
             folder = session.exec(
                 select(Folder)
                 .where(Folder.project_id == data.project_id)
+                .where(Folder.organization_id == auth.org_id)
                 .where(Folder.name == "Content")
             ).first()
             if not folder:
-                folder = Folder(project_id=data.project_id, name="Content")
+                folder = Folder(organization_id=auth.org_id, project_id=data.project_id, name="Content")
                 session.add(folder)
                 session.flush()
             resolved_folder_id = folder.id
@@ -218,6 +222,7 @@ def create_event(data: CalendarEventCreate, session: Session = Depends(get_sessi
         # Create deliverable atomically if we resolved a folder
         if resolved_folder_id is not None:
             new_deliverable = Deliverable(
+                organization_id=auth.org_id,
                 folder_id=resolved_folder_id,
                 content_type=data.content_type,
                 title=data.title,
@@ -228,6 +233,7 @@ def create_event(data: CalendarEventCreate, session: Session = Depends(get_sessi
             deliverable_id = new_deliverable.id
 
     event = CalendarEvent(
+        organization_id=auth.org_id,
         deliverable_id=deliverable_id,
         project_id=data.project_id,
         title=data.title,
@@ -258,13 +264,14 @@ def create_event(data: CalendarEventCreate, session: Session = Depends(get_sessi
 def patch_event(
     event_id: int,
     data: CalendarEventPatch,
+    auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     """Partial update — handles drag-reschedule, status changes, and sync_status
     updates from the Google Calendar sync layer.
     """
     event = session.get(CalendarEvent, event_id)
-    if not event:
+    if not event or event.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Calendar event not found")
 
     if data.title is not None:
@@ -315,9 +322,9 @@ def patch_event(
 
 
 @router.delete("/events/{event_id}")
-def delete_event(event_id: int, session: Session = Depends(get_session)):
+def delete_event(event_id: int, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     event = session.get(CalendarEvent, event_id)
-    if not event:
+    if not event or event.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Calendar event not found")
     session.delete(event)
     session.commit()

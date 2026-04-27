@@ -94,7 +94,7 @@ def create_google_oauth_flow():
 
 
 @router.post("/google/authorize")
-def authorize_google_calendar(session: Session = Depends(get_db)):
+def authorize_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     Step 1: Generate authorization URL to send user to Google consent screen.
     Returns URL that frontend should redirect user to.
@@ -117,7 +117,7 @@ def authorize_google_calendar(session: Session = Depends(get_db)):
 
 
 @router.get("/google/callback")
-def google_callback(code: str, state: str, session: Session = Depends(get_db)):
+def google_callback(code: str, state: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     Step 2: Google redirects user back here with authorization code.
     Validate state parameter to prevent CSRF, then exchange code for access token.
@@ -143,7 +143,7 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
         expires_at = credentials.expiry
         
         integration = session.exec(
-            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
+            select(CalendarIntegration).where(CalendarIntegration.organization_id == auth.org_id)
         ).first()
         
         if integration:
@@ -154,7 +154,7 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
             integration.updated_at = datetime.utcnow()
         else:
             integration = CalendarIntegration(
-                user_id="aaron",
+                organization_id=auth.org_id,
                 access_token=credentials.token,
                 refresh_token=credentials.refresh_token,
                 expires_at=expires_at,
@@ -163,7 +163,7 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
             session.add(integration)
         
         session.commit()
-        logger.info(f"Google Calendar integration established for user aaron, calendar_id={calendar_id}")
+        logger.info(f"Google Calendar integration established for org {auth.org_id}, calendar_id={calendar_id}")
         
         # Blocker #4 Fix: Retry offline events after OAuth connection
         _retry_offline_events(session, integration)
@@ -237,7 +237,7 @@ def _create_or_get_calendar(service):
 
 
 @router.delete("/google/disconnect")
-def disconnect_google_calendar(session: Session = Depends(get_db)):
+def disconnect_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     Revoke Google Calendar access and remove stored credentials.
     User data (calendar events) remain in the database for potential reconnect.
@@ -277,7 +277,7 @@ def disconnect_google_calendar(session: Session = Depends(get_db)):
 
 
 @router.get("/google/status")
-def get_google_status(session: Session = Depends(get_db)):
+def get_google_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """Get current Google Calendar integration status."""
     integration = session.exec(
         select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
@@ -300,7 +300,7 @@ def get_google_status(session: Session = Depends(get_db)):
 
 
 @router.get("/google/sync-status")
-def get_sync_status(session: Session = Depends(get_db)):
+def get_sync_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """Get calendar sync status and pending events."""
     from models import CalendarEvent, CalendarSyncLog
     
@@ -319,7 +319,7 @@ def get_sync_status(session: Session = Depends(get_db)):
     
     pending = session.exec(
         select(CalendarEvent).where(
-            (CalendarEvent.synced_to_google_at == None) & (CalendarEvent.status == "active")
+            (CalendarEvent.organization_id == auth.org_id) & (CalendarEvent.synced_to_google_at == None) & (CalendarEvent.status == "active")
         )
     ).all()
     
@@ -339,7 +339,7 @@ def get_sync_status(session: Session = Depends(get_db)):
     
     return {
         "connected": True,
-        "synced_count": session.exec(select(CalendarEvent).where(CalendarEvent.synced_to_google_at != None)).all().__len__(),
+        "synced_count": session.exec(select(CalendarEvent).where((CalendarEvent.organization_id == auth.org_id) & (CalendarEvent.synced_to_google_at != None))).all().__len__(),
         "pending_events": len(pending),
         "last_synced_at": integration.last_synced_at.isoformat() if integration.last_synced_at else None,
         "errors_last_sync": errors,
@@ -347,7 +347,7 @@ def get_sync_status(session: Session = Depends(get_db)):
 
 
 @router.post("/google/sync-now")
-def sync_now(session: Session = Depends(get_db)):
+def sync_now(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """Manually trigger a calendar sync from Google."""
     from services.calendar import poll_from_google
     
@@ -382,7 +382,7 @@ def _refresh_credentials_if_needed(integration: CalendarIntegration):
 
 
 @router.post("/google/gsc/authorize")
-def authorize_google_gsc(session: Session = Depends(get_db)):
+def authorize_google_gsc(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     Step 1 (GSC): Generate authorization URL for Google Search Console.
     Uses same OAuth flow as Calendar (webmasters.readonly scope already in GOOGLE_SCOPES).
@@ -404,7 +404,7 @@ def authorize_google_gsc(session: Session = Depends(get_db)):
 
 
 @router.get("/google/gsc/properties")
-def get_gsc_properties(session: Session = Depends(get_db)):
+def get_gsc_properties(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     Get list of verified GSC properties for user to select from.
     Requires active Google OAuth integration.
@@ -434,7 +434,7 @@ def get_gsc_properties(session: Session = Depends(get_db)):
             for site in sites
         ]
         
-        logger.info(f"Listed {len(properties)} GSC properties for user aaron")
+        logger.info(f"Listed {len(properties)} GSC properties for org {auth.org_id}")
         return {"properties": properties}
         
     except HttpError as e:
@@ -446,7 +446,7 @@ def get_gsc_properties(session: Session = Depends(get_db)):
 
 
 @router.post("/google/gsc/select-property")
-def select_gsc_property(property_url: str, session: Session = Depends(get_db)):
+def select_gsc_property(property_url: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
     """
     User selects which GSC property to track.
     Stores in CalendarIntegration for now (could extend model later).
@@ -470,7 +470,7 @@ def select_gsc_property(property_url: str, session: Session = Depends(get_db)):
         session.add(integration)
         session.commit()
         
-        logger.info(f"User aaron selected GSC property: {property_url}")
+        logger.info(f"Org {auth.org_id} selected GSC property: {property_url}")
         return {
             "status": "success",
             "selected_property": property_url,
