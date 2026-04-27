@@ -1,6 +1,5 @@
 import json
 import re
-import asyncio
 from config import settings
 from services.llm import get_provider
 from instrumentation import get_tracer
@@ -42,11 +41,11 @@ Generate two concise lines for this intelligence item:
 Return ONLY a JSON object: {"why_relevant": "<text>", "content_angle": "<text>"}
 """
 
-def score_item(title: str, body: str, source: str) -> tuple[float, str]:
+async def score_item(title: str, body: str, source: str) -> tuple[float, str]:
     scoring_prompt = load_scoring_prompt()
     try:
         provider = get_provider(settings.LLM_PROVIDER)
-        response = asyncio.run(provider.create_message(
+        response = await provider.create_message(
             system=scoring_prompt,
             messages=[{
                 "role": "user",
@@ -54,7 +53,7 @@ def score_item(title: str, body: str, source: str) -> tuple[float, str]:
             }],
             model=settings.MODEL_SCORING,
             max_tokens=150,
-        ))
+        )
         text = response.strip()
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
@@ -64,12 +63,12 @@ def score_item(title: str, body: str, source: str) -> tuple[float, str]:
         pass
     return 5.0, "Scoring failed"
 
-def synthesize_item(title: str, body: str, source: str) -> tuple[str, str]:
+async def synthesize_item(title: str, body: str, source: str) -> tuple[str, str]:
     """Generate why_relevant and content_angle for high-scoring items"""
     synthesis_prompt = load_synthesis_prompt()
     try:
         provider = get_provider(settings.LLM_PROVIDER)
-        response = asyncio.run(provider.create_message(
+        response = await provider.create_message(
             system=synthesis_prompt,
             messages=[{
                 "role": "user",
@@ -77,7 +76,7 @@ def synthesize_item(title: str, body: str, source: str) -> tuple[str, str]:
             }],
             model=settings.MODEL_GENERATION,
             max_tokens=300,
-        ))
+        )
         text = response.strip()
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
@@ -87,7 +86,7 @@ def synthesize_item(title: str, body: str, source: str) -> tuple[str, str]:
         pass
     return "", ""
 
-def score_items_batch(items: list[dict]) -> list[dict]:
+async def score_items_batch(items: list[dict]) -> list[dict]:
     tracer = get_tracer()
     with (tracer.start_as_current_span("score_items_batch") if tracer else _nullcontext()) as span:
         if span and tracer:
@@ -96,7 +95,7 @@ def score_items_batch(items: list[dict]) -> list[dict]:
 
         scored = []
         for item in items:
-            score, reasoning = score_item(
+            score, reasoning = await score_item(
                 title=item.get("title", ""),
                 body=item.get("body", ""),
                 source=item.get("source", "")
@@ -112,7 +111,7 @@ def score_items_batch(items: list[dict]) -> list[dict]:
 
         return scored
 
-def synthesize_items_batch(items: list[dict]) -> list[dict]:
+async def synthesize_items_batch(items: list[dict]) -> list[dict]:
     """Post-scrape synthesis pass: generate why_relevant and content_angle for scored items >= 7"""
     tracer = get_tracer()
     with (tracer.start_as_current_span("synthesize_items_batch") if tracer else _nullcontext()) as span:
@@ -124,7 +123,7 @@ def synthesize_items_batch(items: list[dict]) -> list[dict]:
         synthesized = []
         for item in items:
             if (item.get("score") or 0) >= 7:
-                why_relevant, content_angle = synthesize_item(
+                why_relevant, content_angle = await synthesize_item(
                     title=item.get("title", ""),
                     body=item.get("body", ""),
                     source=item.get("source", "")

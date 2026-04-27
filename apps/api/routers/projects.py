@@ -87,7 +87,7 @@ def delete_folder(folder_id: int, session: Session = Depends(get_session)):
     return {"ok": True}
 
 class DeliverableCreate(BaseModel):
-    folder_id: int
+    folder_id: Optional[int] = None
     content_type: str
     title: str
     status: str = "draft"
@@ -104,7 +104,36 @@ def list_deliverables(folder_id: int, session: Session = Depends(get_session)):
 
 @router.post("/deliverables")
 def create_deliverable(data: DeliverableCreate, session: Session = Depends(get_session)):
-    d = Deliverable(**data.dict())
+    # Get or create default folder if not specified
+    if not data.folder_id:
+        project = session.exec(
+            select(Project).where(Project.user_id == "aaron")
+        ).first()
+        if not project:
+            project = Project(user_id="aaron", name="Default Project")
+            session.add(project)
+            session.commit()
+            session.refresh(project)
+        
+        folder = session.exec(
+            select(Folder).where(Folder.project_id == project.id)
+        ).first()
+        if not folder:
+            folder = Folder(project_id=project.id, name="Deliverables")
+            session.add(folder)
+            session.commit()
+            session.refresh(folder)
+        folder_id = folder.id
+    else:
+        folder_id = data.folder_id
+    
+    d = Deliverable(
+        folder_id=folder_id,
+        content_type=data.content_type,
+        title=data.title,
+        status=data.status,
+        body_md=data.body_md,
+    )
     session.add(d)
     session.commit()
     session.refresh(d)
@@ -141,14 +170,35 @@ def delete_deliverable(deliverable_id: int, session: Session = Depends(get_sessi
     return {"ok": True}
 
 class BriefCreate(BaseModel):
-    project_id: int
+    project_id: Optional[int] = None
     deliverable_id: Optional[int] = None
+    title: Optional[str] = None
     brief_md: str
     toggles_json: Optional[str] = None
 
 @router.post("/briefs")
 def create_brief(data: BriefCreate, session: Session = Depends(get_session)):
-    b = Brief(**data.dict())
+    # Get or create default project if not specified
+    if not data.project_id:
+        project = session.exec(
+            select(Project).where(Project.user_id == "aaron")
+        ).first()
+        if not project:
+            project = Project(user_id="aaron", name="Default Project")
+            session.add(project)
+            session.commit()
+            session.refresh(project)
+        project_id = project.id
+    else:
+        project_id = data.project_id
+    
+    b = Brief(
+        project_id=project_id,
+        deliverable_id=data.deliverable_id,
+        title=data.title or "Untitled Brief",
+        brief_md=data.brief_md,
+        toggles_json=data.toggles_json,
+    )
     session.add(b)
     session.commit()
     session.refresh(b)

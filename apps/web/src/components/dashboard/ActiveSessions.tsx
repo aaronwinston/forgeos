@@ -18,7 +18,7 @@ export function ActiveSessions() {
   if (loading) {
     return (
       <section>
-        <h2 className="text-base font-semibold text-fg-primary mb-3">Active Sessions</h2>
+        <h2 className="text-base font-semibold text-fg-primary mb-3">Active sessions</h2>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-12 border border-border rounded-xl bg-bg-secondary animate-pulse" />
@@ -32,7 +32,7 @@ export function ActiveSessions() {
   
   return (
     <section>
-      <h2 className="text-base font-semibold text-fg-primary mb-3">Active Sessions</h2>
+      <h2 className="text-base font-semibold text-fg-primary mb-3">Active sessions</h2>
       <div className="space-y-2">
         {sessions.map(session => (
           <Link

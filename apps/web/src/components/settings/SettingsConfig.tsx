@@ -102,7 +102,7 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
 
         {/* API Keys Section */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">API Keys</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">API keys</h2>
           <p className="text-sm text-gray-600 mb-4">Read-only display of configured API keys</p>
           <div className="space-y-3">
             {apiKeys.length === 0 ? (
@@ -137,7 +137,7 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
 
         {/* Scrape Config Section */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Intelligence Scraping</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Intelligence scraping</h2>
           <p className="text-sm text-gray-600 mb-4">
             Manage scrape sources for intelligence gathering.
             <button

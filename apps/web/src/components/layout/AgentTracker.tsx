@@ -50,7 +50,7 @@ export function AgentTracker() {
   return (
     <aside className="w-64 border-l border-border bg-bg-secondary flex flex-col shrink-0">
       <div className="p-4 border-b border-border">
-        <h3 className="text-xs font-semibold text-fg-tertiary uppercase tracking-wide">Agent Team</h3>
+        <h3 className="text-xs font-semibold text-fg-tertiary tracking-wide">Agent team</h3>
         {activeSession && (
           <p className="text-xs text-fg-secondary mt-0.5 truncate">{activeSession.title}</p>
         )}

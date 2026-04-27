@@ -153,7 +153,7 @@ def get_provider(name: str = "anthropic") -> AnthropicProvider | OpenAIProvider:
         )
     elif name == "openai":
         provider = OpenAIProvider(
-            api_key=settings.get("OPENAI_API_KEY", ""),
+            api_key=settings.OPENAI_API_KEY,
             default_model="gpt-4",
         )
     else:

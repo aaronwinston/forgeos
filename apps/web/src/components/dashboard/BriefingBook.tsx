@@ -83,7 +83,7 @@ export function BriefingBook() {
     <section>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-base font-semibold text-fg-primary">Briefing Book</h2>
+          <h2 className="text-base font-semibold text-fg-primary">Briefing book</h2>
           {refreshedAt && !offline && (
             <p className="text-xs text-fg-tertiary mt-0.5">Last refreshed {formatTime(refreshedAt)}</p>
           )}

@@ -75,7 +75,7 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <AlertCircle size={20} className="text-orange-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-gray-900">Unsaved Changes</h3>
+                <h3 className="font-bold text-gray-900">Unsaved changes</h3>
                 <p className="text-sm text-gray-600 mt-1">You have unsaved changes in {selectedPath?.split('/').pop() || 'the file'}. Do you want to leave without saving?</p>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function SettingsPage() {
                 onClick={confirmUnsavedNavigation}
                 className="px-4 py-2 text-white bg-orange-600 rounded hover:bg-orange-700 font-medium text-sm"
               >
-                Leave Without Saving
+                Leave without saving
               </button>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Engine Files
+            Engine files
           </button>
           <button
             onClick={() => handleTabChange('settings')}
@@ -118,7 +118,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            Settings & Integrations
+            Settings & integrations
           </button>
         </div>
       </div>

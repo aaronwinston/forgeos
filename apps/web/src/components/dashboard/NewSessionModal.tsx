@@ -31,7 +31,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-bg-secondary border border-border rounded-2xl w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
-          <h2 className="text-lg font-semibold text-fg-primary">New Session</h2>
+          <h2 className="text-lg font-semibold text-fg-primary">New session</h2>
           <p className="text-sm text-fg-secondary mt-1">Start a new AI-powered content session</p>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -53,7 +53,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
               onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
               className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-primary text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-purple/30"
             >
-              <option value="blog">Blog Post</option>
+              <option value="blog">Blog post</option>
               <option value="email">Email</option>
               <option value="social">Social</option>
               <option value="launch">Launch</option>

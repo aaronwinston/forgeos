@@ -31,7 +31,7 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="flex-1 border-t mt-2 flex flex-col min-h-0">
-        <p className="text-xs text-muted-foreground px-3 py-2 uppercase font-semibold">Projects</p>
+        <p className="text-xs text-muted-foreground px-3 py-2 font-semibold text-fg-tertiary">Projects</p>
         <div className="flex-1 min-h-0 overflow-hidden">
           <ProjectTree />
         </div>
