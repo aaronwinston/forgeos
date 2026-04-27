@@ -105,6 +105,12 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
     }
   }
 
+  function handleExpandFile() {
+    // Open expand flow in a modal or new window
+    // For now, redirect to expand page with file path as query param
+    window.location.href = `/expand?file=${encodeURIComponent(filePath || '')}`;
+  }
+
   function formatYaml(obj: Record<string, unknown>): string {
     return Object.entries(obj)
       .map(([k, v]) => {
@@ -155,6 +161,12 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
         </div>
         <div className="flex gap-2">
           {isDirty && <span className="text-xs text-orange-600 font-medium">Unsaved changes</span>}
+          <button
+            onClick={handleExpandFile}
+            className="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 font-medium"
+          >
+            Expand with AI
+          </button>
           <button
             onClick={handleSave}
             className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 font-medium"

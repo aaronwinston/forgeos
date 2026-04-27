@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import EngineTree from '@/components/settings/EngineTree';
+import EngineTreeWithHealth from '@/components/settings/EngineTreeWithHealth';
 import EngineEditor from '@/components/settings/EngineEditor';
 import SettingsConfig from '@/components/settings/SettingsConfig';
 import KeywordClusterConfig from '@/components/settings/KeywordClusterConfig';
@@ -140,7 +140,7 @@ export default function SettingsPage() {
                 : 'border-transparent text-fg-secondary hover:text-fg-primary'
             }`}
           >
-            Engine files
+            Engine
           </button>
           <button
             onClick={() => handleTabChange('settings')}
@@ -169,8 +169,8 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-hidden flex">
         {activeTab === 'engine' ? (
           <>
-            <div className="flex flex-col w-64 shrink-0 border-r border-border overflow-hidden">
-              <EngineTree selectedPath={selectedPath} onSelect={handleSelectFile} />
+            <div className="flex flex-col w-80 shrink-0 border-r border-border overflow-hidden">
+              <EngineTreeWithHealth selectedPath={selectedPath} onSelect={handleSelectFile} />
               {/* Upload zone at bottom of engine sidebar */}
               <div className="border-t border-border p-4 space-y-3">
                 <p className="text-xs font-semibold text-fg-tertiary">Upload to engine</p>

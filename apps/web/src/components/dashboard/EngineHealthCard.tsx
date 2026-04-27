@@ -14,7 +14,7 @@ interface EngineHealthReport {
     thinness_pct: number;
     badge: string;
   }>;
-  highest_leverage_file: any;
+  highest_leverage_file: { path: string; thinness_pct: number };
   timestamp: string;
   cached: boolean;
 }

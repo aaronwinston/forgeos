@@ -259,8 +259,8 @@ export function streamChat(
   return () => controller.abort();
 }
 
-export async function getEngineHealth(): Promise<any | ApiError> {
-  return apiFetch<any>('/api/doctrine/health');
+export async function getEngineHealth(): Promise<Record<string, unknown> | ApiError> {
+  return apiFetch<Record<string, unknown>>('/api/doctrine/health');
 }
 
 export const api = {
