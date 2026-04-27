@@ -6,13 +6,14 @@
 export function validateConfig(): void {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+  // API URL is optional - app can work in demo mode without it
   if (!apiBaseUrl) {
-    console.error(
-      'Missing required environment variable: NEXT_PUBLIC_API_BASE_URL\n' +
-      'Please set this in your .env.local or environment before running the app.\n' +
-      'Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000'
-    );
-    throw new Error('NEXT_PUBLIC_API_BASE_URL is required');
+    if (typeof window !== 'undefined') {
+      console.warn(
+        'NEXT_PUBLIC_API_BASE_URL not set. Running in demo mode without API connectivity.'
+      );
+    }
+    return;
   }
 
   // Validate API base URL format

@@ -6,11 +6,7 @@ if (typeof window !== 'undefined') {
     validateConfig();
   } catch (error) {
     console.error('Configuration validation failed:', error);
-    // In development, we'll log but not crash - fallback to localhost:8000
-    // In production, this should fail hard
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
+    // Don't throw - allow app to load in demo mode without API
   }
 }
 
