@@ -1,11 +1,11 @@
 import time
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from cache import briefing_cache
-from config import settings
 from database import get_session
 from models import ScrapeItem
 from sqlmodel import Session, select
 from datetime import datetime, timedelta
+from typing import Optional
 
 router = APIRouter(prefix="/api/briefing", tags=["briefing"])
 
@@ -40,49 +40,61 @@ def format_scrape_item_for_response(item: ScrapeItem, idx: int) -> dict:
         "trending": idx < 3,
     }
 
+def _query_items(db: Session, date: Optional[str] = None):
+    """Return scored ScrapeItem rows for a calendar date (default: today)."""
+    if date:
+        try:
+            target = datetime.strptime(date, "%Y-%m-%d")
+            start = target.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=1)
+        except ValueError:
+            # Fallback to last 24h on bad date
+            end = datetime.utcnow()
+            start = end - timedelta(hours=24)
+    else:
+        end = datetime.utcnow()
+        start = end - timedelta(hours=24)
+
+    return db.exec(
+        select(ScrapeItem)
+        .where(ScrapeItem.score >= 7)
+        .where(ScrapeItem.created_at >= start)
+        .where(ScrapeItem.created_at < end)
+        .where(ScrapeItem.dismissed_at == None)  # noqa: E711
+        .order_by(ScrapeItem.score.desc())
+        .order_by(ScrapeItem.created_at.desc())
+        .limit(8)
+    ).all()
+
 @router.get("")
-async def get_briefing(session: Session = Depends(get_session)):
-    """Read from scored ScrapeItem rows (score >= 7, last 24h) instead of running ad-hoc scrapers"""
-    cached = briefing_cache.get("briefing")
+async def get_briefing(
+    date: Optional[str] = Query(None, description="Calendar date YYYY-MM-DD; defaults to today"),
+    session: Session = Depends(get_session),
+):
+    """Return top-scored ScrapeItem rows. Pass ?date=YYYY-MM-DD for a specific day."""
+    cache_key = f"briefing:{date or 'today'}"
+    cached = briefing_cache.get(cache_key)
     if cached:
         return cached
-    
+
     try:
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
-        items = session.exec(
-            select(ScrapeItem)
-            .where(ScrapeItem.score >= 7)
-            .where(ScrapeItem.created_at >= cutoff_time)
-            .where(ScrapeItem.dismissed_at == None)  # noqa: E711
-            .order_by(ScrapeItem.score.desc())
-            .order_by(ScrapeItem.created_at.desc())
-        ).all()
-        
+        items = _query_items(session, date)
         stories = [format_scrape_item_for_response(item, idx) for idx, item in enumerate(items)]
         result = {"stories": stories, "refreshed_at": time.time()}
-        briefing_cache.set("briefing", result, ttl_seconds=1800)
+        briefing_cache.set(cache_key, result, ttl_seconds=1800)
         return result
     except Exception as e:
         return {"stories": [], "error": str(e), "refreshed_at": None}
 
 @router.post("/refresh")
 async def refresh_briefing(session: Session = Depends(get_session)):
-    """Refresh briefing cache by re-querying ScrapeItem"""
-    briefing_cache.clear("briefing")
+    """Invalidate cache and re-query today's ScrapeItems."""
+    briefing_cache.clear("briefing:today")
     try:
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
-        items = session.exec(
-            select(ScrapeItem)
-            .where(ScrapeItem.score >= 7)
-            .where(ScrapeItem.created_at >= cutoff_time)
-            .where(ScrapeItem.dismissed_at == None)  # noqa: E711
-            .order_by(ScrapeItem.score.desc())
-            .order_by(ScrapeItem.created_at.desc())
-        ).all()
-        
+        items = _query_items(session, date=None)
         stories = [format_scrape_item_for_response(item, idx) for idx, item in enumerate(items)]
         result = {"stories": stories, "refreshed_at": time.time()}
-        briefing_cache.set("briefing", result, ttl_seconds=1800)
+        briefing_cache.set("briefing:today", result, ttl_seconds=1800)
         return result
     except Exception as e:
         return {"stories": [], "error": str(e), "refreshed_at": None}
