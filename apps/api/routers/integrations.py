@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 GOOGLE_SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/webmasters.readonly",
 ]
 
 CALENDAR_NAME = "ForgeOS — Content"
@@ -376,3 +377,106 @@ def _refresh_credentials_if_needed(integration: CalendarIntegration):
         credentials.refresh(request)
     
     return credentials
+
+
+@router.post("/google/gsc/authorize")
+def authorize_google_gsc(session: Session = Depends(get_db)):
+    """
+    Step 1 (GSC): Generate authorization URL for Google Search Console.
+    Uses same OAuth flow as Calendar (webmasters.readonly scope already in GOOGLE_SCOPES).
+    """
+    try:
+        flow = create_google_oauth_flow()
+        auth_url, state = flow.authorization_url(
+            access_type="offline",
+            include_granted_scopes="true",
+        )
+        store_oauth_state(state, ttl_seconds=600)
+        return {
+            "authorization_url": auth_url,
+            "state": state,
+        }
+    except Exception as e:
+        logger.error(f"GSC OAuth flow creation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create authorization URL")
+
+
+@router.get("/google/gsc/properties")
+def get_gsc_properties(session: Session = Depends(get_db)):
+    """
+    Get list of verified GSC properties for user to select from.
+    Requires active Google OAuth integration.
+    """
+    try:
+        integration = session.exec(
+            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
+        ).first()
+        
+        if not integration or not integration.access_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Google OAuth not connected. Authorize Calendar/GSC first."
+            )
+        
+        credentials = _refresh_credentials_if_needed(integration)
+        service = build("webmasters", "v3", credentials=credentials)
+        
+        response = service.sites().list().execute()
+        sites = response.get("siteEntry", [])
+        
+        properties = [
+            {
+                "name": site.get("siteUrl"),
+                "permission_level": site.get("permissionLevel")
+            }
+            for site in sites
+        ]
+        
+        logger.info(f"Listed {len(properties)} GSC properties for user aaron")
+        return {"properties": properties}
+        
+    except HttpError as e:
+        logger.error(f"Failed to list GSC properties: {e}")
+        raise HTTPException(status_code=400, detail="Failed to retrieve GSC properties")
+    except Exception as e:
+        logger.error(f"GSC properties lookup failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving GSC properties")
+
+
+@router.post("/google/gsc/select-property")
+def select_gsc_property(property_url: str, session: Session = Depends(get_db)):
+    """
+    User selects which GSC property to track.
+    Stores in CalendarIntegration for now (could extend model later).
+    """
+    try:
+        integration = session.exec(
+            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
+        ).first()
+        
+        if not integration:
+            raise HTTPException(status_code=401, detail="Google OAuth not connected")
+        
+        # Store selected property as metadata
+        metadata = {}
+        if integration.calendar_id:
+            metadata["calendar_id"] = integration.calendar_id
+        metadata["gsc_property"] = property_url
+        
+        integration.calendar_id = property_url  # Reuse calendar_id field for GSC property
+        integration.updated_at = datetime.utcnow()
+        session.add(integration)
+        session.commit()
+        
+        logger.info(f"User aaron selected GSC property: {property_url}")
+        return {
+            "status": "success",
+            "selected_property": property_url,
+            "message": "GSC property selected. Data will be pulled on next scheduled sync."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to select GSC property: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to save GSC property selection")
