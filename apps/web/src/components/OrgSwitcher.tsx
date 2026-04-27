@@ -17,6 +17,7 @@ export default function OrgSwitcher() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const personalMode = process.env.NEXT_PUBLIC_FORGEOS_MODE === 'personal';
 
   useEffect(() => {
     // Load current org from cookie
@@ -27,9 +28,14 @@ export default function OrgSwitcher() {
       setCurrentOrg({ id: orgId, name: 'My Organization', slug: '', plan: 'free' });
     }
     
-    // Fetch orgs from API
-    fetchOrgs();
-  }, []);
+    // Fetch orgs from API (skip in personal mode)
+    if (!personalMode) {
+      fetchOrgs();
+    } else {
+      // In personal mode, show hardcoded Personal org
+      setCurrentOrg({ id: 'personal', name: 'Personal', slug: 'personal', plan: 'pro' });
+    }
+  }, [personalMode]);
 
   async function fetchOrgs() {
     try {
@@ -89,6 +95,21 @@ export default function OrgSwitcher() {
 
   if (!currentOrg) {
     return <div className="p-2 text-slate-400 text-sm">Loading...</div>;
+  }
+
+  // In personal mode, show disabled org switcher
+  if (personalMode) {
+    return (
+      <div className="relative">
+        <button
+          disabled
+          className="w-full px-3 py-2 rounded bg-slate-700 text-white text-left font-medium cursor-not-allowed opacity-60"
+          title="Organization switcher is disabled in personal mode"
+        >
+          {currentOrg.name}
+        </button>
+      </div>
+    );
   }
 
   return (
