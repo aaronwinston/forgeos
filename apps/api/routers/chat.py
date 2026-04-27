@@ -316,38 +316,44 @@ class BriefYoloRequest(BaseModel):
 
 @router.post("/brief-guided")
 async def brief_guided(req: BriefGuideRequest, session: Session = Depends(get_session)):
-    """Guided mode: conversational brief creation with streaming."""
-    system = """You are a creative brief guide helping Aaron create marketing content.
+    """Guided mode: conversational brief creation with streaming and state machine.
     
-Ask only the key questions needed for a complete brief:
+    Agent returns JSON when complete: {"state": "complete", "brief_md": "..."}
+    """
+    system = """You are a creative brief guide helping Aaron create marketing content.
+
+Your job: Ask only the key questions needed for a complete brief, then return structured JSON.
+
+Questions to ask (in order):
 1. Audience: Who is this for?
 2. Voice: What tone? (opinionated/thoughtful/objective/technical/founder)
-3. Format: What format? (blog/email/social/press release/etc)
+3. Format: What type? (blog/email/social/press/case-study/analyst)
 4. Success Criteria: How will we know this worked?
 5. Supporting Context: Any important details?
 
-Skip questions where the user already provided an answer.
-When you have enough to write a complete brief, generate the brief in markdown format with these sections:
-- Objective
-- Audience  
-- Core Message
-- Supporting Points
-- Tone
-- Success Criteria
-- Next Steps
+CRITICAL RULES:
+- Skip any question where the user/toggles already provided an answer
+- When you have answers to all unasked questions, generate a complete brief
+- Return your final response as JSON ONLY, no other text:
 
-Then output: BRIEF_COMPLETE with the markdown."""
+{
+  "state": "complete",
+  "brief_md": "# Brief\\n\\n**Objective**: ...\\n\\n**Audience**: ...\\n\\n**Core Message**: ...\\n\\n**Supporting Points**: ...\\n\\n**Tone**: ...\\n\\n**Success Criteria**: ..."
+}
 
-    messages = req.messages + [{"role": "user", "content": "Help me write this brief. Use the toggles I've provided."}]
-    
-    # Add toggle context to system
+Do NOT output anything else after the JSON. The JSON is your final response."""
+
+    # Build toggle context from presets
+    toggle_context = ""
     if req.toggles:
-        toggle_text = "\n\nUser's Toggle Settings:\n"
+        toggle_context = "\n\nPreset Values (skip questions for these):\n"
         for k, v in req.toggles.items():
             if v:
-                toggle_text += f"- {k}: {v}\n"
-        system += toggle_text
-
+                toggle_context += f"- {k}: {v}\n"
+    
+    # Inject system + toggles into messages
+    messages = req.messages.copy()
+    
     async def event_generator():
         full_response = ""
         try:
@@ -358,8 +364,26 @@ Then output: BRIEF_COMPLETE with the markdown."""
                 full_response += chunk
                 yield f"data: {json.dumps({'chunk': chunk})}\n\n"
             
-            # Signal completion
-            yield f"data: {json.dumps({'done': True, 'brief_md': full_response})}\n\n"
+            # Parse the response to check if agent completed (returned JSON with state: complete)
+            try:
+                # Extract JSON from response
+                import re
+                json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
+                if json_match:
+                    response_data = json.loads(json_match.group())
+                    if response_data.get("state") == "complete":
+                        # Agent successfully generated brief
+                        brief_md = response_data.get("brief_md", "")
+                        yield f"data: {json.dumps({'done': True, 'brief_md': brief_md, 'state': 'complete'})}\n\n"
+                    else:
+                        # Incomplete (agent asking another question)
+                        yield f"data: {json.dumps({'done': False, 'state': 'incomplete'})}\n\n"
+                else:
+                    # No JSON found, agent is asking a question
+                    yield f"data: {json.dumps({'done': False, 'state': 'incomplete'})}\n\n"
+            except (json.JSONDecodeError, AttributeError):
+                # If we can't parse, assume incomplete
+                yield f"data: {json.dumps({'done': False, 'state': 'incomplete'})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
@@ -368,14 +392,82 @@ Then output: BRIEF_COMPLETE with the markdown."""
 
 @router.post("/brief-yolo")
 async def brief_yolo(req: BriefYoloRequest, session: Session = Depends(get_session)):
-    """YOLO mode: one-shot brief + deliverable generation."""
-    content_type = req.toggles.get("content_type", "blog")
+    """YOLO mode: atomic one-shot brief + deliverable creation.
     
-    # Generate brief using existing function
-    brief_md = await generate_brief(
-        user_prompt=req.prompt,
-        content_type=content_type,
-        toggles=req.toggles,
-    )
-    
-    return {"brief_md": brief_md}
+    Creates Brief and Deliverable in a single transaction.
+    Returns both on success, or error if any step fails.
+    """
+    try:
+        content_type = req.toggles.get("content_type", "blog")
+        
+        # Generate brief using existing function
+        brief_md = await generate_brief(
+            user_prompt=req.prompt,
+            content_type=content_type,
+            toggles=req.toggles,
+        )
+        
+        # Get or create default project
+        project = session.exec(
+            select(Project).where(Project.user_id == "aaron")
+        ).first()
+        if not project:
+            project = Project(user_id="aaron", name="Default Project")
+            session.add(project)
+            session.commit()
+            session.refresh(project)
+        
+        # Get or create default folder
+        folder = session.exec(
+            select(Folder).where(Folder.project_id == project.id)
+        ).first()
+        if not folder:
+            folder = Folder(project_id=project.id, name="Deliverables")
+            session.add(folder)
+            session.commit()
+            session.refresh(folder)
+        
+        # Create Brief (atomic transaction)
+        brief = Brief(
+            project_id=project.id,
+            title=content_type.replace("_", " ").title(),
+            brief_md=brief_md,
+            toggles_json=json.dumps(req.toggles),
+        )
+        session.add(brief)
+        session.flush()  # Get ID without committing yet
+        
+        # Create Deliverable in same transaction
+        deliverable = Deliverable(
+            folder_id=folder.id,
+            content_type=content_type,
+            title=content_type.replace("_", " ").title(),
+            status="draft",
+            body_md="",
+        )
+        session.add(deliverable)
+        
+        # Commit both together (atomic)
+        session.commit()
+        session.refresh(brief)
+        session.refresh(deliverable)
+        
+        return {
+            "brief": {
+                "id": brief.id,
+                "title": brief.title,
+                "brief_md": brief.brief_md,
+                "toggles_json": brief.toggles_json,
+            },
+            "deliverable": {
+                "id": deliverable.id,
+                "folder_id": deliverable.folder_id,
+                "content_type": deliverable.content_type,
+                "title": deliverable.title,
+                "status": deliverable.status,
+            }
+        }
+    except Exception as e:
+        # Rollback on any error
+        session.rollback()
+        raise HTTPException(status_code=400, detail=f"YOLO creation failed: {str(e)}")

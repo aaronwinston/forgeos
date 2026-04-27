@@ -367,6 +367,9 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
       }
 
       const decoder = new TextDecoder();
+      let isBriefComplete = false;
+      let completeBriefMd = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -389,11 +392,10 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                   return updated;
                 });
               }
-              if (data.done) {
-                // Check if we have enough for a brief
-                if (newMessages.length >= 3) {
-                  generateBriefFromChat(assistantMessage);
-                }
+              if (data.done && data.state === 'complete') {
+                // Agent returned complete brief as JSON
+                isBriefComplete = true;
+                completeBriefMd = data.brief_md || assistantMessage;
               }
             } catch (e) {
               // Silent parse error
@@ -401,6 +403,12 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
           }
         }
       }
+
+      // If agent completed, show brief preview
+      if (isBriefComplete) {
+        generateBriefFromChat(completeBriefMd);
+      }
+
       setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chat failed');
@@ -425,11 +433,24 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
       }
 
       const data = await response.json();
+      
+      // YOLO mode is atomic: brief and deliverable are created by the backend
+      // We just show the brief preview, but the deliverable is already created
       setBriefPreview({
-        title: toggles.content_type || 'Untitled',
-        brief_md: data.brief_md,
-        toggles_json: JSON.stringify(toggles),
+        title: data.brief.title || (toggles.content_type || 'Untitled'),
+        brief_md: data.brief.brief_md,
+        toggles_json: data.brief.toggles_json,
       });
+      
+      // Store the deliverable so we can navigate to it on confirm
+      setDeliverable({
+        id: data.deliverable.id,
+        folder_id: data.deliverable.folder_id,
+        content_type: data.deliverable.content_type,
+        title: data.deliverable.title,
+        status: data.deliverable.status,
+      });
+      
       setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed');
@@ -452,6 +473,13 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
     setLoading(true);
     try {
+      // If deliverable already exists (YOLO mode), just navigate to it
+      if (deliverable) {
+        setLoading(false);
+        return; // Guided mode will handle the creation below
+      }
+
+      // GUIDED MODE: Create brief and deliverable atomically
       // Get or create default project and folder
       const projectsRes = await fetch('/api/projects');
       const projects = await projectsRes.json();
@@ -485,7 +513,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
         folderId = folder.id;
       }
 
-      // Create brief
+      // Create brief (project_id is now optional, will use default)
       const briefRes = await fetch('/api/briefs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -501,7 +529,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
       const brief = await briefRes.json();
 
-      // Create deliverable
+      // Create deliverable (folder_id is now optional, will use default)
       const delRes = await fetch('/api/deliverables', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
