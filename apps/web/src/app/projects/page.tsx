@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { getProjects } from '@/lib/api';
 import type { Project } from '@/lib/api';
 import { SkeletonCard } from '@/components/ui/SkeletonCard';
+import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
