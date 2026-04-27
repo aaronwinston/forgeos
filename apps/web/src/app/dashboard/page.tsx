@@ -6,6 +6,7 @@ import { EngineHealthCard } from '@/components/dashboard/EngineHealthCard';
 import { ActiveSessions } from '@/components/dashboard/ActiveSessions';
 import { NewSessionModal } from '@/components/dashboard/NewSessionModal';
 import { UpNext } from '@/components/dashboard/UpNext';
+import { WelcomeBanner } from '@/components/WelcomeBanner';
 import LetsBuildModal from '@/components/LetsBuildModal';
 import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
@@ -32,6 +33,9 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
+      {/* Welcome banner */}
+      <WelcomeBanner />
+
       {/* ── Hero + actions ── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-4">
