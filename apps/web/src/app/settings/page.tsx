@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import EngineTree from '@/components/settings/EngineTree';
 import EngineEditor from '@/components/settings/EngineEditor';
 import SettingsConfig from '@/components/settings/SettingsConfig';
+import KeywordClusterConfig from '@/components/settings/KeywordClusterConfig';
 import UploadZone from '@/components/settings/UploadZone';
 import UploadDestinationModal, { type UploadDestination } from '@/components/settings/UploadDestinationModal';
 import { AlertCircle } from 'lucide-react';
 
-type Tab = 'engine' | 'settings';
+type Tab = 'engine' | 'settings' | 'search';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -152,6 +153,16 @@ export default function SettingsPage() {
           >
             Settings & integrations
           </button>
+          <button
+            onClick={() => handleTabChange('search')}
+            className={`px-6 py-3 font-medium text-sm border-b-2 transition ${
+              activeTab === 'search'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-fg-secondary hover:text-fg-primary'
+            }`}
+          >
+            Search intelligence
+          </button>
         </div>
       </div>
 
@@ -181,8 +192,12 @@ export default function SettingsPage() {
               onDirtyChange={setIsDirty}
             />
           </>
-        ) : (
+        ) : activeTab === 'settings' ? (
           <SettingsConfig onNavigateTo={handleNavigateToFile} />
+        ) : (
+          <div className="flex-1 overflow-auto p-6">
+            <KeywordClusterConfig />
+          </div>
         )}
       </div>
 

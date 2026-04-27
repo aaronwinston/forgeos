@@ -1,6 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from sqlmodel import SQLModel, Field
+from pydantic import PrivateAttr
 from cryptography.fernet import Fernet
 from config import settings
 
@@ -109,8 +110,8 @@ class PipelineStep(SQLModel, table=True):
 class CalendarIntegration(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(default="aaron")
-    _access_token: str = Field(alias="_access_token")  # encrypted in DB
-    _refresh_token: str = Field(alias="_refresh_token")  # encrypted in DB
+    access_token_encrypted: str = Field(default="")  # encrypted in DB
+    refresh_token_encrypted: str = Field(default="")  # encrypted in DB
     expires_at: datetime
     calendar_id: str
     last_synced_at: Optional[datetime] = None
@@ -120,36 +121,36 @@ class CalendarIntegration(SQLModel, table=True):
     @property
     def access_token(self) -> str:
         """Decrypt access token on read."""
-        if not self._access_token:
+        if not self.access_token_encrypted:
             return None
         cipher = Fernet(settings.ENCRYPTION_KEY)
-        return cipher.decrypt(self._access_token.encode()).decode()
+        return cipher.decrypt(self.access_token_encrypted.encode()).decode()
 
     @access_token.setter
     def access_token(self, value: str):
         """Encrypt access token on write."""
         if not value:
-            self._access_token = None
+            self.access_token_encrypted = ""
             return
         cipher = Fernet(settings.ENCRYPTION_KEY)
-        self._access_token = cipher.encrypt(value.encode()).decode()
+        self.access_token_encrypted = cipher.encrypt(value.encode()).decode()
 
     @property
     def refresh_token(self) -> str:
         """Decrypt refresh token on read."""
-        if not self._refresh_token:
+        if not self.refresh_token_encrypted:
             return None
         cipher = Fernet(settings.ENCRYPTION_KEY)
-        return cipher.decrypt(self._refresh_token.encode()).decode()
+        return cipher.decrypt(self.refresh_token_encrypted.encode()).decode()
 
     @refresh_token.setter
     def refresh_token(self, value: str):
         """Encrypt refresh token on write."""
         if not value:
-            self._refresh_token = None
+            self.refresh_token_encrypted = ""
             return
         cipher = Fernet(settings.ENCRYPTION_KEY)
-        self._refresh_token = cipher.encrypt(value.encode()).decode()
+        self.refresh_token_encrypted = cipher.encrypt(value.encode()).decode()
 
 class CalendarEvent(SQLModel, table=True):
     """
