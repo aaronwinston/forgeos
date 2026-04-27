@@ -1,6 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
 from services.file_engine import list_skills, list_context_layers, list_core_docs, REPO_ROOT
-import shutil
 import subprocess
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
@@ -104,19 +103,94 @@ def get_scrape_config():
     ]
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    staging_dir = REPO_ROOT / "_uploads"
-    staging_dir.mkdir(exist_ok=True)
-    dest = staging_dir / file.filename
-    with dest.open("wb") as f:
-        shutil.copyfileobj(file.file, f)
-    content = dest.read_text(errors="ignore")
+async def upload_file(
+    file: UploadFile = File(...),
+    destination: str = "reference",
+    project_id: str | None = None,
+):
+    """
+    Parse and append an uploaded document to a destination context file.
+
+    destination values:
+      "messaging"  → context/02_narrative/messaging-framework.md
+      "strategy"   → context/03_strategy/content-strategy.md
+      "voice"      → core/VOICE.md
+      "project"    → context/projects/<project_id>/<filename>.md
+      "reference"  → context/uploads/<filename>.md  (default)
+    """
+    raw_bytes = await file.read()
+    filename = file.filename or "upload"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    # ── Parse content ─────────────────────────────────────────────
+    content = _parse_upload(raw_bytes, ext, filename)
+
+    # ── Determine destination path ─────────────────────────────────
+    dest_path = _resolve_destination(destination, filename, project_id)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # ── Append to destination (file watcher picks it up) ─────────
+    separator = f"\n\n---\n\n<!-- uploaded: {filename} -->\n\n"
+    with dest_path.open("a", encoding="utf-8") as fh:
+        fh.write(separator + content)
+
     return {
-        "filename": file.filename,
-        "size": dest.stat().st_size,
-        "preview": content[:500],
-        "suggested_layer": _suggest_layer(file.filename, content),
+        "filename": filename,
+        "destination": str(dest_path.relative_to(REPO_ROOT)),
+        "chars_written": len(content),
+        "preview": content[:300],
     }
+
+
+def _parse_upload(raw: bytes, ext: str, filename: str) -> str:
+    """Extract plain text from uploaded file bytes."""
+    if ext in ("md", "txt"):
+        return raw.decode("utf-8", errors="replace")
+
+    if ext == "pdf":
+        try:
+            from pypdf import PdfReader
+            import io
+            reader = PdfReader(io.BytesIO(raw))
+            pages = [page.extract_text() or "" for page in reader.pages]
+            return "\n\n".join(pages).strip()
+        except ImportError:
+            return f"[PDF parsing unavailable — install pypdf]\n\nFilename: {filename}"
+        except Exception as e:
+            return f"[PDF parse error: {e}]\n\nFilename: {filename}"
+
+    if ext == "docx":
+        try:
+            from docx import Document
+            import io
+            doc = Document(io.BytesIO(raw))
+            paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+            return "\n\n".join(paragraphs)
+        except ImportError:
+            return f"[DOCX parsing unavailable — install python-docx]\n\nFilename: {filename}"
+        except Exception as e:
+            return f"[DOCX parse error: {e}]\n\nFilename: {filename}"
+
+    # Fallback: try UTF-8
+    return raw.decode("utf-8", errors="replace")
+
+
+def _resolve_destination(destination: str, filename: str, project_id: str | None):
+    """Map destination key to absolute Path."""
+    mapping = {
+        "messaging": REPO_ROOT / "context" / "02_narrative" / "messaging-framework.md",
+        "strategy":  REPO_ROOT / "context" / "03_strategy" / "content-strategy.md",
+        "voice":     REPO_ROOT / "core" / "VOICE.md",
+    }
+    if destination in mapping:
+        return mapping[destination]
+    if destination == "project" and project_id:
+        safe_name = filename.replace(" ", "-").lower()
+        return REPO_ROOT / "context" / "projects" / project_id / safe_name
+    # Default: reference store
+    safe_name = filename.replace(" ", "-").lower()
+    return REPO_ROOT / "context" / "uploads" / safe_name
+
 
 def _suggest_layer(filename: str, content: str) -> str:
     fn = filename.lower()
@@ -131,3 +205,4 @@ def _suggest_layer(filename: str, content: str) -> str:
     if "philosophy" in fn or "manifesto" in fn:
         return "context/01_philosophy/"
     return "context/05_patterns/"
+

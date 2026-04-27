@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react';
 import EngineTree from '@/components/settings/EngineTree';
 import EngineEditor from '@/components/settings/EngineEditor';
 import SettingsConfig from '@/components/settings/SettingsConfig';
+import UploadZone from '@/components/settings/UploadZone';
+import UploadDestinationModal, { type UploadDestination } from '@/components/settings/UploadDestinationModal';
 import { AlertCircle } from 'lucide-react';
 
 type Tab = 'engine' | 'settings';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function SettingsPage() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -14,6 +18,12 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('engine');
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  // Upload state
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{ destination: string; chars_written: number } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Handle navigation with unsaved changes warning
   useEffect(() => {
@@ -64,6 +74,28 @@ export default function SettingsPage() {
       setIsDirty(false);
     }
     setPendingNavigation(null);
+  }
+
+  async function handleUploadConfirm(destination: UploadDestination, projectId?: string) {
+    if (!pendingFile) return;
+    setUploading(true);
+    setUploadError(null);
+    setUploadResult(null);
+    try {
+      const form = new FormData();
+      form.append('file', pendingFile);
+      form.append('destination', destination);
+      if (projectId) form.append('project_id', projectId);
+      const res = await fetch(`${API_BASE}/api/settings/upload`, { method: 'POST', body: form });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const data = await res.json();
+      setUploadResult(data);
+      setPendingFile(null);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -127,7 +159,22 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-hidden flex">
         {activeTab === 'engine' ? (
           <>
-            <EngineTree selectedPath={selectedPath} onSelect={handleSelectFile} />
+            <div className="flex flex-col w-64 shrink-0 border-r border-border overflow-hidden">
+              <EngineTree selectedPath={selectedPath} onSelect={handleSelectFile} />
+              {/* Upload zone at bottom of engine sidebar */}
+              <div className="border-t border-border p-4 space-y-3">
+                <p className="text-xs font-semibold text-fg-tertiary">Upload to engine</p>
+                <UploadZone onUpload={(file) => { setPendingFile(file); setUploadResult(null); setUploadError(null); }} />
+                {uploadResult && (
+                  <p className="text-xs text-success">
+                    ✓ Appended {uploadResult.chars_written} chars → {uploadResult.destination}
+                  </p>
+                )}
+                {uploadError && (
+                  <p className="text-xs text-error">{uploadError}</p>
+                )}
+              </div>
+            </div>
             <EngineEditor
               filePath={selectedPath}
               isDirty={isDirty}
@@ -138,6 +185,16 @@ export default function SettingsPage() {
           <SettingsConfig onNavigateTo={handleNavigateToFile} />
         )}
       </div>
+
+      {/* Upload destination modal */}
+      {pendingFile && (
+        <UploadDestinationModal
+          filename={pendingFile.name}
+          onConfirm={handleUploadConfirm}
+          onCancel={() => { setPendingFile(null); setUploadError(null); }}
+          uploading={uploading}
+        />
+      )}
     </div>
   );
 }
