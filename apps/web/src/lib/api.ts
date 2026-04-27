@@ -259,6 +259,10 @@ export function streamChat(
   return () => controller.abort();
 }
 
+export async function getEngineHealth(): Promise<any | ApiError> {
+  return apiFetch<any>('/api/doctrine/health');
+}
+
 export const api = {
   getProjects: () => getProjects(),
   createProject: (data: { name: string; description?: string }) =>
@@ -286,6 +290,7 @@ export const api = {
   createChatSession: (projectId?: number) => apiFetch<unknown>('/api/chat/session', { method: 'POST', body: JSON.stringify({ project_id: projectId }) }),
   getMessages: (sessionId: number) => apiFetch<unknown[]>(`/api/chat/session/${sessionId}/messages`),
   generateBrief: (data: unknown) => apiFetch<unknown>('/api/chat/brief', { method: 'POST', body: JSON.stringify(data) }),
+  getEngineHealth: () => getEngineHealth(),
 };
 
 // ---------------------------------------------------------------------------

@@ -205,33 +205,23 @@ async def get_engine_health(
     auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    """Get engine health status for all files."""
+    """Get engine health status for all files (actual filesystem scan)."""
     
-    # Get latest version of each file
-    versions = session.exec(
-        select(DoctrineVersion).where(
-            DoctrineVersion.organization_id == auth.org_id
-        ).order_by(
-            DoctrineVersion.file_path,
-            desc(DoctrineVersion.created_at)
-        )
-    ).all()
+    from services.doctrine_health import DoctrineHealthService
     
-    # Deduplicate by file_path (keep latest)
-    health = {}
-    for v in versions:
-        if v.file_path not in health:
-            word_count = len(v.content.split())
-            completeness, status = compute_completeness(word_count, v.file_path)
-            health[v.file_path] = HealthStatus(
-                file_path=v.file_path,
-                word_count=word_count,
-                completeness_score=completeness,
-                status=status,
-                last_updated=str(v.created_at)
-            )
+    # In personal mode, scan actual filesystem
+    service = DoctrineHealthService(repo_root=".")
+    report = service.get_health_report()
     
-    return list(health.values())
+    return {
+        "total_files": report["total_files"],
+        "placeholder_count": report["placeholder_count"],
+        "thin_count": report["thin_count"],
+        "files": report["files"],
+        "highest_leverage_file": service.get_highest_leverage_thin_file(),
+        "timestamp": report["timestamp"],
+        "cached": report["cached"]
+    }
 
 @router.post("/cleanup-old-versions")
 async def cleanup_old_versions(

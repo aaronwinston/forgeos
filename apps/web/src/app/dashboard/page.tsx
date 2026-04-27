@@ -2,6 +2,7 @@
 import { QuoteCallout } from '@/components/dashboard/QuoteCallout';
 import { HeroSection } from '@/components/dashboard/HeroSection';
 import { BriefingBook } from '@/components/dashboard/BriefingBook';
+import { EngineHealthCard } from '@/components/dashboard/EngineHealthCard';
 import { ActiveSessions } from '@/components/dashboard/ActiveSessions';
 import { NewSessionModal } from '@/components/dashboard/NewSessionModal';
 import { UpNext } from '@/components/dashboard/UpNext';
@@ -45,10 +46,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Main content + Up Next sidebar ── */}
+      {/* ── Main content + sidebar ── */}
       <div className="flex gap-8 items-start">
         {/* Main column */}
         <div className="flex-1 min-w-0 space-y-8">
+          <EngineHealthCard />
           <ActiveSessions />
           <BriefingBook />
         </div>
