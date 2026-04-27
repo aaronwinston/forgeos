@@ -54,7 +54,11 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from database import create_db_and_tables
+from database import create_db_and_tables, get_session
+from middleware.request_logging import RequestLoggingMiddleware
+from middleware.csrf import CSRFMiddleware
+from personal_mode import is_personal
+from services.briefing_aggregation import run_weekly_aggregation
 from middleware.request_logging import RequestLoggingMiddleware
 from middleware.csrf import CSRFMiddleware
 from personal_mode import is_personal
@@ -218,12 +222,59 @@ async def startup():
         except Exception as e:
             logger.error(f"Cross-reference pass failed: {str(e)}")
 
+    async def scheduled_briefing_aggregation():
+        """Weekly aggregation of briefing feedback and scoring prompt calibration."""
+        try:
+            from sqlalchemy import create_engine
+            from sqlmodel import Session as SQLSession
+            
+            # Get database URL
+            engine = create_engine(settings.DATABASE_URL)
+            with SQLSession(engine) as session:
+                result = run_weekly_aggregation(session)
+                logger.info(f"Briefing aggregation: {result.get('status')} - {result.get('thumbs_up', 0)} 👍, {result.get('thumbs_down', 0)} 👎")
+        except Exception as e:
+            logger.error(f"Briefing aggregation failed: {str(e)}")
+    
+    async def scheduled_briefing_email():
+        """Daily 7am email digest of top briefing items."""
+        try:
+            if not settings.RESEND_API_KEY:
+                logger.debug("Briefing email: Resend API key not configured, skipping")
+                return
+            
+            from sqlalchemy import create_engine
+            from sqlmodel import Session as SQLSession
+            from services.email_service import EmailService
+            
+            # In personal mode, send to hardcoded aaron email
+            if is_personal():
+                recipient = "aaron@forgeos.local"
+                org_id = "personal"
+            else:
+                # In multi-tenant, would need to iterate over orgs with email settings
+                logger.debug("Briefing email: Skipping in multi-tenant mode (not yet implemented)")
+                return
+            
+            engine = create_engine(settings.DATABASE_URL)
+            with SQLSession(engine) as session:
+                email_service = EmailService()
+                result = email_service.send_briefing_digest(org_id, recipient, session)
+                if result["success"]:
+                    logger.info(f"Briefing email sent to {recipient}")
+                else:
+                    logger.debug(f"Briefing email skipped: {result['reason']}")
+        except Exception as e:
+            logger.error(f"Briefing email failed: {str(e)}")
+
     scheduler.add_job(scheduled_scrape, 'cron', hour=8, minute=0, id='scrape_morning', replace_existing=True)
     scheduler.add_job(scheduled_scrape, 'cron', hour=18, minute=0, id='scrape_evening', replace_existing=True)
     scheduler.add_job(scheduled_calendar_poll, 'interval', minutes=5, id='calendar_poll', replace_existing=True)
     scheduler.add_job(scheduled_trends_poll, 'cron', hour=9, minute=0, id='trends_poll', replace_existing=True)  # Daily at 9 AM
     scheduler.add_job(scheduled_gsc_pull, 'cron', hour=9, minute=15, id='gsc_pull', replace_existing=True)  # 15 min after trends
     scheduler.add_job(scheduled_cross_reference, 'cron', hour=9, minute=30, id='cross_ref_pass', replace_existing=True)  # 30 min after trends
+    scheduler.add_job(scheduled_briefing_aggregation, 'cron', day_of_week='6', hour=23, minute=59, id='briefing_aggregation', replace_existing=True)  # Sunday 23:59
+    scheduler.add_job(scheduled_briefing_email, 'cron', hour=7, minute=0, id='briefing_email', replace_existing=True)  # Daily at 7 AM
     scheduler.start()
 
 @app.on_event("shutdown")
