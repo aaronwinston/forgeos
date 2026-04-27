@@ -8,4 +8,7 @@ def get_session():
         yield session
 
 def create_db_and_tables():
+    # Import all models to ensure they're registered with SQLModel.metadata
+    # before calling create_all()
+    import models  # noqa: F401
     SQLModel.metadata.create_all(engine)
