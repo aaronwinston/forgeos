@@ -103,3 +103,37 @@ class PipelineStep(SQLModel, table=True):
     started_at: datetime = Field(default_factory=datetime.utcnow)
     completed_at: Optional[datetime] = None
     tokens_used: Optional[int] = None
+
+class CalendarIntegration(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="aaron")
+    access_token: str
+    refresh_token: str
+    expires_at: datetime
+    calendar_id: str
+    last_synced_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CalendarEvent(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    deliverable_id: int = Field(foreign_key="deliverable.id")
+    google_event_id: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    start_at: datetime
+    end_at: datetime
+    status: str = Field(default="active")
+    last_synced_at: Optional[datetime] = None
+    synced_to_google_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CalendarSyncLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    event_id: Optional[int] = Field(default=None, foreign_key="calendarevent.id")
+    operation: str
+    status: str
+    error_message: Optional[str] = None
+    details_json: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
