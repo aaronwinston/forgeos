@@ -294,6 +294,20 @@ I'm one person building this between other work. The roadmap is real and the gap
 Open an issue. Start a discussion. The best contributions usually start with a conversation.
  
 ---
+
+## Security & repo hygiene
+
+Never commit secrets or local/dev artifacts. The following should always remain untracked:
+
+- `.env*` (except `.env.example`)
+- local databases: `*.db`, `*.sqlite`, `*.sqlite3`
+- virtualenvs: `venv/`, `.venv/`
+- Node artifacts: `node_modules/`, `.next/`
+- build outputs: `dist/`, `build/`
+
+If a secret was ever committed, rotate it immediately. To fully purge it from git history, rewrite history (e.g. `git filter-repo`) and force-push.
+
+---
  
 ## License
  

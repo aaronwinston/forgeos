@@ -1,11 +1,35 @@
+# Python
 __pycache__/
 *.py[cod]
-.DS_Store
 *.egg-info/
+
+# OS
+.DS_Store
+
+# Environments & secrets
+.env*
+!.env.example
+!**/.env.example
+
+# Python virtual environments
+.venv/
+venv/
+**/venv/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node/Next
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+
+# Build outputs
 dist/
 build/
-.env
+
+# Local drafts
 briefs/drafts/
-*.db
-*.db
-*.db
