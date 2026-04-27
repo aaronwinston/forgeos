@@ -241,3 +241,104 @@ export const api = {
   getMessages: (sessionId: number) => apiFetch<unknown[]>(`/api/chat/session/${sessionId}/messages`),
   generateBrief: (data: unknown) => apiFetch<unknown>('/api/chat/brief', { method: 'POST', body: JSON.stringify(data) }),
 };
+
+// ---------------------------------------------------------------------------
+// Calendar types
+// ---------------------------------------------------------------------------
+
+export type ContentType = 'blog' | 'email' | 'press-release' | 'case-study' | 'whitepaper' | 'launch';
+export type CalendarEventStatus = 'pending' | 'confirmed' | 'cancelled';
+export type SyncStatus = 'synced' | 'syncing' | 'offline';
+
+export interface CalendarEvent {
+  id: number;
+  deliverable_id: number | null;
+  project_id: number | null;
+  google_event_id: string | null;
+  title: string;
+  content_type: ContentType;
+  description: string | null;
+  notes: string | null;
+  start_at: string;  // ISO 8601
+  end_at: string | null;
+  all_day: boolean;
+  status: CalendarEventStatus;
+  sync_status: SyncStatus;
+  last_synced_at: string | null;
+  synced_to_google_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarEventCreatePayload {
+  title: string;
+  content_type: ContentType;
+  start_at: string;
+  end_at?: string;
+  all_day?: boolean;
+  status?: CalendarEventStatus;
+  notes?: string;
+  deliverable_id?: number;
+  project_id?: number;
+  folder_id?: number;
+}
+
+export interface CalendarEventPatchPayload {
+  title?: string;
+  content_type?: ContentType;
+  start_at?: string;
+  end_at?: string;
+  all_day?: boolean;
+  status?: CalendarEventStatus;
+  sync_status?: SyncStatus;
+  google_event_id?: string;
+  notes?: string;
+  deliverable_id?: number;
+}
+
+export interface CalendarEventCreateResponse extends CalendarEvent {
+  deliverable?: { id: number; title: string };
+}
+
+// ---------------------------------------------------------------------------
+// Calendar API functions
+// ---------------------------------------------------------------------------
+
+export async function getCalendarEvents(start?: string, end?: string): Promise<CalendarEvent[]> {
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end) params.set('end', end);
+  const qs = params.toString();
+  const result = await apiFetch<CalendarEvent[]>(`/api/calendar/events${qs ? `?${qs}` : ''}`);
+  if (isApiError(result)) return [];
+  return result;
+}
+
+export async function getUpcomingEvents(limit = 5): Promise<CalendarEvent[]> {
+  const result = await apiFetch<CalendarEvent[]>(`/api/calendar/events/upcoming?limit=${limit}`);
+  if (isApiError(result)) return [];
+  return result;
+}
+
+export async function createCalendarEvent(
+  data: CalendarEventCreatePayload,
+): Promise<CalendarEventCreateResponse | ApiError> {
+  return apiFetch<CalendarEventCreateResponse>('/api/calendar/events', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCalendarEvent(
+  id: number,
+  data: CalendarEventPatchPayload,
+): Promise<CalendarEvent | ApiError> {
+  return apiFetch<CalendarEvent>(`/api/calendar/events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCalendarEvent(id: number): Promise<void> {
+  await apiFetch(`/api/calendar/events/${id}`, { method: 'DELETE' });
+}
