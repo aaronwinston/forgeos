@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd apps/web && npm run build",
+  "buildCommand": "cd apps/web && npm ci && npm run build",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "npm install",
+  "installCommand": "npm ci --prefix apps/web",
   "framework": "nextjs",
   "regions": ["sfo1"],
   "rewrites": [
