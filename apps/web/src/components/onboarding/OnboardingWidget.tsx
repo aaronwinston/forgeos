@@ -28,7 +28,7 @@ export default function OnboardingWidget() {
   const fetchState = async () => {
     try {
       const res = await fetch('/api/onboarding/state', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        credentials: 'include'
       });
       if (res.ok) {
         setState(await res.json());

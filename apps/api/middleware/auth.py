@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, HTTPException, status, Header, Request
 from typing import Optional
 import jwt
 
@@ -9,18 +9,25 @@ class AuthContext:
         self.role = role
 
 def get_current_user(
+    request: Request,
     authorization: Optional[str] = Header(None),
 ) -> AuthContext:
-    """Extract and validate auth token from Authorization header."""
+    """Extract and validate auth token from httpOnly cookie or Authorization header."""
     
-    if not authorization or not authorization.startswith("Bearer "):
+    # Try to get token from httpOnly cookie first (preferred method)
+    token = request.cookies.get("auth_token")
+    
+    # Fallback to Authorization header for backward compatibility during migration
+    if not token and authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]  # Remove "Bearer " prefix
+    
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
     
-    token = authorization[7:]  # Remove "Bearer " prefix
-    
     try:
-        # Decode without verification (Clerk token validation happens at edge)
-        payload = jwt.decode(token, options={"verify_signature": False})
+        # Decode with verification using JWT_SECRET_KEY
+        from config import settings
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("sub")
         
         if not user_id:
@@ -36,6 +43,8 @@ def get_current_user(
         
     except jwt.DecodeError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 

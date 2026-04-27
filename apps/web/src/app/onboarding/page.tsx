@@ -31,7 +31,7 @@ export default function OnboardingPage() {
   const fetchState = async () => {
     try {
       const res = await fetch('/api/onboarding/state', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -59,8 +59,9 @@ export default function OnboardingPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ completed_steps: newCompleted })
       });
       if (res.ok) {
@@ -147,8 +148,9 @@ function CompanyPitchStep({ onNext }: { onNext: () => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ pitch })
       });
       onNext();
@@ -193,8 +195,9 @@ function VoiceExamplesStep({ onNext }: { onNext: () => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ examples: examples.filter(e => e.trim()) })
       });
       onNext();
@@ -249,8 +252,9 @@ function CompetitorsStep({ onNext }: { onNext: () => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ 
           competitors: competitors.filter(c => c.name.trim()) 
         })
@@ -342,15 +346,16 @@ function RuntimeKeyStep({ onNext }: { onNext: () => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ api_key: apiKey })
       });
       if (res.ok) {
         // Validate the key
         const validateRes = await fetch('/api/runtimes/anthropic/validate', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+          credentials: 'include'
         });
         if (validateRes.ok) {
           onNext();
@@ -404,8 +409,9 @@ function StarterProjectStep({ onNext }: { onNext: () => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          
         },
+        credentials: 'include',
         body: JSON.stringify({ template: selected })
       });
       onNext();

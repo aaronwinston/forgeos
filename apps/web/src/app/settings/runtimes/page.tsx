@@ -23,8 +23,9 @@ export default function RuntimesSettings() {
 
   const fetchKeys = async () => {
     try {
-      const res = await fetch('/api/runtimes', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_BASE}/api/runtimes`, {
+        credentials: 'include'
       });
       if (res.ok) {
         setKeys(await res.json());
@@ -41,12 +42,13 @@ export default function RuntimesSettings() {
     setSuccess('');
 
     try {
-      const res = await fetch(`/api/runtimes/${selectedRuntime}/add`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_BASE}/api/runtimes/${selectedRuntime}/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
+        credentials: 'include',
         body: JSON.stringify({ api_key: apiKey })
       });
 
@@ -67,9 +69,10 @@ export default function RuntimesSettings() {
 
   const handleValidate = async (runtime: string) => {
     try {
-      const res = await fetch(`/api/runtimes/${runtime}/validate`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_BASE}/api/runtimes/${runtime}/validate`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       
@@ -88,9 +91,10 @@ export default function RuntimesSettings() {
     if (!confirm(`Delete ${runtime} key?`)) return;
 
     try {
-      const res = await fetch(`/api/runtimes/${runtime}`, {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_BASE}/api/runtimes/${runtime}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        credentials: 'include'
       });
 
       if (res.ok) {

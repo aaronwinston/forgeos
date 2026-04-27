@@ -18,12 +18,12 @@ export default function OrgSwitcher() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load current org and list of orgs
-    const orgId = localStorage.getItem('current_org_id');
-    const orgName = localStorage.getItem('current_org_name');
+    // Load current org from cookie
+    const orgId = document.cookie.split('; ').find(row => row.startsWith('current_org_id='))?.split('=')[1];
     
-    if (orgId && orgName) {
-      setCurrentOrg({ id: orgId, name: orgName, slug: '', plan: 'free' });
+    if (orgId) {
+      // Set a placeholder name - in production, fetch full org details from API
+      setCurrentOrg({ id: orgId, name: 'My Organization', slug: '', plan: 'free' });
     }
     
     // Fetch orgs from API
@@ -32,11 +32,9 @@ export default function OrgSwitcher() {
 
   async function fetchOrgs() {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/orgs', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE}/api/orgs`, {
+        credentials: 'include', // Send cookies
       });
       
       if (response.ok) {
@@ -49,8 +47,8 @@ export default function OrgSwitcher() {
   }
 
   async function switchOrg(org: Organization) {
-    localStorage.setItem('current_org_id', org.id);
-    localStorage.setItem('current_org_name', org.name);
+    // In cookie-based auth, org switching would be handled server-side
+    // For now, just update the client-side state
     setCurrentOrg(org);
     setIsOpen(false);
     
@@ -64,15 +62,15 @@ export default function OrgSwitcher() {
     
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const slug = orgName.toLowerCase().replace(/\s+/g, '-');
       
-      const response = await fetch('http://localhost:8000/api/orgs', {
+      const response = await fetch(`${API_BASE}/api/orgs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', // Send cookies
         body: JSON.stringify({ name: orgName, slug }),
       });
       

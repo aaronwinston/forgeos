@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     
     # CORS allowed origins (comma-separated list)
     CORS_ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
+    
+    # JWT secret key for auth tokens
+    JWT_SECRET_KEY: str = ""
 
     class Config:
         env_file = ".env"
@@ -55,5 +58,10 @@ class Settings(BaseSettings):
         if not self.LLM_KEY_ENCRYPTION_SECRET:
             import base64
             self.LLM_KEY_ENCRYPTION_SECRET = base64.b64encode(os.urandom(32)).decode()
+        
+        # If JWT_SECRET_KEY not provided, generate one
+        if not self.JWT_SECRET_KEY:
+            import base64
+            self.JWT_SECRET_KEY = base64.b64encode(os.urandom(32)).decode()
 
 settings = Settings()

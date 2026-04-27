@@ -26,8 +26,9 @@ export default function UsageSettings() {
 
   const fetchUsage = async () => {
     try {
-      const res = await fetch('/api/usage/current-month', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_BASE}/api/usage/current-month`, {
+        credentials: 'include'
       });
       
       if (res.ok) {

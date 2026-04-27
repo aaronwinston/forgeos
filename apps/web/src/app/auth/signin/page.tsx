@@ -16,23 +16,25 @@ export default function SignIn() {
     setError('');
 
     try {
-      // In production, this would call a real auth API
-      // For now, create a mock org and token
-      const orgId = 'org_' + Math.random().toString(36).substr(2, 9);
-      const userId = email.split('@')[0];
-      
-      const payload = {
-        sub: userId,
-        org_id: orgId,
-        role: 'owner',
-        email,
-      };
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE}/api/auth/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important: allows cookies to be set
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-      // Create a mock JWT (in production, server would sign this)
-      const token = JSON.stringify(payload);
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('current_org_id', orgId);
-      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Sign in failed' }));
+        throw new Error(errorData.detail || 'Sign in failed');
+      }
+
+      // Token is now stored in httpOnly cookie, redirect to dashboard
       router.push('/dashboard');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Sign in failed';

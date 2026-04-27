@@ -17,21 +17,26 @@ export default function SignUp() {
     setError('');
 
     try {
-      // Create org via API
-      const orgId = 'org_' + Math.random().toString(36).substr(2, 9);
-      const userId = email.split('@')[0];
-      
-      const payload = {
-        sub: userId,
-        org_id: orgId,
-        role: 'owner',
-        email,
-      };
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important: allows cookies to be set
+        body: JSON.stringify({
+          email,
+          password,
+          org_name: orgName,
+        }),
+      });
 
-      const token = JSON.stringify(payload);
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('current_org_id', orgId);
-      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Sign up failed' }));
+        throw new Error(errorData.detail || 'Sign up failed');
+      }
+
+      // Token is now stored in httpOnly cookie, redirect to dashboard
       router.push('/dashboard');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Sign up failed';
