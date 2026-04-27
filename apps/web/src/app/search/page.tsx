@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { getApiBase } from '@/lib/api';
+import { getHeadersWithCSRF } from '@/lib/csrf';
 import { Button } from '@/components/ui/Button';
 import OpportunitiesSection from '@/components/search/OpportunitiesSection';
 import DefendingPositionSection from '@/components/search/DefendingPositionSection';
@@ -12,7 +13,10 @@ export default function SearchPage() {
   const handleRefreshAll = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch(`${getApiBase()}/api/intelligence/scrape`, { method: 'POST' });
+      const response = await fetch(`${getApiBase()}/api/intelligence/scrape`, { 
+        method: 'POST',
+        headers: getHeadersWithCSRF(),
+      });
       if (!response.ok) throw new Error('Scrape failed');
       await new Promise(resolve => setTimeout(resolve, 2000));
       window.location.reload();
