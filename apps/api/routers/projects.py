@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import get_session
 from models import Project, Folder, Deliverable, Brief, ScrapeItem
+from middleware.auth import get_current_user, AuthContext
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -14,27 +15,58 @@ class ProjectCreate(BaseModel):
     description: Optional[str] = None
 
 @router.get("/projects")
-def list_projects(session: Session = Depends(get_session)):
-    return session.exec(select(Project)).all()
+def list_projects(
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    return session.exec(
+        select(Project).where(Project.organization_id == auth.org_id)
+    ).all()
 
 @router.post("/projects")
-def create_project(data: ProjectCreate, session: Session = Depends(get_session)):
-    p = Project(name=data.name, description=data.description)
+def create_project(
+    data: ProjectCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    p = Project(
+        name=data.name,
+        description=data.description,
+        organization_id=auth.org_id,
+        user_id=auth.user_id,
+    )
     session.add(p)
     session.commit()
     session.refresh(p)
     return p
 
 @router.get("/projects/{project_id}")
-def get_project(project_id: int, session: Session = Depends(get_session)):
-    p = session.get(Project, project_id)
+def get_project(
+    project_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    p = session.exec(
+        select(Project).where(
+            (Project.id == project_id) & (Project.organization_id == auth.org_id)
+        )
+    ).first()
     if not p:
         raise HTTPException(status_code=404, detail="Project not found")
     return p
 
 @router.put("/projects/{project_id}")
-def update_project(project_id: int, data: ProjectCreate, session: Session = Depends(get_session)):
-    p = session.get(Project, project_id)
+def update_project(
+    project_id: int,
+    data: ProjectCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    p = session.exec(
+        select(Project).where(
+            (Project.id == project_id) & (Project.organization_id == auth.org_id)
+        )
+    ).first()
     if not p:
         raise HTTPException(status_code=404, detail="Project not found")
     p.name = data.name
@@ -46,8 +78,16 @@ def update_project(project_id: int, data: ProjectCreate, session: Session = Depe
     return p
 
 @router.delete("/projects/{project_id}")
-def delete_project(project_id: int, session: Session = Depends(get_session)):
-    p = session.get(Project, project_id)
+def delete_project(
+    project_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    p = session.exec(
+        select(Project).where(
+            (Project.id == project_id) & (Project.organization_id == auth.org_id)
+        )
+    ).first()
     if not p:
         raise HTTPException(status_code=404, detail="Project not found")
     session.delete(p)
@@ -60,19 +100,62 @@ class FolderCreate(BaseModel):
     name: str
 
 @router.get("/projects/{project_id}/folders")
-def list_folders(project_id: int, session: Session = Depends(get_session)):
-    return session.exec(select(Folder).where(Folder.project_id == project_id)).all()
+def list_folders(
+    project_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # Verify project belongs to org
+    p = session.exec(
+        select(Project).where(
+            (Project.id == project_id) & (Project.organization_id == auth.org_id)
+        )
+    ).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return session.exec(
+        select(Folder).where(
+            (Folder.project_id == project_id) & (Folder.organization_id == auth.org_id)
+        )
+    ).all()
 
 @router.get("/folders/{folder_id}")
-def get_folder(folder_id: int, session: Session = Depends(get_session)):
-    f = session.get(Folder, folder_id)
+def get_folder(
+    folder_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    f = session.exec(
+        select(Folder).where(
+            (Folder.id == folder_id) & (Folder.organization_id == auth.org_id)
+        )
+    ).first()
     if not f:
         raise HTTPException(status_code=404, detail="Folder not found")
     return f
 
 @router.post("/folders")
-def create_folder(data: FolderCreate, session: Session = Depends(get_session)):
-    f = Folder(**data.dict())
+def create_folder(
+    data: FolderCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # Verify project belongs to org
+    p = session.exec(
+        select(Project).where(
+            (Project.id == data.project_id) & (Project.organization_id == auth.org_id)
+        )
+    ).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    f = Folder(
+        project_id=data.project_id,
+        parent_folder_id=data.parent_folder_id,
+        name=data.name,
+        organization_id=auth.org_id,
+    )
     session.add(f)
     session.commit()
     session.refresh(f)

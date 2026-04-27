@@ -5,10 +5,32 @@ from sqlalchemy import Index
 from pydantic import PrivateAttr
 from cryptography.fernet import Fernet
 from config import settings
+import uuid
+
+class Organization(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    name: str
+    slug: str
+    plan: str = Field(default="free")  # free|pro|team
+    trial_ends_at: Optional[datetime] = None
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    subscription_status: Optional[str] = None  # active|past_due|canceled
+    current_period_end: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Membership(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    user_id: str
+    organization_id: str = Field(foreign_key="organization.id")
+    role: str = Field(default="member")  # owner|admin|member
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Project(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: str = Field(default="aaron")
+    organization_id: str = Field(foreign_key="organization.id")
+    user_id: str
     name: str
     description: Optional[str] = None
     status: str = Field(default="active")
@@ -16,6 +38,7 @@ class Project(SQLModel, table=True):
 
 class Folder(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     project_id: int = Field(foreign_key="project.id")
     parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
     name: str
@@ -23,6 +46,7 @@ class Folder(SQLModel, table=True):
 
 class Deliverable(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     folder_id: int = Field(foreign_key="folder.id")
     content_type: str
     title: str
@@ -34,7 +58,8 @@ class Deliverable(SQLModel, table=True):
 
 class Brief(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: str = Field(default="aaron")
+    organization_id: str = Field(foreign_key="organization.id")
+    user_id: str
     project_id: int = Field(foreign_key="project.id")
     deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
     title: str
@@ -50,6 +75,7 @@ class Brief(SQLModel, table=True):
 
 class ChatSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
     deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
@@ -57,6 +83,7 @@ class ChatSession(SQLModel, table=True):
 
 class ChatMessage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     session_id: int = Field(foreign_key="chatsession.id")
     role: str
     content: str
@@ -65,6 +92,7 @@ class ChatMessage(SQLModel, table=True):
 
 class ScrapeItem(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     source: str
     source_url: str
     title: str
@@ -84,6 +112,7 @@ class ScrapeItem(SQLModel, table=True):
 
 class PipelineRun(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     brief_id: int = Field(foreign_key="brief.id")
     deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
     title: str
@@ -100,6 +129,7 @@ class PipelineRun(SQLModel, table=True):
 
 class PipelineStep(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
     pipeline_run_id: int = Field(foreign_key="pipelinerun.id")
     agent_name: str
     input_text: str
@@ -110,9 +140,10 @@ class PipelineStep(SQLModel, table=True):
 
 class CalendarIntegration(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: str = Field(default="aaron")
-    access_token_encrypted: str = Field(default="")  # encrypted in DB
-    refresh_token_encrypted: str = Field(default="")  # encrypted in DB
+    organization_id: str = Field(foreign_key="organization.id")
+    user_id: str
+    access_token_encrypted: str = Field(default="")
+    refresh_token_encrypted: str = Field(default="")
     expires_at: datetime
     calendar_id: str
     last_synced_at: Optional[datetime] = None
