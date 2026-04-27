@@ -49,14 +49,16 @@ def get_current_user(
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("sub")
         
-        if not user_id:
+        if not user_id or not isinstance(user_id, str):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         
         org_id = payload.get("org_id")
-        if not org_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No organization")
+        if not org_id or not isinstance(org_id, str):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid organization claim")
         
         role = payload.get("role", "member")
+        if not isinstance(role, str):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid role claim")
 
         ctx = AuthContext(user_id=user_id, org_id=org_id, role=role)
         request.state.auth = ctx

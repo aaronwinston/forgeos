@@ -190,13 +190,16 @@ export function streamSession(
   sessionId: number,
   onUpdate: (event: Record<string, unknown>) => void,
 ): () => void {
-  const es = new EventSource(`${API_BASE}/api/sessions/${sessionId}/stream`);
+  const csrfToken = getCSRFToken();
+  const es = new EventSource(`${API_BASE}/api/sessions/${sessionId}/stream?csrf_token=${encodeURIComponent(csrfToken)}`);
   es.onmessage = (e) => {
     try {
       const data = JSON.parse(e.data);
       onUpdate(data);
       if (data.type === 'done') es.close();
-    } catch {}
+    } catch (parseError) {
+      console.error('Failed to parse session stream:', parseError);
+    }
   };
   es.onerror = () => es.close();
   return () => es.close();
@@ -246,7 +249,11 @@ export function streamChat(
             try {
               const data = JSON.parse(line.slice(6));
               if (data.chunk) onChunk(data.chunk);
-            } catch {}
+              if (data.done) onComplete?.();
+              if (data.error) onError?.(data.error);
+            } catch (parseError) {
+              console.error('Failed to parse SSE chunk:', parseError);
+            }
           }
         }
       }

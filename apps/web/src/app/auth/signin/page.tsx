@@ -19,8 +19,20 @@ export default function SignIn() {
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    
+    // Validate inputs
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    setLoading(true);
 
     try {
       const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');

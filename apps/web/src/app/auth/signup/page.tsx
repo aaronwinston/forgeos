@@ -20,8 +20,25 @@ export default function SignUp() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    
+    // Validate inputs
+    if (!orgName || orgName.trim().length < 2) {
+      setError('Organization name must be at least 2 characters');
+      return;
+    }
+    
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
+    setLoading(true);
 
     try {
       const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
