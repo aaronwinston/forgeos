@@ -181,24 +181,38 @@ def _build_insight(item: ScrapeItem, keyword: str, session: Session, user_id: st
 def _assess_trends_momentum(trends_row: TrendsData) -> str:
     """
     Assess if trends data shows rising/steady/falling interest.
-    Simple heuristic: check if recent values are higher/same/lower than older values.
+    Handles pytrends JSON format: {"keyword": {timestamp: value, ...}, "isPartial": {...}}
     """
     try:
         if not trends_row or not trends_row.interest_over_time_json:
             return "no_data"
         
         data = json.loads(trends_row.interest_over_time_json)
-        if not data or len(data) < 2:
+        if not data:
+            return "no_data"
+        
+        # pytrends returns {keyword: {timestamp: value}, "isPartial": {...}}
+        # Extract the keyword's data (first key that's not "isPartial")
+        values = None
+        for key, val in data.items():
+            if key != "isPartial" and isinstance(val, dict):
+                values = list(val.values())
+                break
+        
+        if not values or len(values) < 2:
             return "steady"
         
         # Simple heuristic: compare last 1/3 to first 1/3 of data
-        values = [v for v in data if isinstance(v, (int, float))]
+        # Convert to float in case they're integers
+        values = [float(v) for v in values if isinstance(v, (int, float))]
         if len(values) < 2:
             return "steady"
         
-        first_third = sum(values[:len(values)//3]) / max(1, len(values)//3)
-        last_third = sum(values[-(len(values)//3):]) / max(1, len(values)//3)
+        third_size = max(1, len(values) // 3)
+        first_third = sum(values[:third_size]) / third_size
+        last_third = sum(values[-third_size:]) / third_size
         
+        # Assess momentum
         if last_third > first_third * 1.1:
             return "rising"
         elif last_third < first_third * 0.9:
