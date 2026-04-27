@@ -427,17 +427,24 @@ export default function ProjectTree() {
     const isExpanded = expandedFolders.has(folder.id);
     const marginLeft = depth * 12;
     const folderType = depth === 1 ? 'folder' : 'subfolder';
+    const isSelected = selectedItem?.type === folderType && selectedItem?.id === folder.id;
 
     return (
       <div key={`folder-${folder.id}`}>
         <div
-          className="py-1 px-2 text-sm hover:bg-accent/50 rounded flex items-center gap-2 group cursor-pointer"
+          className={`py-1 px-2 text-sm rounded flex items-center gap-2 group cursor-pointer ${
+            isSelected ? 'bg-primary/20 border-l-2 border-primary' : 'hover:bg-accent/50'
+          }`}
           style={{ marginLeft: `${marginLeft}px` }}
+          onClick={() => setSelectedItem({ type: folderType, id: folder.id, parentId: folder.project_id })}
           onContextMenu={(e) => handleContextMenu(e, folderType, folder.id, folder.project_id)}
         >
           <span
             className="text-xs cursor-pointer"
-            onClick={() => toggleFolder(folder.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFolder(folder.id);
+            }}
           >
             {isExpanded ? '▼' : '▶'}
           </span>
@@ -486,16 +493,23 @@ export default function ProjectTree() {
         ) : (
           filteredProjects.map((project) => {
             const isExpanded = expandedFolders.has(project.id);
+            const isSelected = selectedItem?.type === 'project' && selectedItem?.id === project.id;
 
             return (
               <div key={`proj-${project.id}`}>
                 <div
-                  className="py-1 px-2 text-sm hover:bg-accent/50 rounded flex items-center gap-2 group cursor-pointer mx-2 mt-1"
+                  className={`py-1 px-2 text-sm rounded flex items-center gap-2 group cursor-pointer mx-2 mt-1 ${
+                    isSelected ? 'bg-primary/20 border-l-2 border-primary' : 'hover:bg-accent/50'
+                  }`}
+                  onClick={() => setSelectedItem({ type: 'project', id: project.id })}
                   onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
                 >
                   <span
                     className="text-xs cursor-pointer"
-                    onClick={() => toggleFolder(project.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFolder(project.id);
+                    }}
                   >
                     {isExpanded ? '▼' : '▶'}
                   </span>
