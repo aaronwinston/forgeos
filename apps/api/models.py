@@ -17,6 +17,7 @@ class Organization(SQLModel, table=True):
     stripe_subscription_id: Optional[str] = None
     subscription_status: Optional[str] = None  # active|past_due|canceled
     current_period_end: Optional[datetime] = None
+    onboarding_completed_steps: Optional[str] = None  # JSON array of completed step IDs
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
