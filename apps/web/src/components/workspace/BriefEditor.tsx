@@ -20,7 +20,7 @@ interface BriefEditorProps {
 const VOICE_OPTIONS = ['opinionated', 'thoughtful', 'objective', 'technical', 'founder'];
 const CONTENT_TYPE_OPTIONS = ['blog', 'email', 'press-release', 'case-study', 'whitepaper'];
 
-export default function BriefEditor({ brief, deliverableId, onChange }: BriefEditorProps) {
+export default function BriefEditor({ brief, onChange }: BriefEditorProps) {
   const defaultToggles = brief?.toggles_json ? JSON.parse(brief.toggles_json) : {};
 
   const [title, setTitle] = useState(brief?.title || '');
