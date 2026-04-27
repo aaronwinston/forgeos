@@ -33,9 +33,9 @@ export default function EditorTab({ deliverable }: EditorTabProps) {
 
     try {
       const response = await fetch(
-        `/api/deliverables/${deliverable.id}/body`,
+        `/api/deliverables/${deliverable.id}`,
         {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },

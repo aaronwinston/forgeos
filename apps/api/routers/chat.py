@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
@@ -30,6 +31,23 @@ class GenerateRequest(BaseModel):
     content_type: str
     playbook: str = "auto"
     toggles: dict = {}
+
+class TogglesRequest(BaseModel):
+    brief_first: bool = False
+    audience: str = ""
+    voice: str = "thoughtful"
+    skills: list[str] = []
+    playbook: str = "auto"
+    content_type: str = "blog"
+
+class ContextLayersRequest(BaseModel):
+    layers: list[str]
+
+class SkillsRequest(BaseModel):
+    skills: list[str]
+
+class IntelligenceItemsRequest(BaseModel):
+    items: list[int]
 
 @router.post("/session")
 def create_session(
@@ -137,3 +155,110 @@ async def generate_deliverable(req: GenerateRequest):
         yield f"data: {json.dumps({'done': True})}\n\n"
 
     return StreamingResponse(event_gen(), media_type="text/event-stream")
+
+
+# Brief toggles and context management
+@router.post("/briefs/{brief_id}/toggles")
+def update_brief_toggles(brief_id: int, req: TogglesRequest, session: Session = Depends(get_session)):
+    """Update Brief toggles (brief_first, audience, voice, skills, playbook, content_type)"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    toggles = req.dict()
+    brief.toggles_json = json.dumps(toggles)
+    brief.updated_at = datetime.utcnow()
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "toggles": toggles}
+
+
+@router.post("/briefs/{brief_id}/context-layers")
+def update_context_layers(brief_id: int, req: ContextLayersRequest, session: Session = Depends(get_session)):
+    """Update Brief context_layers array"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    brief.context_layers_json = json.dumps(req.layers)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "context_layers": req.layers}
+
+
+@router.delete("/briefs/{brief_id}/context-layers/{layer_name}")
+def remove_context_layer(brief_id: int, layer_name: str, session: Session = Depends(get_session)):
+    """Remove one context layer from Brief"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    layers = json.loads(brief.context_layers_json or "[]")
+    layers = [l for l in layers if l != layer_name]
+    brief.context_layers_json = json.dumps(layers)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "context_layers": layers}
+
+
+@router.post("/briefs/{brief_id}/skills")
+def update_skills(brief_id: int, req: SkillsRequest, session: Session = Depends(get_session)):
+    """Update Brief skills array"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    brief.skills_json = json.dumps(req.skills)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "skills": req.skills}
+
+
+@router.delete("/briefs/{brief_id}/skills/{skill_name}")
+def remove_skill(brief_id: int, skill_name: str, session: Session = Depends(get_session)):
+    """Remove one skill from Brief"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    skills = json.loads(brief.skills_json or "[]")
+    skills = [s for s in skills if s != skill_name]
+    brief.skills_json = json.dumps(skills)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "skills": skills}
+
+
+@router.post("/briefs/{brief_id}/intelligence-items")
+def update_intelligence_items(brief_id: int, req: IntelligenceItemsRequest, session: Session = Depends(get_session)):
+    """Update Brief intelligence_items array"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    brief.intelligence_items_json = json.dumps(req.items)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "intelligence_items": req.items}
+
+
+@router.delete("/briefs/{brief_id}/intelligence-items/{item_id}")
+def remove_intelligence_item(brief_id: int, item_id: int, session: Session = Depends(get_session)):
+    """Remove one intelligence item from Brief"""
+    brief = session.get(Brief, brief_id)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    
+    items = json.loads(brief.intelligence_items_json or "[]")
+    items = [i for i in items if i != item_id]
+    brief.intelligence_items_json = json.dumps(items)
+    session.add(brief)
+    session.commit()
+    session.refresh(brief)
+    return {"id": brief.id, "intelligence_items": items}

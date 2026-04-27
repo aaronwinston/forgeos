@@ -38,6 +38,9 @@ class Brief(SQLModel, table=True):
     description: Optional[str] = None
     brief_md: Optional[str] = None
     toggles_json: Optional[str] = None
+    context_layers_json: Optional[str] = None
+    skills_json: Optional[str] = None
+    intelligence_items_json: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

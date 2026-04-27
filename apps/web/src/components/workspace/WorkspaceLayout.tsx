@@ -4,6 +4,8 @@ import WorkspaceProjectTree from './WorkspaceProjectTree';
 import ChatTab from './ChatTab';
 import EditorTab from './EditorTab';
 import BriefTab from './BriefTab';
+import TogglesPanel from './TogglesPanel';
+import ContextInUsePanel from './ContextInUsePanel';
 
 interface WorkspaceLayoutProps {
   deliverable: {
@@ -136,79 +138,20 @@ export default function WorkspaceLayout({
 
         {/* Tab Content */}
         <div className="flex-1 overflow-hidden">
-          {activeTab === 'chat' && <ChatTab deliverable={deliverable} />}
+          {activeTab === 'chat' && <ChatTab deliverable={deliverable} brief={brief} />}
           {activeTab === 'editor' && <EditorTab deliverable={deliverable} />}
           {activeTab === 'brief' && <BriefTab deliverable={deliverable} brief={brief} />}
         </div>
       </div>
 
       {/* Right Pane: Toggles + Context */}
-      <div className="w-[300px] border-l border-gray-200 bg-gray-50 overflow-auto flex flex-col">
-        <div className="p-3 border-b border-gray-200 space-y-3">
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Brief Toggle</p>
-            <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-gray-900 transition-colors">
-              <input type="checkbox" defaultChecked className="w-4 h-4 rounded cursor-pointer" />
-              <span className="text-gray-700">Brief first</span>
-            </label>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Audience</label>
-            <input
-              type="text"
-              defaultValue="AI engineers"
-              className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white hover:border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Voice</label>
-            <select className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white hover:border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors cursor-pointer">
-              <option>thoughtful</option>
-              <option>opinionated</option>
-              <option>objective</option>
-              <option>technical</option>
-              <option>founder</option>
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Skills</label>
-            <input
-              type="text"
-              placeholder="comma-separated"
-              className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white hover:border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Playbook</label>
-            <input
-              type="text"
-              defaultValue="auto"
-              className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white hover:border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Content Type</label>
-            <select className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white hover:border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors cursor-pointer">
-              <option>blog</option>
-              <option>article</option>
-              <option>guide</option>
-              <option>whitepaper</option>
-              <option>tutorial</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="p-3 border-t border-gray-200">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Context in Use</p>
-          <div className="space-y-2">
-            <p className="text-xs text-gray-500 italic">No context added yet</p>
-          </div>
-        </div>
+      <div className="w-[300px] border-l border-gray-200 bg-gray-50 overflow-hidden flex flex-col">
+        <TogglesPanel brief={brief} onChange={() => window.location.reload()} />
+        <ContextInUsePanel
+          brief={brief}
+          intelligenceItems={[]}
+          onChange={() => window.location.reload()}
+        />
       </div>
     </div>
   );

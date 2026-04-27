@@ -65,8 +65,11 @@ export default function TipTapEditor({
       }
     } catch (error) {
       console.error('Error parsing markdown:', error);
+      // Fallback: set raw markdown as plain text
       if (editor) {
-        editor.commands.setContent(markdown);
+        editor.commands.setContent(
+          `<pre>${markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+        );
       }
     }
   };
