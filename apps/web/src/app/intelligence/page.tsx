@@ -13,13 +13,22 @@ export default function IntelligencePage() {
     try {
       setLoading(true);
       setError(null);
+      console.debug('[Intelligence] Loading items...');
       const response = await fetch('http://localhost:8000/api/intelligence/items');
-      if (!response.ok) throw new Error('Failed to fetch intelligence items');
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
       const data = await response.json();
       setItems(data);
+      console.debug('[Intelligence] Loaded', data.length, 'items');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load intelligence');
-      console.error('Load failed:', err);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const message = err instanceof Error ? err.message : 'Failed to load intelligence';
+      const userMessage = err instanceof Error && err.message.includes('API error')
+        ? 'Unable to connect to intelligence service. Check that the API is running.'
+        : 'Failed to load intelligence items. Please try again.';
+      setError(userMessage);
+      console.error('[Intelligence] Load error:', err);
     } finally {
       setLoading(false);
     }
@@ -51,13 +60,20 @@ export default function IntelligencePage() {
   const handleRefreshNow = async () => {
     setRefreshing(true);
     try {
+      console.debug('[Intelligence] Starting intelligence scrape...');
       const response = await fetch('http://localhost:8000/api/intelligence/scrape', { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to refresh intelligence');
+      if (!response.ok) {
+        throw new Error(`Scrape failed: ${response.status}`);
+      }
+      console.debug('[Intelligence] Scrape initiated, waiting for results...');
       await new Promise(resolve => setTimeout(resolve, 3000));
-      loadItems();
+      await loadItems();
     } catch (err) {
-      console.error('Refresh failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh intelligence');
+      const userMessage = err instanceof Error && err.message.includes('Scrape failed')
+        ? 'Failed to start intelligence scrape. Check the API and try again.'
+        : 'Error refreshing intelligence. Please check your configuration.';
+      setError(userMessage);
+      console.error('[Intelligence] Refresh error:', err);
     } finally {
       setRefreshing(false);
     }
