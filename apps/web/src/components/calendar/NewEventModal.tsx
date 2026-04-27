@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { CalendarEvent, ContentType } from '@/lib/api';
-import { createCalendarEvent, isApiError, getProjects } from '@/lib/api';
+import type { CalendarEvent, ContentType, Folder } from '@/lib/api';
+import { createCalendarEvent, isApiError, getProjects, getProjectFolders } from '@/lib/api';
 import type { Project } from '@/lib/api';
 import { CONTENT_TYPES, CONTENT_TYPE_CONFIG } from './contentTypeConfig';
 
@@ -13,7 +13,6 @@ interface Props {
 }
 
 function toLocalDatetimeValue(d: Date) {
-  // Returns "YYYY-MM-DDThh:mm" for datetime-local input
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -21,13 +20,11 @@ function toLocalDatetimeValue(d: Date) {
 /**
  * Modal for creating a new calendar event.
  *
- * Flow:
- *  1. User sets title, content type, date, optional notes
- *  2. Optionally links to a project (triggers folder creation prompt)
- *     — or leaves unlinked (event exists without a deliverable)
- *  3. POST /api/calendar/events
- *     - If folder_id supplied → creates CalendarEvent + Deliverable atomically
- *     - Navigate to /workspace/[deliverableId] on success
+ * Folder resolution (mirrors backend priority):
+ *   1. User picks project → modal loads that project's folders
+ *   2. User picks a folder → folder_id sent to API
+ *   3. No folders exist → project_id sent, backend auto-creates "Content" folder
+ *   4. No project selected → event-only, no deliverable
  */
 export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
   const router = useRouter();
@@ -37,14 +34,33 @@ export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
   const [startAt, setStartAt] = useState(toLocalDatetimeValue(defaultDate));
   const [allDay, setAllDay] = useState(true);
   const [notes, setNotes] = useState('');
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [foldersLoading, setFoldersLoading] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<number | ''>('');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load projects on mount
   useEffect(() => {
     getProjects().then(setProjects).catch(() => {});
   }, []);
+
+  // Load folders whenever project changes
+  useEffect(() => {
+    setSelectedFolderId('');
+    setFolders([]);
+    if (!selectedProjectId) return;
+
+    setFoldersLoading(true);
+    getProjectFolders(Number(selectedProjectId))
+      .then(setFolders)
+      .catch(() => setFolders([]))
+      .finally(() => setFoldersLoading(false));
+  }, [selectedProjectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,15 +69,16 @@ export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
     setSubmitting(true);
     setError(null);
 
-    const startDate = new Date(startAt);
-
     const result = await createCalendarEvent({
       title: title.trim(),
       content_type: contentType,
-      start_at: startDate.toISOString(),
+      start_at: new Date(startAt).toISOString(),
       all_day: allDay,
       notes: notes.trim() || undefined,
-      project_id: selectedProjectId ? Number(selectedProjectId) : undefined,
+      // Send folder_id if the user picked one; otherwise send project_id so the
+      // backend can auto-create/find the default "Content" folder atomically.
+      folder_id: selectedFolderId ? Number(selectedFolderId) : undefined,
+      project_id: !selectedFolderId && selectedProjectId ? Number(selectedProjectId) : undefined,
     });
 
     setSubmitting(false);
@@ -73,11 +90,19 @@ export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
 
     onCreated(result);
 
-    // Navigate to workspace if a deliverable was created
     if (result.deliverable?.id) {
       router.push(`/workspace/${result.deliverable.id}`);
     }
   };
+
+  const willCreateDeliverable = Boolean(selectedProjectId);
+  const folderHint = (() => {
+    if (!selectedProjectId) return null;
+    if (foldersLoading) return 'Loading folders…';
+    if (folders.length === 0) return 'No folders yet — a "Content" folder will be created automatically.';
+    if (!selectedFolderId) return 'Select a folder, or leave blank to use the first available.';
+    return null;
+  })();
 
   return (
     <div
@@ -151,31 +176,54 @@ export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
             </label>
           </div>
 
-          {/* Project link (optional) */}
+          {/* Project selector */}
           <div>
             <label className="block text-xs font-medium text-fg-secondary mb-1">
-              Link to project <span className="text-fg-tertiary font-normal">(optional — creates deliverable)</span>
+              Project <span className="text-fg-tertiary font-normal">(optional — creates workspace deliverable)</span>
             </label>
             <select
               value={selectedProjectId}
               onChange={e => setSelectedProjectId(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full px-3 py-2 text-sm rounded-input border border-border bg-bg-secondary text-fg-primary focus:outline-none focus:ring-1 focus:ring-accent"
             >
-              <option value="">No project — event only</option>
+              <option value="">No project — calendar event only</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            {selectedProjectId && (
-              <p className="text-[11px] text-fg-tertiary mt-1">
-                A draft deliverable will be created in this project.
-              </p>
-            )}
           </div>
+
+          {/* Folder selector — shown only when a project is selected and has folders */}
+          {selectedProjectId !== '' && (
+            <div>
+              <label className="block text-xs font-medium text-fg-secondary mb-1">
+                Folder <span className="text-fg-tertiary font-normal">(optional)</span>
+              </label>
+              {foldersLoading ? (
+                <div className="h-9 rounded-input border border-border bg-bg-secondary animate-shimmer" />
+              ) : folders.length > 0 ? (
+                <select
+                  value={selectedFolderId}
+                  onChange={e => setSelectedFolderId(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 text-sm rounded-input border border-border bg-bg-secondary text-fg-primary focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  <option value="">Auto-select first folder</option>
+                  {folders.map(f => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+              ) : null}
+              {folderHint && (
+                <p className="text-[11px] text-fg-tertiary mt-1">{folderHint}</p>
+              )}
+            </div>
+          )}
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-medium text-fg-secondary mb-1">Notes <span className="text-fg-tertiary font-normal">(optional)</span></label>
+            <label className="block text-xs font-medium text-fg-secondary mb-1">
+              Notes <span className="text-fg-tertiary font-normal">(optional)</span>
+            </label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -201,13 +249,12 @@ export function NewEventModal({ defaultDate, onClose, onCreated }: Props) {
             Cancel
           </button>
           <button
-            type="submit"
-            form="new-event-form"
+            type="button"
             onClick={handleSubmit}
             disabled={submitting}
             className="px-4 py-2 text-sm rounded-input bg-accent text-white font-medium hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {submitting ? 'Creating…' : selectedProjectId ? 'Create & open workspace →' : 'Create event'}
+            {submitting ? 'Creating…' : willCreateDeliverable ? 'Create & open workspace →' : 'Create event'}
           </button>
         </div>
       </div>

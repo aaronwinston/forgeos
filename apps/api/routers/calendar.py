@@ -17,7 +17,7 @@ field on GET so the UI can render ✓ / ⟳ / ⚠ badges.
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import get_session
-from models import CalendarEvent, Deliverable, Folder
+from models import CalendarEvent, Deliverable, Folder, Project
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta, timezone
@@ -123,6 +123,17 @@ def get_upcoming_events(
     return [_event_to_dict(e) for e in events]
 
 
+@router.get("/projects/{project_id}/folders")
+def list_project_folders(project_id: int, session: Session = Depends(get_session)):
+    """Return all folders for a project, used by NewEventModal to let the user
+    choose where to place the deliverable instead of always falling back to auto-create.
+    """
+    folders = session.exec(
+        select(Folder).where(Folder.project_id == project_id).order_by(Folder.name)
+    ).all()
+    return [{"id": f.id, "name": f.name, "parent_folder_id": f.parent_folder_id} for f in folders]
+
+
 @router.get("/events")
 def list_events(
     start: Optional[str] = None,
@@ -152,11 +163,17 @@ def list_events(
 
 @router.post("/events", status_code=201)
 def create_event(data: CalendarEventCreate, session: Session = Depends(get_session)):
-    """Create a CalendarEvent. When folder_id is supplied and deliverable_id is not,
-    a Deliverable is created atomically in the same transaction — calendar event and
-    workspace deliverable always exist as a pair.
+    """Create a CalendarEvent, optionally paired with a new Deliverable.
 
-    Returns the event dict plus 'deliverable': {id, title} for client-side navigation.
+    Deliverable creation priority (evaluated in order):
+      1. deliverable_id provided → link to existing deliverable, no new one created
+      2. folder_id provided      → create Deliverable in that folder (atomic)
+      3. project_id provided     → find or create a 'Content' folder in the project,
+                                   then create Deliverable there (atomic, no folder
+                                   lookup required from the client)
+      4. neither                 → event only, no deliverable
+
+    Returns the event dict plus 'deliverable': {id, title} when one was created or linked.
     """
     if data.content_type not in VALID_CONTENT_TYPES:
         raise HTTPException(
@@ -171,21 +188,43 @@ def create_event(data: CalendarEventCreate, session: Session = Depends(get_sessi
 
     deliverable_id = data.deliverable_id
     new_deliverable = None
+    resolved_folder_id = data.folder_id
 
-    # Atomic creation: CalendarEvent + Deliverable
-    if deliverable_id is None and data.folder_id is not None:
-        folder = session.get(Folder, data.folder_id)
-        if not folder:
-            raise HTTPException(status_code=404, detail="Folder not found")
-        new_deliverable = Deliverable(
-            folder_id=data.folder_id,
-            content_type=data.content_type,
-            title=data.title,
-            status="draft",
-        )
-        session.add(new_deliverable)
-        session.flush()  # get id before commit
-        deliverable_id = new_deliverable.id
+    if deliverable_id is None:
+        # Priority 2: explicit folder_id
+        if resolved_folder_id is not None:
+            folder = session.get(Folder, resolved_folder_id)
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+
+        # Priority 3: project_id without folder_id — find or create default folder
+        elif data.project_id is not None:
+            project = session.get(Project, data.project_id)
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+            # Find an existing "Content" folder, else create it
+            folder = session.exec(
+                select(Folder)
+                .where(Folder.project_id == data.project_id)
+                .where(Folder.name == "Content")
+            ).first()
+            if not folder:
+                folder = Folder(project_id=data.project_id, name="Content")
+                session.add(folder)
+                session.flush()
+            resolved_folder_id = folder.id
+
+        # Create deliverable atomically if we resolved a folder
+        if resolved_folder_id is not None:
+            new_deliverable = Deliverable(
+                folder_id=resolved_folder_id,
+                content_type=data.content_type,
+                title=data.title,
+                status="draft",
+            )
+            session.add(new_deliverable)
+            session.flush()
+            deliverable_id = new_deliverable.id
 
     event = CalendarEvent(
         deliverable_id=deliverable_id,

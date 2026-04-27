@@ -342,3 +342,16 @@ export async function updateCalendarEvent(
 export async function deleteCalendarEvent(id: number): Promise<void> {
   await apiFetch(`/api/calendar/events/${id}`, { method: 'DELETE' });
 }
+
+export interface Folder {
+  id: number;
+  name: string;
+  parent_folder_id: number | null;
+}
+
+/** Fetch folders for a project — used by NewEventModal folder picker */
+export async function getProjectFolders(projectId: number): Promise<Folder[]> {
+  const result = await apiFetch<Folder[]>(`/api/calendar/projects/${projectId}/folders`);
+  if (isApiError(result)) return [];
+  return result;
+}
