@@ -38,6 +38,7 @@ async def poll_trends(keywords: Optional[list[str]] = None, region: str = "US"):
         keywords = DEFAULT_KEYWORDS
     
     results = []
+    errors = []
     pytrends = TrendReq(hl='en-US', tz=360)
     
     for keyword in keywords:
@@ -59,38 +60,49 @@ async def poll_trends(keywords: Optional[list[str]] = None, region: str = "US"):
             related_json = json.dumps(related_queries) if related_queries else "{}"
             
             with Session(engine) as session:
-                existing = session.exec(
-                    select(TrendsData).where(
-                        (TrendsData.keyword == keyword) &
-                        (TrendsData.region == region)
-                    )
-                ).first()
-                
-                if existing:
-                    existing.interest_over_time_json = interest_json
-                    existing.related_queries_json = related_json
-                    existing.fetched_at = datetime.utcnow()
-                    session.add(existing)
-                else:
-                    trends_data = TrendsData(
-                        keyword=keyword,
-                        region=region,
-                        interest_over_time_json=interest_json,
-                        related_queries_json=related_json
-                    )
-                    session.add(trends_data)
-                
-                session.commit()
-                results.append(keyword)
+                try:
+                    existing = session.exec(
+                        select(TrendsData).where(
+                            (TrendsData.user_id == "aaron") &
+                            (TrendsData.keyword == keyword) &
+                            (TrendsData.region == region)
+                        )
+                    ).first()
+                    
+                    if existing:
+                        existing.interest_over_time_json = interest_json
+                        existing.related_queries_json = related_json
+                        existing.fetched_at = datetime.utcnow()
+                        session.add(existing)
+                        logger.debug(f"Updated trends data for {keyword}")
+                    else:
+                        trends_data = TrendsData(
+                            keyword=keyword,
+                            region=region,
+                            interest_over_time_json=interest_json,
+                            related_queries_json=related_json
+                        )
+                        session.add(trends_data)
+                        logger.debug(f"Created new trends data for {keyword}")
+                    
+                    session.commit()
+                    results.append(keyword)
+                except Exception as db_err:
+                    session.rollback()
+                    logger.error(f"Database error for '{keyword}': {str(db_err)}")
+                    errors.append((keyword, str(db_err)))
             
             # Rate limit: small delay between requests
             await asyncio.sleep(1)
             
         except Exception as e:
-            logger.error(f"Failed to poll trends for '{keyword}': {str(e)}")
+            logger.error(f"Failed to poll trends for '{keyword}': {str(e)}", exc_info=True)
+            errors.append((keyword, str(e)))
             # Continue with next keyword on error
     
-    logger.info(f"Trends poll complete: {len(results)} keywords processed")
+    logger.info(f"Trends poll complete: {len(results)} keywords processed, {len(errors)} errors")
+    if errors:
+        logger.warning(f"Trends poll errors: {errors}")
     return results
 
 

@@ -143,34 +143,45 @@ async def pull_gsc_data(user_id: str = "aaron", gsc_property: Optional[str] = No
             return {"status": "success", "rows_fetched": 0}
         
         # Store in database
-        with Session(engine) as session:
-            for row_data in rows:
-                # Upsert: update if query+page+date combo exists, else insert
-                existing = session.exec(
-                    select(GscQuery).where(
-                        (GscQuery.user_id == user_id) &
-                        (GscQuery.query == row_data['query']) &
-                        (GscQuery.page == row_data['page']) &
-                        (GscQuery.date_range_start == row_data['date_range_start'])
-                    )
-                ).first()
-                
-                row_data['user_id'] = user_id
-                if existing:
-                    # Update existing row
-                    for key, value in row_data.items():
-                        if key != 'user_id':  # Don't overwrite user_id
-                            setattr(existing, key, value)
-                    session.add(existing)
-                else:
-                    # Insert new row
-                    gsc_query = GscQuery(**row_data)
-                    session.add(gsc_query)
-            
-            session.commit()
+        inserted_count = 0
+        updated_count = 0
         
-        return {"status": "success", "rows_fetched": len(rows)}
+        with Session(engine) as session:
+            try:
+                for row_data in rows:
+                    # Upsert: update if query+page+date combo exists, else insert
+                    existing = session.exec(
+                        select(GscQuery).where(
+                            (GscQuery.user_id == user_id) &
+                            (GscQuery.query == row_data['query']) &
+                            (GscQuery.page == row_data['page']) &
+                            (GscQuery.date_range_start == row_data['date_range_start'])
+                        )
+                    ).first()
+                    
+                    row_data['user_id'] = user_id
+                    if existing:
+                        # Update existing row
+                        for key, value in row_data.items():
+                            if key != 'user_id':  # Don't overwrite user_id
+                                setattr(existing, key, value)
+                        session.add(existing)
+                        updated_count += 1
+                    else:
+                        # Insert new row
+                        gsc_query = GscQuery(**row_data)
+                        session.add(gsc_query)
+                        inserted_count += 1
+                
+                session.commit()
+                logger.info(f"GSC data stored: {inserted_count} inserted, {updated_count} updated")
+            except Exception as db_err:
+                session.rollback()
+                logger.error(f"Database error during GSC upsert: {str(db_err)}", exc_info=True)
+                return {"status": "error", "error": f"Database error: {str(db_err)}"}
+        
+        return {"status": "success", "rows_fetched": len(rows), "inserted": inserted_count, "updated": updated_count}
         
     except Exception as e:
-        logger.error(f"GSC pull failed: {str(e)}")
+        logger.error(f"GSC pull failed: {str(e)}", exc_info=True)
         return {"status": "error", "error": str(e)}

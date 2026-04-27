@@ -48,6 +48,7 @@ async def cross_reference_lm_pass(user_id: str = "aaron") -> dict:
             logger.info(f"Cross-referencing {len(top_items)} high-scored items")
             
             insights_created = 0
+            errors = []
             
             # Step 2-5: Process each item
             for item in top_items:
@@ -59,27 +60,34 @@ async def cross_reference_lm_pass(user_id: str = "aaron") -> dict:
                     
                     # For each keyword, check GSC and Trends data
                     for keyword in keywords:
-                        insight = _build_insight(
-                            item=item,
-                            keyword=keyword,
-                            session=session,
-                            user_id=user_id
-                        )
-                        
-                        if insight:
-                            session.add(insight)
-                            insights_created += 1
+                        try:
+                            insight = _build_insight(
+                                item=item,
+                                keyword=keyword,
+                                session=session,
+                                user_id=user_id
+                            )
+                            
+                            if insight:
+                                session.add(insight)
+                                insights_created += 1
+                        except Exception as keyword_err:
+                            logger.warning(f"Failed to build insight for item {item.id}, keyword '{keyword}': {str(keyword_err)}")
+                            errors.append((item.id, keyword, str(keyword_err)))
                     
                 except Exception as e:
-                    logger.error(f"Failed to process item {item.id}: {str(e)}")
+                    logger.error(f"Failed to process item {item.id}: {str(e)}", exc_info=True)
+                    errors.append((item.id, None, str(e)))
                     continue
             
             session.commit()
-            logger.info(f"Cross-reference pass complete: {insights_created} insights created")
-            return {"status": "success", "insights_created": insights_created}
+            logger.info(f"Cross-reference pass complete: {insights_created} insights created, {len(errors)} errors")
+            if errors:
+                logger.warning(f"Cross-reference errors: {errors}")
+            return {"status": "success", "insights_created": insights_created, "errors": len(errors)}
             
     except Exception as e:
-        logger.error(f"Cross-reference pass failed: {str(e)}")
+        logger.error(f"Cross-reference pass failed: {str(e)}", exc_info=True)
         return {"status": "error", "error": str(e)}
 
 
