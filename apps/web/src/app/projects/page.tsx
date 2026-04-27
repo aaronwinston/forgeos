@@ -23,7 +23,9 @@ export default function ProjectsPage() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : projects.length === 0 ? (
-        <p className="text-fg-secondary text-sm">No projects yet.</p>
+        <div className="text-center py-16">
+          <p className="text-fg-secondary text-sm mb-4">No projects yet. Create your first project to get started.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {projects.map(p => (

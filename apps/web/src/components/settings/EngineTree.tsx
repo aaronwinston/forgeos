@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, FileText, Folder } from 'lucide-react';
 
 interface TreeNode {
@@ -20,34 +20,7 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
   const [tree, setTree] = useState<TreeNode[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set(['core', 'context', 'skills', 'playbooks', 'rubrics']));
 
-  useEffect(() => {
-    fetch('http://localhost:8000/api/files/tree')
-      .then(r => r.json())
-      .then((fileTree: Record<string, string[]>) => {
-        const nodes = buildTree(fileTree);
-        setTree(nodes);
-      })
-      .catch(console.error);
-  }, []);
-
-  function buildTree(fileTree: Record<string, string[]>): TreeNode[] {
-    const dirs = ['core', 'context', 'skills', 'playbooks', 'rubrics'];
-    
-    return dirs.map(dir => {
-      const files = fileTree[dir] || [];
-      const children = buildContextTree(dir, files);
-      
-      return {
-        name: dir,
-        path: dir,
-        type: 'folder',
-        children,
-        isOpen: true,
-      };
-    });
-  }
-
-  function buildContextTree(dir: string, files: string[]): TreeNode[] {
+  const buildContextTree = useCallback((dir: string, files: string[]): TreeNode[] => {
     if (dir === 'context') {
       const grouped: Record<string, string[]> = {};
       files.forEach(f => {
@@ -62,11 +35,11 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
       return Object.keys(grouped).sort().map(layer => ({
         name: layer,
         path: `context/${layer}`,
-        type: 'folder',
+        type: 'folder' as const,
         children: grouped[layer].map(f => ({
           name: f.split('/').pop() || f,
           path: f,
-          type: 'file',
+          type: 'file' as const,
         })),
       }));
     }
@@ -85,11 +58,11 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
       return Object.keys(grouped).sort().map(category => ({
         name: category,
         path: `skills/${category}`,
-        type: 'folder',
+        type: 'folder' as const,
         children: grouped[category].map(f => ({
           name: f.split('/').pop() || f,
           path: f,
-          type: 'file',
+          type: 'file' as const,
         })),
       }));
     }
@@ -108,11 +81,11 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
       return Object.keys(grouped).sort().map(category => ({
         name: category,
         path: `rubrics/${category}`,
-        type: 'folder',
+        type: 'folder' as const,
         children: grouped[category].map(f => ({
           name: f.split('/').pop() || f,
           path: f,
-          type: 'file',
+          type: 'file' as const,
         })),
       }));
     }
@@ -120,9 +93,36 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
     return files.map(f => ({
       name: f.split('/').pop() || f,
       path: f,
-      type: 'file',
+      type: 'file' as const,
     }));
-  }
+  }, []);
+
+  const buildTree = useCallback((fileTree: Record<string, string[]>): TreeNode[] => {
+    const dirs = ['core', 'context', 'skills', 'playbooks', 'rubrics'];
+    
+    return dirs.map(dir => {
+      const files = fileTree[dir] || [];
+      const children = buildContextTree(dir, files);
+      
+      return {
+        name: dir,
+        path: dir,
+        type: 'folder' as const,
+        children,
+        isOpen: true,
+      };
+    });
+  }, [buildContextTree]);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/files/tree')
+      .then(r => r.json())
+      .then((fileTree: Record<string, string[]>) => {
+        const nodes = buildTree(fileTree);
+        setTree(nodes);
+      })
+      .catch(console.error);
+  }, [buildTree]);
 
   function toggleExpanded(path: string) {
     const newExpanded = new Set(expanded);

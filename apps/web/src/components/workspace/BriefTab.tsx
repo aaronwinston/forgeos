@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import BriefEditor from './BriefEditor';
 
 interface BriefTabProps {
@@ -19,10 +18,7 @@ interface BriefTabProps {
 }
 
 export default function BriefTab({ deliverable, brief }: BriefTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleBriefChange = () => {
-    setIsLoading(true);
     window.location.reload();
   };
 

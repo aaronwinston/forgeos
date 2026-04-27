@@ -86,7 +86,10 @@ export function BriefingBook() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : stories.length === 0 ? (
-        <p className="text-sm text-fg-secondary">No stories yet. Click refresh to load your briefing.</p>
+        <div className="border rounded-lg p-8 text-center">
+          <p className="text-sm text-fg-secondary">No briefing items yet.</p>
+          <p className="text-xs text-fg-tertiary mt-1">Refresh to load the latest stories from your briefing sources.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {stories.map(story => <StoryCard key={story.id} story={story} />)}

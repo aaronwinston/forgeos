@@ -115,12 +115,16 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           </div>
         ) : (
           <>
-            {folders.map(f => (
-              <button key={f.id} onClick={() => setSelectedFolder(f)}
-                className={`w-full text-left text-xs px-2 py-1.5 rounded ${selectedFolder?.id === f.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
-                {f.name}
-              </button>
-            ))}
+            {folders.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No folders yet. Create one to get started.</p>
+            ) : (
+              folders.map(f => (
+                <button key={f.id} onClick={() => setSelectedFolder(f)}
+                  className={`w-full text-left text-xs px-2 py-1.5 rounded ${selectedFolder?.id === f.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
+                  {f.name}
+                </button>
+              ))
+            )}
           </>
         )}
         <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={() => setShowFolderModal(true)}>+ New folder</button>
@@ -134,12 +138,16 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             </div>
           ) : (
             <>
-              {deliverables.map(d => (
-                <button key={d.id} onClick={() => setSelectedDeliverable(d)}
-                  className={`w-full text-left text-xs px-2 py-1.5 rounded ${selectedDeliverable?.id === d.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
-                  <span className="inline-block border rounded px-1 text-[10px] mr-1">{d.content_type}</span>{d.title}
-                </button>
-              ))}
+              {deliverables.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No deliverables yet. Create one to get started.</p>
+              ) : (
+                deliverables.map(d => (
+                  <button key={d.id} onClick={() => setSelectedDeliverable(d)}
+                    className={`w-full text-left text-xs px-2 py-1.5 rounded ${selectedDeliverable?.id === d.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
+                    <span className="inline-block border rounded px-1 text-[10px] mr-1">{d.content_type}</span>{d.title}
+                  </button>
+                ))
+              )}
             </>
           )}
           <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={() => setShowDeliverableModal(true)}>+ New deliverable</button>

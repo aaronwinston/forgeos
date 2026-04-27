@@ -94,8 +94,9 @@ export default function IntelligencePage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="border rounded-lg p-6">
-          <p className="text-gray-500">No intelligence items yet. Click &quot;Refresh now&quot; to pull the latest.</p>
+        <div className="border rounded-lg p-8 text-center">
+          <p className="text-sm text-gray-700">No intelligence items yet.</p>
+          <p className="text-xs text-gray-500 mt-1">Click &quot;Refresh now&quot; to fetch the latest articles and content from your configured sources.</p>
         </div>
       ) : (
         <div className="space-y-3">

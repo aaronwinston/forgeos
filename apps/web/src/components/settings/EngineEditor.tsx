@@ -18,7 +18,6 @@ interface FileMetadata {
 }
 
 export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave }: EngineEditorProps) {
-  const [file, setFile] = useState<FileMetadata | null>(null);
   const [content, setContent] = useState('');
   const [metadata, setMetadata] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
@@ -29,7 +28,6 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
   // Load file when path changes
   useEffect(() => {
     if (!filePath) {
-      setFile(null);
       setContent('');
       setMetadata({});
       setReferences({ skills: 0, playbooks: 0 });
@@ -46,7 +44,6 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
         return r.json();
       })
       .then(data => {
-        setFile(data);
         setContent(data.content);
         setMetadata(data.metadata || {});
       })
@@ -62,8 +59,8 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
     try {
       const response = await fetch(`http://localhost:8000/api/settings/references?path=${encodeURIComponent(path)}`);
       if (response.ok) {
-        const data = await response.json();
-        setReferences(data);
+        const refsData = await response.json();
+        setReferences(refsData);
       }
     } catch (e) {
       console.error('Failed to load references:', e);
@@ -103,7 +100,6 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
 
       if (!response.ok) throw new Error('Save failed');
       
-      const data = await response.json();
       onDirtyChange(false);
       
       if (onSave) {
