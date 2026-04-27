@@ -269,4 +269,13 @@ def create_db_and_tables():
     # Import all models to ensure they're registered (and for create_all fallback)
     import models  # noqa: F401
 
-    run_migrations()
+    # Run Alembic migrations for version-controlled schema changes
+    try:
+        from migration_runner import run_pending_migrations
+        run_pending_migrations()
+    except Exception as e:
+        # Fall back to the legacy migration system if Alembic fails
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Alembic migration failed, falling back to legacy migrations: {e}")
+        run_migrations()
