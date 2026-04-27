@@ -86,6 +86,7 @@ from routers import (
     audit as audit_router,
     jobs,
     benchmark,
+    x_to_wordpress,
 )
 from config import settings
 from middleware.rate_limit import limiter, setup_rate_limiting
@@ -154,6 +155,7 @@ app.include_router(trust.router)
 app.include_router(audit_router.router)
 app.include_router(jobs.router)
 app.include_router(benchmark.router)
+app.include_router(x_to_wordpress.router)
 
 scheduler = AsyncIOScheduler()
 
