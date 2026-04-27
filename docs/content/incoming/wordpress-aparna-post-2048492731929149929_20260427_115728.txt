@@ -1,0 +1,37 @@
+WORDPRESS IMPORT FILE
+=====================
+
+Title: The biggest bottleneck in AI adoption isn't model performance—it's observability
+Author: Aparna Dhinakaran
+Date: 2026-04-27 11:57:28
+Category: Product Thinking
+Tags: AI, MLOps, developer-experience, observability, product-thinking, aparna, founder-insights
+Source: https://x.com/aparnadhinak/status/2048492731929149929
+Source Author: @aparnadhinak
+
+---
+
+The biggest bottleneck in AI adoption isn't model performance—it's observability.
+
+Teams ship models that work great in notebooks, then spend weeks debugging why they fail in production. The data distribution shifts. Edge cases appear. The model metrics tell a different story than the business metrics.
+
+We built Arize around one core principle: you can't fix what you can't see. Same applies to your developer experience. You can't improve DX if you don't have visibility into where developers are stuck.
+
+This is why we're obsessing over the feedback loop from production back to the team. Every query, every latency spike, every drift signal—it all flows back to the model owner with context.
+
+The future of AI isn't smarter models. It's smarter operations.
+
+#AI #MLOps #ProductThinking #DeveloperExperience
+
+---
+
+METADATA
+========
+Source URL: https://x.com/aparnadhinak/status/2048492731929149929
+Posted by: Aparna Dhinakaran (@aparnadhinak)
+Type: Tweet / Article
+Likes: [Not retrieved]
+Retweets: [Not retrieved]
+Replies: [Not retrieved]
+Scraped: 2026-04-27 11:57:28
+Format: WordPress Import Ready
