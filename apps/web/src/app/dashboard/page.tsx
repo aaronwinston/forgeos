@@ -29,7 +29,7 @@ export default function DashboardPage() {
           <Button onClick={() => setShowLetsBuildModal(true)} className="bg-blue-600 hover:bg-blue-700">
             ✨ Let's Build
           </Button>
-          <Button onClick={() => setShowSessionModal(true)}>+ New Session</Button>
+          <Button onClick={() => setShowSessionModal(true)}>+ New session</Button>
         </div>
       </div>
       

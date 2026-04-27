@@ -137,7 +137,7 @@ export default function TogglesPanel({ brief, onChange }: TogglesPanelProps) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">📦 Content Type</label>
+        <label className="text-xs font-semibold text-gray-500 tracking-wider block">📦 Content type</label>
         <select
           value={toggles.content_type}
           onChange={(e) => handleChange('content_type', e.target.value)}

@@ -39,7 +39,7 @@ export default function SessionsPage() {
           <h1 className="text-2xl font-semibold text-fg-primary">Sessions</h1>
           <p className="text-sm text-fg-secondary mt-1">All your AI content sessions</p>
         </div>
-        <Button onClick={() => setShowModal(true)}>+ New Session</Button>
+        <Button onClick={() => setShowModal(true)}>+ New session</Button>
       </div>
 
       {error && (

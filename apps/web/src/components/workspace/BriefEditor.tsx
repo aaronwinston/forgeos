@@ -211,8 +211,8 @@ export default function BriefEditor({ brief, onChange }: BriefEditorProps) {
 
       {/* Content Type */}
       <div className="mb-6">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
-          📦 Content Type
+        <label className="text-xs font-semibold text-gray-500 tracking-wider block mb-2">
+          📦 Content type
         </label>
         <select
           value={contentType}

@@ -10,7 +10,7 @@ interface TreeItemModalProps {
 }
 
 const CONTENT_TYPES = [
-  { value: 'blog', label: 'Blog Post' },
+  { value: 'blog', label: 'Blog post' },
   { value: 'email', label: 'Email' },
   { value: 'press-release', label: 'Press Release' },
   { value: 'case-study', label: 'Case Study' },
@@ -104,7 +104,7 @@ export default function TreeItemModal({ isOpen, type, onClose, onCreate }: TreeI
             {/* Content type field (for deliverables) */}
             {type === 'deliverable' && (
               <div>
-                <label className="block text-sm font-medium mb-1">Content Type</label>
+                <label className="block text-sm font-medium mb-1">Content type</label>
                 <select
                   value={contentType}
                   onChange={(e) => setContentType(e.target.value)}

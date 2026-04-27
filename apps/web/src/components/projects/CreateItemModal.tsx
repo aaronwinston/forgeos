@@ -88,7 +88,7 @@ export default function CreateItemModal({
 
             {type === 'deliverable' && (
               <div>
-                <label className="block text-sm font-medium mb-1">Content Type</label>
+                <label className="block text-sm font-medium mb-1">Content type</label>
                 <select
                   value={contentType}
                   onChange={(e) => setContentType(e.target.value)}
