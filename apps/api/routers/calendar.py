@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import get_session
 from models import CalendarEvent, Deliverable, Folder, Project
+from middleware.auth import get_current_user, AuthContext
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta, timezone

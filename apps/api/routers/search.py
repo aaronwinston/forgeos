@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import engine
 from models import SearchInsight
+from middleware.auth import get_current_user, AuthContext
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 logger = logging.getLogger(__name__)

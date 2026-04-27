@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import engine
 from models import CalendarIntegration
+from middleware.auth import get_current_user, AuthContext
 from config import settings
 import secrets
 import uuid
