@@ -6,14 +6,14 @@ export function DocumentEditor({ output }: { output?: string }) {
   
   if (!output && !content) {
     return (
-      <div className="border border-border rounded-xl p-6 bg-bg-secondary text-center">
+      <div className="border border-border rounded-card p-6 bg-bg-secondary text-center">
         <p className="text-sm text-fg-tertiary">Output will appear here once agents complete.</p>
       </div>
     );
   }
   
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-bg-secondary">
+    <div className="border border-border rounded-card overflow-hidden bg-bg-secondary">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-semibold text-fg-primary">Document</h3>
         <button

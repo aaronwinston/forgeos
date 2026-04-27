@@ -6,10 +6,10 @@ export function SessionCard({ session }: { session: Session }) {
   return (
     <Link
       href={`/sessions/${session.id}`}
-      className="block border border-border rounded-xl p-4 bg-bg-secondary hover:border-brand-purple/30 hover:shadow-sm transition-all group"
+      className="block border border-border rounded-card p-4 bg-bg-secondary hover:border-accent/30 hover:shadow-sm transition-all group"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="text-sm font-semibold text-fg-primary group-hover:text-brand-purple transition-colors leading-snug">
+        <h3 className="text-sm font-semibold text-fg-primary group-hover:text-accent transition-colors leading-snug">
           {session.title}
         </h3>
         <StatusBadge status={session.status} />
@@ -21,12 +21,12 @@ export function SessionCard({ session }: { session: Session }) {
       <div className="space-y-2 mb-3">
         {session.brief_id && (
           <div className="text-xs text-fg-tertiary">
-            Brief <span className="text-brand-purple">#{session.brief_id}</span>
+            Brief <span className="text-accent">#{session.brief_id}</span>
           </div>
         )}
         {session.deliverable_id && (
           <div className="text-xs text-fg-tertiary">
-            Deliverable <span className="text-brand-purple">#{session.deliverable_id}</span>
+            Deliverable <span className="text-accent">#{session.deliverable_id}</span>
           </div>
         )}
       </div>
@@ -38,7 +38,7 @@ export function SessionCard({ session }: { session: Session }) {
           </div>
           <div className="h-1 bg-bg-tertiary rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand-purple rounded-full transition-all"
+              className="h-full bg-accent rounded-full transition-all"
               style={{ width: `${session.progress}%` }}
             />
           </div>

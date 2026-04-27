@@ -86,7 +86,7 @@ export function AgentTracker() {
           </div>
           <div className="h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand-purple rounded-full transition-all duration-500"
+              className="h-full bg-accent rounded-full transition-all duration-500"
               style={{ width: `${activeSession.progress}%` }}
             />
           </div>

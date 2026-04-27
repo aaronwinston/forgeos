@@ -67,28 +67,28 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-bg-primary">
       {/* Unsaved changes warning modal */}
       {showUnsavedWarning && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-bg-secondary border border-border rounded-card shadow-lg max-w-md p-6 space-y-4">
             <div className="flex gap-3">
-              <AlertCircle size={20} className="text-orange-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle size={20} className="text-warning flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-gray-900">Unsaved changes</h3>
-                <p className="text-sm text-gray-600 mt-1">You have unsaved changes in {selectedPath?.split('/').pop() || 'the file'}. Do you want to leave without saving?</p>
+                <h3 className="font-bold text-fg-primary">Unsaved changes</h3>
+                <p className="text-sm text-fg-secondary mt-1">You have unsaved changes in {selectedPath?.split('/').pop() || 'the file'}. Do you want to leave without saving?</p>
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-4">
               <button
                 onClick={() => setShowUnsavedWarning(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 font-medium text-sm"
+                className="px-4 py-2 text-fg-secondary bg-bg-tertiary rounded-input hover:bg-bg-tertiary/80 font-medium text-sm border border-border"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmUnsavedNavigation}
-                className="px-4 py-2 text-white bg-orange-600 rounded hover:bg-orange-700 font-medium text-sm"
+                className="px-4 py-2 text-white bg-warning rounded-input hover:bg-warning/90 font-medium text-sm"
               >
                 Leave without saving
               </button>
@@ -98,14 +98,14 @@ export default function SettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b bg-gray-50 sticky top-0 z-10">
+      <div className="border-b border-border bg-bg-secondary sticky top-0 z-10">
         <div className="flex">
           <button
             onClick={() => handleTabChange('engine')}
             className={`px-6 py-3 font-medium text-sm border-b-2 transition ${
               activeTab === 'engine'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-fg-secondary hover:text-fg-primary'
             }`}
           >
             Engine files
@@ -114,8 +114,8 @@ export default function SettingsPage() {
             onClick={() => handleTabChange('settings')}
             className={`px-6 py-3 font-medium text-sm border-b-2 transition ${
               activeTab === 'settings'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-fg-secondary hover:text-fg-primary'
             }`}
           >
             Settings & integrations

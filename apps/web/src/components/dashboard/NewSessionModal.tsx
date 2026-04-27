@@ -29,7 +29,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
   
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-bg-secondary border border-border rounded-2xl w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-bg-secondary border border-border rounded-card w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-fg-primary">New session</h2>
           <p className="text-sm text-fg-secondary mt-1">Start a new AI-powered content session</p>

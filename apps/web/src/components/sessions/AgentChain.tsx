@@ -44,7 +44,7 @@ export function AgentChain({ session: initialSession, onUpdate }: AgentChainProp
   const currentIndex = AGENTS.findIndex(a => a === session.current_agent);
   
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-bg-secondary">
+    <div className="border border-border rounded-card overflow-hidden bg-bg-secondary">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-fg-primary">Agent Chain</h3>
         {session.status !== 'complete' && (
@@ -76,7 +76,7 @@ export function AgentChain({ session: initialSession, onUpdate }: AgentChainProp
         </div>
         <div className="h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
           <div
-            className="h-full bg-brand-purple rounded-full transition-all duration-500"
+            className="h-full bg-accent rounded-full transition-all duration-500"
             style={{ width: `${session.progress}%` }}
           />
         </div>

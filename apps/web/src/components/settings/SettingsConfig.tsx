@@ -87,39 +87,39 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
   }
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Loading settings...</div>;
+    return <div className="p-6 text-fg-secondary">Loading settings...</div>;
   }
 
   return (
     <div className="flex-1 overflow-auto">
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded p-4 flex gap-2">
-            <AlertCircle size={16} className="text-red-600 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-bg-tertiary border border-error/30 rounded-card p-4 flex gap-2">
+            <AlertCircle size={16} className="text-error mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-error">{error}</p>
           </div>
         )}
 
-        {/* API Keys Section */}
+        {/* API keys section */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">API keys</h2>
-          <p className="text-sm text-gray-600 mb-4">Read-only display of configured API keys</p>
+          <h2 className="text-lg font-bold text-fg-primary mb-4">API keys</h2>
+          <p className="text-sm text-fg-secondary mb-4">Read-only display of configured API keys</p>
           <div className="space-y-3">
             {apiKeys.length === 0 ? (
-              <p className="text-sm text-gray-500">No API keys configured</p>
+              <p className="text-sm text-fg-tertiary">No API keys configured</p>
             ) : (
               apiKeys.map(key => (
-                <div key={key.name} className="flex items-center gap-3 bg-gray-50 p-4 rounded border">
+                <div key={key.name} className="flex items-center gap-3 bg-bg-secondary p-4 rounded-card border border-border">
                   <div className="flex-1">
-                    <p className="text-sm font-mono font-medium text-gray-900">{key.name}</p>
+                    <p className="text-sm font-mono font-medium text-fg-primary">{key.name}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <code className="text-xs bg-gray-900 text-gray-100 px-2 py-1 rounded font-mono">
+                    <code className="text-xs bg-bg-tertiary text-fg-primary px-2 py-1 rounded-input font-mono border border-border">
                       {revealedKeys.has(key.name) ? key.value : key.masked}
                     </code>
                     <button
                       onClick={() => toggleKeyReveal(key.name)}
-                      className="p-1 hover:bg-gray-200 rounded text-gray-600"
+                      className="p-1 hover:bg-bg-tertiary rounded-input text-fg-secondary"
                       title={revealedKeys.has(key.name) ? 'Hide' : 'Show'}
                     >
                       {revealedKeys.has(key.name) ? (
@@ -135,35 +135,35 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
           </div>
         </section>
 
-        {/* Scrape Config Section */}
+        {/* Intelligence scraping section */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Intelligence scraping</h2>
-          <p className="text-sm text-gray-600 mb-4">
+          <h2 className="text-lg font-bold text-fg-primary mb-4">Intelligence scraping</h2>
+          <p className="text-sm text-fg-secondary mb-4">
             Manage scrape sources for intelligence gathering.
             <button
               onClick={() => onNavigateTo?.('context/07_research/intelligence-scoring-prompt.md')}
-              className="ml-2 text-blue-600 hover:text-blue-700 underline text-sm"
+              className="ml-2 text-accent hover:text-accent/80 underline text-sm"
             >
               Edit scoring logic →
             </button>
           </p>
           <div className="space-y-3">
             {scrapeConfig.length === 0 ? (
-              <p className="text-sm text-gray-500">No scrape sources configured</p>
+              <p className="text-sm text-fg-tertiary">No scrape sources configured</p>
             ) : (
               scrapeConfig.map(source => (
-                <div key={source.id} className="bg-gray-50 p-4 rounded border">
+                <div key={source.id} className="bg-bg-secondary p-4 rounded-card border border-border">
                   <div className="flex items-center gap-3 mb-3">
                     <label className="flex items-center gap-2">
-                      <input type="checkbox" checked={source.enabled} readOnly disabled className="rounded" />
-                      <span className="text-sm font-medium text-gray-900">{source.name}</span>
+                      <input type="checkbox" checked={source.enabled} readOnly disabled className="rounded-chip" />
+                      <span className="text-sm font-medium text-fg-primary">{source.name}</span>
                     </label>
                   </div>
                   {Object.keys(source.params || {}).length > 0 && (
                     <div className="ml-6 space-y-2">
                       {Object.entries(source.params).map(([k, v]) => (
-                        <p key={k} className="text-xs text-gray-600">
-                          <span className="font-mono text-gray-700">{k}</span>: <span className="text-gray-500">{v}</span>
+                        <p key={k} className="text-xs text-fg-secondary">
+                          <span className="font-mono text-fg-secondary">{k}</span>: <span className="text-fg-tertiary">{v}</span>
                         </p>
                       ))}
                     </div>
@@ -174,16 +174,16 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
           </div>
         </section>
 
-        {/* Integrations Section */}
+        {/* Integrations section */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Integrations</h2>
+          <h2 className="text-lg font-bold text-fg-primary mb-4">Integrations</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {INTEGRATIONS.map(integration => (
-              <div key={integration.id} className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded border border-gray-200 h-32 flex flex-col">
-                <h3 className="text-sm font-bold text-gray-900">{integration.name}</h3>
-                <p className="text-xs text-gray-600 mt-2">{integration.description}</p>
-                <div className="mt-auto pt-3 border-t border-gray-300">
-                  <p className="text-xs text-gray-500 font-medium">{integration.status}</p>
+              <div key={integration.id} className="bg-bg-secondary p-4 rounded-card border border-border h-32 flex flex-col">
+                <h3 className="text-sm font-bold text-fg-primary">{integration.name}</h3>
+                <p className="text-xs text-fg-secondary mt-2">{integration.description}</p>
+                <div className="mt-auto pt-3 border-t border-border">
+                  <p className="text-xs text-fg-tertiary font-medium">{integration.status}</p>
                 </div>
               </div>
             ))}

@@ -6,7 +6,7 @@ export function StoryCard({ story }: { story: Story }) {
       href={story.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block border border-border rounded-xl p-4 bg-bg-secondary hover:border-brand-purple/30 hover:shadow-sm transition-all"
+      className="group block border border-border rounded-card p-4 bg-bg-secondary hover:border-accent/30 hover:shadow-sm transition-all"
     >
       <div className="flex items-center gap-2 mb-2">
         <span className="text-base">{story.icon}</span>
@@ -23,7 +23,7 @@ export function StoryCard({ story }: { story: Story }) {
           <span className="text-xs text-fg-tertiary ml-auto">{story.engagement_signal}</span>
         )}
       </div>
-      <h3 className="text-sm font-semibold text-fg-primary leading-snug mb-2 group-hover:text-brand-purple transition-colors line-clamp-2">
+      <h3 className="text-sm font-semibold text-fg-primary leading-snug mb-2 group-hover:text-accent transition-colors line-clamp-2">
         {story.title}
       </h3>
       <p className="text-xs text-fg-secondary leading-relaxed mb-3 line-clamp-2">

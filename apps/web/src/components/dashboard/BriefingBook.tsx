@@ -107,7 +107,7 @@ export function BriefingBook() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : stories.length === 0 ? (
-        <div className="border rounded-lg p-8 text-center">
+        <div className="border border-border rounded-card p-8 text-center">
           <p className="text-sm text-fg-secondary">No briefing items yet.</p>
           <p className="text-xs text-fg-tertiary mt-1">Refresh to load the latest stories from your briefing sources.</p>
         </div>

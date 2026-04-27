@@ -21,7 +21,7 @@ export function ActiveSessions() {
         <h2 className="text-base font-semibold text-fg-primary mb-3">Active sessions</h2>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-12 border border-border rounded-xl bg-bg-secondary animate-pulse" />
+            <div key={i} className="h-12 border border-border rounded-card bg-bg-secondary animate-shimmer" />
           ))}
         </div>
       </section>
@@ -38,7 +38,7 @@ export function ActiveSessions() {
           <Link
             key={session.id}
             href={`/sessions/${session.id}`}
-            className="flex items-center gap-3 p-3 border border-border rounded-xl bg-bg-secondary hover:border-brand-purple/30 transition-colors group"
+            className="flex items-center gap-3 p-4 border border-border rounded-card bg-bg-secondary hover:border-accent/30 transition-colors group"
           >
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-fg-primary truncate group-hover:text-brand-purple transition-colors">
