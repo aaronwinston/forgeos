@@ -1,0 +1,290 @@
+version: '1.0'
+last_updated: '2024'
+total_agents: 25
+agents:
+- name: content-ops-manager
+  category: editorial
+  role: Use this skill to manage intake, prioritization, publishing workflow, stakeholder
+    handoffs, and content calendar decisions.
+  path: skills/editorial/content-ops-manager/SKILL.md
+  primary_inputs: Request or brief Deadline Stakeholders Channel Campaign or launch
+    context Required approvals Current stage
+  use_cases:
+  - Handling content intake from stakeholders
+  - Prioritizing content requests against calendar and capacity
+  - Creating publishing checklists for specific asset types
+- name: copy-chief
+  category: editorial
+  role: Use this skill for final line editing, clarity, concision, brand voice, structure,
+    grammar, and polish.
+  path: skills/editorial/copy-chief/SKILL.md
+  primary_inputs: Draft Target channel Audience Voice guidance from core/VOICE.md
+    Known claims or constraints Desired level of edit (light polish vs. heavy revision)
+  use_cases:
+  - A draft needs final polish before review
+  - Copy is too long or unfocused
+  - Voice is inconsistent across sections
+- name: editorial-director
+  category: editorial
+  role: Use this skill to define strategy, audience, angle, narrative, positioning,
+    and editorial direction before drafting begins.
+  path: skills/editorial/editorial-director/SKILL.md
+  primary_inputs: Topic or brief Audience Business goal Source material Product context
+    Desired channel Timing or campaign context Any known constraints
+  use_cases:
+  - Starting a new blog post or content asset
+  - Pressure-testing an idea before investing in drafting
+  - Turning messy input into a clear strategy
+- name: managing-editor
+  category: editorial
+  role: Use this skill to turn ideas, briefs, and drafts into production-ready editorial
+    plans with owners, stages, and review paths.
+  path: skills/editorial/managing-editor/SKILL.md
+  primary_inputs: Content idea or brief Deadline Channel Stakeholders Review requirements
+    Source material status Launch or campaign timing
+  use_cases:
+  - Planning an editorial calendar
+  - Turning a content idea into a production plan
+  - Identifying missing inputs before drafting
+- name: ai-researcher
+  category: foundation
+  role: Use this skill to research AI engineering trends, technical topics, market
+    movement, competitor narratives, developer pain points, and source material for
+    content.
+  path: skills/foundation/ai-researcher/SKILL.md
+  primary_inputs: Topic or research question Target audience Source links or documents
+    Desired output type Time sensitivity Known company POV, if available
+  use_cases:
+  - Researching a technical topic before drafting
+  - Preparing a blog or launch brief
+  - Creating a daily or weekly AI briefing
+- name: dev-copywriter
+  category: foundation
+  role: Use this skill to draft developer-focused blogs, technical explainers, product
+    education, and practical content for AI builders.
+  path: skills/foundation/dev-copywriter/SKILL.md
+  primary_inputs: Content brief Target audience Core message Source material Product
+    or technical notes Desired format and length Required CTA
+  use_cases:
+  - Drafting a developer blog post
+  - Writing a technical explainer
+  - Turning a brief into a first draft
+- name: dev-reviewer
+  category: foundation
+  role: Use this skill to review drafts for developer fluency, technical clarity,
+    specificity, usefulness, and anti-hype positioning.
+  path: skills/foundation/dev-reviewer/SKILL.md
+  primary_inputs: Draft Target audience Intended channel Source material Product or
+    technical constraints Known claims that need caution
+  use_cases:
+  - Reviewing a blog draft for developer fluency
+  - Removing hype and vague claims
+  - Making copy more useful to builders
+- name: founder-x-recap
+  category: foundation
+  role: Use this skill to summarize founder or executive X activity into useful recaps,
+    themes, and content opportunities.
+  path: skills/foundation/founder-x-recap/SKILL.md
+  primary_inputs: Founder or executive posts (text or links) Time period Target channel
+    Desired output type Known company priorities or campaigns
+  use_cases:
+  - Summarizing founder tweets or posts from the past 12 to 24 hours
+  - Identifying recurring POVs worth amplifying
+  - Creating a weekly founder social recap
+- name: claims-risk-reviewer
+  category: quality
+  role: Use this skill to review risky, unsupported, overbroad, regulated, customer,
+    partner, benchmark, or competitive claims before publication.
+  path: skills/quality/claims-risk-reviewer/SKILL.md
+  primary_inputs: Draft Source material Approval status of any customer, partner,
+    or analyst references Known legal or compliance constraints
+  use_cases:
+  - Reviewing any content before publication
+  - Auditing a launch announcement for risky claims
+  - Checking analyst materials for unsupported assertions
+- name: dev-campaign-reviewer
+  category: quality
+  role: Use this skill to review developer-facing ads, landing pages, launch copy,
+    video scripts, and campaign concepts for technical credibility, workflow clarity,
+    and conversion quality.
+  path: skills/quality/dev-campaign-reviewer/SKILL.md
+  primary_inputs: Draft asset or campaign copy Screenshots or product UI Intended
+    audience Channel or format Character limits Product claims or docs Desired conversion
+  use_cases:
+  - Reviewing ad copy
+  - Reviewing landing pages
+  - Reviewing video scripts or storyboards
+- name: final-publish-reviewer
+  category: quality
+  role: Use this skill for final pre-publication review covering quality, claims,
+    approvals, metadata, links, CTA, and distribution readiness.
+  path: skills/quality/final-publish-reviewer/SKILL.md
+  primary_inputs: Final draft All previous review outputs Claims and approval status
+    Metadata (title, slug, meta description) CTA and links Distribution plan
+  use_cases:
+  - Any content asset before publication
+  - After all other reviews have been completed
+  - Before final handoff to publishing or distribution
+- name: narrative-consistency-reviewer
+  category: quality
+  role: Use this skill to review whether an asset aligns with company narrative, category
+    strategy, voice, and messaging system.
+  path: skills/quality/narrative-consistency-reviewer/SKILL.md
+  primary_inputs: Draft Core narrative or messaging system Recent published content
+    for reference Campaign or category context
+  use_cases:
+  - Reviewing content for narrative alignment before publication
+  - Checking launch copy against company positioning
+  - Auditing a new content series for strategic consistency
+- name: analyst-relations-writer
+  category: specialization
+  role: Use this skill to respond to analyst notes, prepare briefings, and shape analyst
+    relations narratives.
+  path: skills/specialization/analyst-relations-writer/SKILL.md
+  primary_inputs: Analyst note or inquiry Company POV and talking points Product capabilities
+    and roadmap context Customer proof points (with approval status) Competiti
+  use_cases:
+  - Responding to an analyst note or inquiry
+  - Preparing a briefing document for an analyst meeting
+  - Shaping the company's narrative in analyst contexts
+- name: competitive-intelligence
+  category: specialization
+  role: Use this skill to provide competitive framing, differentiation analysis, and
+    market context at any stage of content production. Designed to be invoked proactively
+    throughout the editorial process, not just as a final gate.
+  path: skills/specialization/competitive-intelligence/SKILL.md
+  primary_inputs: Content brief, draft, or task description (required) `context/02_narrative/competitive-pov.md`
+    — curated competitive research files (primary source; a
+  use_cases:
+  - Starting any content task — check if competitive context is relevant before anything
+    is written
+  - A brief or draft touches differentiation, category claims, or market positioning
+  - A draft makes a claim that a competitor also makes (neutralize it or sharpen it)
+- name: content-repurposer
+  category: specialization
+  role: Use this skill to turn one source asset into channel-specific derivatives
+    without losing accuracy or voice.
+  path: skills/specialization/content-repurposer/SKILL.md
+  primary_inputs: Source asset (blog, announcement, report) Target channels Audience
+    for each channel CTA for each channel Length constraints
+  use_cases:
+  - Turning a blog post into social, email, and sales content
+  - Creating a newsletter module from a longer asset
+  - Extracting pull quotes and key ideas from a source
+- name: customer-story-producer
+  category: specialization
+  role: Use this skill to evaluate case study potential, shape customer narratives,
+    and prepare interview guides.
+  path: skills/specialization/customer-story-producer/SKILL.md
+  primary_inputs: Customer name or description Known use case or deployment context
+    Technical details Results or outcomes (if known) Approval status Sales or customer
+    t
+  use_cases:
+  - Evaluating whether a customer situation has case study potential
+  - Shaping the narrative approach for a customer story
+  - Preparing interview questions for a customer conversation
+- name: dev-ad-writer
+  category: specialization
+  role: Use this skill to write developer-facing ad copy for technical products, especially
+    CLI, IDE, agent, API, observability, infrastructure, and AI developer tools.
+  path: skills/specialization/dev-ad-writer/SKILL.md
+  primary_inputs: Product or feature being marketed Target developer audience Workflow
+    or use case Product UI, docs, or source truth Channel and character limits Desire
+  use_cases:
+  - Writing paid social ads for developers
+  - Writing Meta, Reddit, LinkedIn, or X ad copy
+  - Creating static ad headlines
+- name: executive-comms-writer
+  category: specialization
+  role: Use this skill to draft founder and executive communications that are technical,
+    credible, and voice-sensitive.
+  path: skills/specialization/executive-comms-writer/SKILL.md
+  primary_inputs: Executive name and voice notes Source material (research, launch
+    details, personal experience) Target channel and audience Desired tone and length
+    Cla
+  use_cases:
+  - Drafting a founder LinkedIn post or thread
+  - Writing an executive byline or op-ed
+  - Preparing executive talking points for an event or interview
+- name: launch-comms-writer
+  category: specialization
+  role: Use this skill to write product, feature, integration, and partner launch
+    copy across all required formats.
+  path: skills/specialization/launch-comms-writer/SKILL.md
+  primary_inputs: Launch brief Product details and technical notes Primary message
+    and secondary messages Target audience Channels and formats needed Executive quote
+    re
+  use_cases:
+  - Writing a product or feature launch announcement
+  - Drafting launch blog intro and body copy
+  - Writing email and social launch variants
+- name: lifecycle-email-writer
+  category: specialization
+  role: Use this skill to write onboarding, nurture, product education, launch, and
+    activation emails.
+  path: skills/specialization/lifecycle-email-writer/SKILL.md
+  primary_inputs: Email type and goal Target audience and lifecycle stage Source content
+    or product details CTA Tone guidance Known constraints
+  use_cases:
+  - Writing onboarding email sequences
+  - Drafting nurture or educational emails
+  - Writing product launch emails
+- name: pmm-lead
+  category: specialization
+  role: Use this skill to define or review product positioning, messaging hierarchy,
+    category narrative, and feature-to-benefit translation before or during content
+    production.
+  path: skills/specialization/pmm-lead/SKILL.md
+  primary_inputs: Content brief or draft (required) `core/CONTEXT.md` — Arize AI product
+    knowledge (required) `core/BRAND_VOICE.md` and `core/CONTENT_STRATEGY.md` (requ
+  use_cases:
+  - Developing or reviewing a content brief for launches, thought leadership, analyst
+    responses, or case studies
+  - Reviewing a draft to determine if it reflects correct positioning and messaging
+    hierarchy
+  - Defining the category narrative before a new content push or campaign
+- name: seo-strategist
+  category: specialization
+  role: Use this skill to improve discoverability without weakening content quality
+    or developer credibility.
+  path: skills/specialization/seo-strategist/SKILL.md
+  primary_inputs: Draft or brief Target audience Intended channel Any known keywords
+    or search terms Competitor content to consider
+  use_cases:
+  - Optimizing a blog post for search
+  - Recommending title options for SEO and click-through
+  - Writing meta descriptions
+- name: social-editor
+  category: specialization
+  role: Use this skill to create LinkedIn, X, founder, executive, and company social
+    copy from source assets.
+  path: skills/specialization/social-editor/SKILL.md
+  primary_inputs: Source asset (blog, announcement, research) Target channels Founder
+    or executive voice notes Company account tone CTA or link
+  use_cases:
+  - Turning a blog post into social variants
+  - Writing founder or executive LinkedIn posts
+  - Creating X threads or standalone posts
+- name: technical-fact-checker
+  category: specialization
+  role: Use this skill to review technical, product, architecture, benchmark, and
+    implementation claims for accuracy before publication.
+  path: skills/specialization/technical-fact-checker/SKILL.md
+  primary_inputs: Draft with technical claims highlighted Product documentation or
+    technical notes Source material (papers, docs, code) Known constraints or caveats
+  use_cases:
+  - Reviewing technical claims in a blog post or launch copy
+  - Checking product behavior descriptions against known capabilities
+  - Verifying code accuracy and idiom
+- name: workflow-extractor
+  category: specialization
+  role: Use this skill to turn product features, screenshots, docs, or rough notes
+    into concrete developer workflows that can power ads, landing pages, demos, docs,
+    and launch content.
+  path: skills/specialization/workflow-extractor/SKILL.md
+  primary_inputs: Product screenshots or UI notes Product docs or source truth Audience
+    Desired campaign or content format Any known commands, APIs, or UI actions Desir
+  use_cases:
+  - The user has feature notes but needs campaign concepts
+  - The user has screenshots but the story is unclear
+  - The user needs ad workflows or demo scripts

@@ -316,3 +316,57 @@ MIT. Use it, fork it, build on it. If it helps you, tell me.
 ## You clearly read this far, good job
 
 ForgeOS was built by Aaron Winston. It is an AI-native editorial operating system for teams building technical content for developers, engineering leaders, AI builders, and enterprise buyers. It is not a prompt dump. It is not a generic content bot. It is a structured system of specialized agents that work like a high-performing editorial team — with a philosophy, a voice, a quality bar, and a chain of accountability from brief to published asset. The judgment is yours. The system executes your direction.
+
+---
+
+## ForgeOS Production System
+
+Beyond the agent engine, ForgeOS includes a comprehensive **production system** for operationalizing content creation at scale.
+
+### Six Layers
+
+1. **Agent Index & Context Index** (Phase 1)
+   - Complete agent capabilities inventory
+   - Structured context types available
+   - Agent selection guidance
+
+2. **Runbook Layer** (Phase 2)
+   - Step-by-step workflows for 5 major content types
+   - Blog posts, campaigns, repurposing, audits, strategy briefs
+   - Estimated timelines and resource requirements
+   - See: `runbooks/` directory
+
+3. **Content Package Layer** (Phase 3)
+   - Deliverable specifications and bundles
+   - Complete package definitions with success metrics
+   - Multi-format content coordination
+   - See: `packages/` directory
+
+4. **QA System** (Phase 4)
+   - Quality gating workflow with 4 approval levels
+   - Type-specific checklists: blog, campaign, social, analytics, positioning
+   - Integration points for quality assurance
+   - See: `workflows/qa-*` files
+
+5. **Export Layer** (Phase 5)
+   - Export to Claude, Cursor, Copilot, ChatGPT, Markdown
+   - Platform-specific context preservation
+   - Knowledge base templates for each platform
+   - See: `exports/` directory
+
+6. **Lifecycle & Reporting** (Phase 6)
+   - Content lifecycle stages and tracking
+   - Performance metrics and optimization triggers
+   - Status workflow from planning through archive
+   - See: `workflows/content-lifecycle.md`
+
+### Quick Start with Production System
+
+→ **[Getting Started Guide](./docs/getting-started-production-system.md)**
+
+Choose a workflow:
+- [Blog Post Runbook](./runbooks/blog-post.md) - Create a blog post
+- [Campaign Package](./packages/launch-campaign.md) - Multi-channel campaign
+- [Content Audit](./runbooks/content-audit.md) - Quarterly content review
+
+---
