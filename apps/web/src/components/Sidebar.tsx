@@ -16,7 +16,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-56 border-r border-border bg-bg-secondary flex flex-col h-screen">
+    <aside className="w-56 border-r border-border bg-bg-secondary flex flex-col h-full">
       <div className="p-4 border-b border-border">
         <h1 className="font-bold text-sm text-fg-primary">ForgeOS</h1>
         <p className="text-xs text-fg-tertiary">Marketing command center</p>
