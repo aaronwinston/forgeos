@@ -1,7 +1,7 @@
 <img width="1082" height="607" alt="Screenshot 2026-04-26 at 9 18 56 PM" src="https://github.com/user-attachments/assets/e712f82b-f49a-47f8-9cef-37784dafd509" />
 
 
-**Mission control for content.**
+# **ForgeOS: Mission control for content.**
  
 A local-first marketing operating system. You point it at your voice, your messaging, your competitive POV. It points back at the work.
  
