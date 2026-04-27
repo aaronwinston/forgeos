@@ -20,7 +20,7 @@ export default function SkillPlaybookChip({ type, name }: SkillPlaybookChipProps
         // In a real implementation, this would fetch the skill/playbook content
         // For now, we'll just show a placeholder
         setPreviewContent(`# ${name}\n\nLoading ${type} content...`);
-      } catch (err) {
+      } catch {
         setPreviewContent(`Error loading ${type}: ${name}`);
       } finally {
         setPreviewLoading(false);
