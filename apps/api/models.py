@@ -116,14 +116,33 @@ class CalendarIntegration(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class CalendarEvent(SQLModel, table=True):
+    """
+    A calendar event tied (optionally) to a Deliverable.
+
+    status follows RFC 5545: 'pending' | 'confirmed' | 'cancelled'.
+    sync_status reflects the Google Calendar round-trip state used by the UI
+    to render ✓ synced / ⟳ syncing / ⚠ offline badges.
+    google_event_id, last_synced_at, synced_to_google_at are managed by the
+    OAuth/sync layer (Phase 3.3 Opus scope via /api/integrations).
+    """
     id: Optional[int] = Field(default=None, primary_key=True)
-    deliverable_id: int = Field(foreign_key="deliverable.id")
-    google_event_id: Optional[str] = None
+    # Optional — event may exist before a deliverable is created
+    deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
+    # For project context when no deliverable exists yet
+    project_id: Optional[int] = Field(default=None, foreign_key="project.id")
+    google_event_id: Optional[str] = Field(default=None)
     title: str
+    # blog | email | press-release | case-study | whitepaper | launch
+    content_type: str = Field(default="blog")
     description: Optional[str] = None
+    notes: Optional[str] = None
     start_at: datetime
-    end_at: datetime
-    status: str = Field(default="active")
+    end_at: Optional[datetime] = Field(default=None)
+    all_day: bool = Field(default=True)
+    # RFC 5545 event status
+    status: str = Field(default="confirmed")  # pending | confirmed | cancelled
+    # UI sync indicator managed by the OAuth sync layer
+    sync_status: str = Field(default="offline")  # synced | syncing | offline
     last_synced_at: Optional[datetime] = None
     synced_to_google_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

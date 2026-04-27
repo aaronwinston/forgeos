@@ -1,1 +1,1 @@
-from . import projects, chat, intelligence, settings, files, sessions, briefing
+from . import projects, chat, intelligence, settings, files, sessions, briefing, integrations, calendar
