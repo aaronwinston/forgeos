@@ -192,3 +192,45 @@ class CalendarSyncLog(SQLModel, table=True):
     error_message: Optional[str] = None
     details_json: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class KeywordCluster(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="aaron")
+    keyword: str
+    region: str = Field(default="US")
+    active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class GscQuery(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="aaron")
+    query: str
+    page: str
+    clicks: int
+    impressions: int
+    ctr: float
+    position: float
+    date_range_start: str
+    date_range_end: str
+    fetched_at: datetime = Field(default_factory=datetime.utcnow)
+
+class TrendsData(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="aaron")
+    keyword: str
+    region: str = Field(default="US")
+    interest_over_time_json: Optional[str] = None
+    related_queries_json: Optional[str] = None
+    fetched_at: datetime = Field(default_factory=datetime.utcnow)
+
+class SearchInsight(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="aaron")
+    topic: str
+    source_item_ids: str
+    our_gsc_position: Optional[float] = None
+    our_gsc_clicks: Optional[int] = None
+    trends_momentum: str = Field(default="no_data")
+    insight_text: str
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
