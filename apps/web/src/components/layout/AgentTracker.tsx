@@ -63,7 +63,7 @@ export function AgentTracker() {
             else if (i === currentAgentIndex) status = 'active';
           }
           return (
-            <div key={agent.name} className="flex items-start gap-2.5 px-2 py-2 rounded-lg hover:bg-bg-tertiary transition-colors">
+            <div key={agent.name} className="flex items-start gap-2.5 px-2 py-2 rounded-input hover:bg-bg-tertiary transition-colors">
               <AgentDot status={status} />
               <div className="min-w-0">
                 <p className={`text-xs font-medium truncate ${status === 'active' ? 'text-fg-primary' : 'text-fg-secondary'}`}>

@@ -177,6 +177,7 @@ def _parse_upload(raw: bytes, ext: str, filename: str) -> str:
 
 def _resolve_destination(destination: str, filename: str, project_id: str | None):
     """Map destination key to absolute Path."""
+    import re
     mapping = {
         "messaging": REPO_ROOT / "context" / "02_narrative" / "messaging-framework.md",
         "strategy":  REPO_ROOT / "context" / "03_strategy" / "content-strategy.md",
@@ -184,11 +185,14 @@ def _resolve_destination(destination: str, filename: str, project_id: str | None
     }
     if destination in mapping:
         return mapping[destination]
+    # Sanitize filename — always force .md extension, no path separators
+    base = re.sub(r'[^\w\-]', '-', filename.rsplit('.', 1)[0]).lower().strip('-') or 'upload'
+    safe_name = base + '.md'
     if destination == "project" and project_id:
-        safe_name = filename.replace(" ", "-").lower()
+        if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
+            raise HTTPException(status_code=400, detail="Invalid project_id: must be alphanumeric with dashes/underscores only")
         return REPO_ROOT / "context" / "projects" / project_id / safe_name
     # Default: reference store
-    safe_name = filename.replace(" ", "-").lower()
     return REPO_ROOT / "context" / "uploads" / safe_name
 
 

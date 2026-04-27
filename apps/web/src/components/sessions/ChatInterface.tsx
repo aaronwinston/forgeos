@@ -41,7 +41,7 @@ export function ChatInterface({ sessionId }: { sessionId: number }) {
   };
   
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-bg-secondary flex flex-col h-80">
+    <div className="border border-border rounded-card overflow-hidden bg-bg-secondary flex flex-col h-80">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-fg-primary">Chat</h3>
       </div>
@@ -51,7 +51,7 @@ export function ChatInterface({ sessionId }: { sessionId: number }) {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] text-xs px-3 py-2 rounded-xl leading-relaxed ${
+            <div className={`max-w-[80%] text-xs px-3 py-2 rounded-card leading-relaxed ${
               m.role === 'user'
                 ? 'bg-brand-purple text-white'
                 : 'bg-bg-tertiary text-fg-primary border border-border'
@@ -69,7 +69,7 @@ export function ChatInterface({ sessionId }: { sessionId: number }) {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
           placeholder="Ask anything..."
-          className="flex-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-brand-purple/30"
+          className="flex-1 text-sm border border-border rounded-input px-3 py-1.5 bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
         <Button size="sm" onClick={send} loading={streaming}>Send</Button>
       </div>

@@ -19,7 +19,7 @@ function formatTime(ts: number | null) {
 function getYesterdayDate(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  return d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
 }
 
 export function BriefingBook() {
@@ -30,7 +30,7 @@ export function BriefingBook() {
   const [offlineMessage, setOfflineMessage] = useState('Start the local API to load your briefing feed.');
   const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const [showYesterday, setShowYesterday] = useState(false);
-  const [refreshProgress, setRefreshProgress] = useState<{ sources: number; found: number; scored: number } | null>(null);
+  const [refreshProgress, setRefreshProgress] = useState(false);
 
   const load = useCallback(async (yesterday = false) => {
     try {
@@ -67,16 +67,16 @@ export function BriefingBook() {
     if (showYesterday) return; // yesterday view is read-only
     try {
       setRefreshing(true);
-      setRefreshProgress({ sources: 0, found: 0, scored: 0 });
-      const result = await refreshBriefing((progress) => setRefreshProgress(progress));
-      setRefreshProgress(null);
+      setRefreshProgress(true);
+      const result = await refreshBriefing();
+      setRefreshProgress(false);
       if ((result.stories ?? []).length > 0 || !result.error) {
         setOffline(false);
         setStories((result.stories ?? []).slice(0, MAX_ITEMS));
         setRefreshedAt(result.refreshed_at);
       }
     } catch (err) {
-      setRefreshProgress(null);
+      setRefreshProgress(false);
       setOffline(true);
       setOfflineMessage('Failed to refresh briefing. Check your connection and try again.');
       console.error('[BriefingBook] Refresh error:', err);
@@ -129,7 +129,7 @@ export function BriefingBook() {
         </div>
       </div>
 
-      {refreshProgress && <RefreshProgress progress={refreshProgress} />}
+      {refreshProgress && <RefreshProgress />}
 
       {offline ? (
         <OfflineState message={offlineMessage} />

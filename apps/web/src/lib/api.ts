@@ -129,25 +129,10 @@ export async function getBriefingByDate(date: string): Promise<BriefingResponse>
   return result;
 }
 
-export type RefreshProgressCallback = (progress: { sources: number; found: number; scored: number }) => void;
-
-export async function refreshBriefing(onProgress?: RefreshProgressCallback): Promise<BriefingResponse> {
-  // Simulate progress ticks while the actual request runs
-  let tick = 0;
-  const interval = onProgress
-    ? setInterval(() => {
-        tick++;
-        onProgress({ sources: Math.min(tick, 5), found: tick * 4, scored: Math.floor(tick * 1.5) });
-      }, 800)
-    : null;
-
-  try {
-    const result = await apiFetch<BriefingResponse>('/api/briefing/refresh', { method: 'POST' });
-    if (isApiError(result)) return { stories: [], refreshed_at: null, error: 'API_UNAVAILABLE' };
-    return result;
-  } finally {
-    if (interval) clearInterval(interval);
-  }
+export async function refreshBriefing(): Promise<BriefingResponse> {
+  const result = await apiFetch<BriefingResponse>('/api/briefing/refresh', { method: 'POST' });
+  if (isApiError(result)) return { stories: [], refreshed_at: null, error: 'API_UNAVAILABLE' };
+  return result;
 }
 
 export async function getProjects(): Promise<Project[]> {

@@ -101,7 +101,7 @@ export default function EditorTab({ deliverable }: EditorTabProps) {
         <button
           onClick={handleSave}
           disabled={!hasUnsavedChanges || isSaving}
-          className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-2 bg-accent text-white rounded-input hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
         >
           <Save size={16} />
           {isSaving ? 'Saving...' : 'Save'}

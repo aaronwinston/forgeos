@@ -174,7 +174,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               {messages.length === 0 && <p className="text-sm text-gray-500">Start a conversation. Describe what you want to create.</p>}
               {messages.map(msg => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-black text-white' : 'bg-gray-100'}`}>
+                  <div className={`max-w-[80%] rounded-card px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-accent text-white' : 'bg-bg-tertiary text-fg-primary'}`}>
                     {msg.content || (streaming && msg.role === 'assistant' ? '...' : '')}
                   </div>
                 </div>

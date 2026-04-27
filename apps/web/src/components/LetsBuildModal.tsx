@@ -93,7 +93,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl h-[80vh] flex flex-col">
+      <div className="bg-bg-secondary rounded-card shadow-lg w-full max-w-3xl h-[80vh] flex flex-col">
         {/* Header */}
         <div className="border-b p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -218,7 +218,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-xl px-4 py-2 rounded-lg ${
+                        className={`max-w-xl px-4 py-2 rounded-card ${
                           msg.role === 'user'
                             ? 'bg-blue-600 text-white rounded-br-none'
                             : 'bg-gray-100 text-gray-900 rounded-bl-none'
@@ -231,7 +231,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
                   {loading && (
                     <div className="flex justify-start">
-                      <div className="bg-gray-100 px-4 py-2 rounded-lg rounded-bl-none">
+                      <div className="bg-bg-tertiary px-4 py-2 rounded-card rounded-bl-none">
                         <Loader className="w-4 h-4 animate-spin text-gray-600" />
                       </div>
                     </div>
@@ -239,7 +239,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
                   {error && (
                     <div className="flex justify-start">
-                      <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-sm">
+                      <div className="bg-error/10 text-error px-4 py-2 rounded-card text-sm">
                         {error}
                       </div>
                     </div>
@@ -294,7 +294,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
               <div className="flex-1 flex flex-col items-center justify-center p-4">
                 <div className="text-center">
                   <div className="text-5xl mb-4">✨</div>
-                  <h3 className="text-xl font-semibold mb-2">Deliverable Created!</h3>
+                  <h3 className="text-xl font-semibold mb-2">Deliverable created!</h3>
                   <p className="text-gray-600 mb-6">
                     {deliverable.title} is ready in your workspace
                   </p>
@@ -306,7 +306,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                       }}
                       className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                     >
-                      Open Workspace
+                      Open workspace
                     </button>
                     <button
                       onClick={resetForm}

@@ -36,13 +36,13 @@ export default function TreeItemModal({ isOpen, type, onClose, onCreate }: TreeI
   const getTitle = () => {
     switch (type) {
       case 'project':
-        return 'New Project';
+        return 'New project';
       case 'folder':
-        return 'New Folder';
+        return 'New folder';
       case 'subfolder':
         return 'New Subfolder';
       case 'deliverable':
-        return 'New Deliverable';
+        return 'New deliverable';
       default:
         return 'New Item';
     }
@@ -77,7 +77,7 @@ export default function TreeItemModal({ isOpen, type, onClose, onCreate }: TreeI
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-background border rounded-lg shadow-lg w-96 max-w-full mx-4">
+      <div className="bg-bg-secondary border border-border rounded-card shadow-lg w-96 max-w-full mx-4">
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="border-b p-4">

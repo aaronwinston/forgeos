@@ -43,7 +43,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Q3 launch blog post"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-brand-purple/30 focus:border-brand-purple/50"
+              className="w-full border border-border rounded-input px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50"
             />
           </div>
           <div>
@@ -51,7 +51,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
             <select
               value={form.type}
               onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-primary text-fg-primary focus:outline-none focus:ring-2 focus:ring-brand-purple/30"
+              className="w-full border border-border rounded-input px-3 py-2 text-sm bg-bg-primary text-fg-primary focus:outline-none focus:ring-2 focus:ring-accent/30"
             >
               <option value="blog">Blog post</option>
               <option value="email">Email</option>
@@ -66,7 +66,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
               value={form.audience}
               onChange={e => setForm(f => ({ ...f, audience: e.target.value }))}
               placeholder="e.g. ML engineers, marketing leaders"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-brand-purple/30"
+              className="w-full border border-border rounded-input px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
           <div>
@@ -76,7 +76,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder="What should this content accomplish?"
               rows={3}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-brand-purple/30 resize-none"
+              className="w-full border border-border rounded-input px-3 py-2 text-sm bg-bg-primary text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
             />
           </div>
           <div className="flex gap-3 pt-2">

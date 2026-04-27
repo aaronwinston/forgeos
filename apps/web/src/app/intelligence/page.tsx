@@ -94,7 +94,7 @@ export default function IntelligencePage() {
       </div>
 
       {error && (
-        <div className="border border-red-300 rounded-lg p-4 bg-red-50">
+        <div className="border border-red-300 rounded-card p-4 bg-red-50">
           <p className="text-sm text-red-800 mb-2">{error}</p>
           <Button size="sm" onClick={loadItems} variant="secondary">Retry</Button>
         </div>
@@ -103,21 +103,21 @@ export default function IntelligencePage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="border rounded-lg p-4 animate-pulse">
+            <div key={i} className="border rounded-card p-4 animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
               <div className="h-3 bg-gray-200 rounded w-1/2" />
             </div>
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="border rounded-lg p-8 text-center">
+        <div className="border rounded-card p-8 text-center">
           <p className="text-sm text-gray-700">No intelligence items yet.</p>
           <p className="text-xs text-gray-500 mt-1">Click &quot;Refresh now&quot; to fetch the latest articles and content from your configured sources.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {items.map(item => (
-            <div key={item.id} className="border rounded-lg p-4">
+            <div key={item.id} className="border rounded-card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex gap-2 mb-1">

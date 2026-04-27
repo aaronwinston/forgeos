@@ -34,7 +34,7 @@ export default function ProjectsPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-semibold text-fg-primary mb-6">Projects</h1>
       {error && (
-        <div className="mb-6 border border-red-300 rounded-lg p-4 bg-red-50">
+        <div className="mb-6 border border-red-300 rounded-card p-4 bg-red-50">
           <p className="text-sm text-red-800 mb-2">{error}</p>
           <Button size="sm" onClick={load} variant="secondary">Retry</Button>
         </div>
@@ -50,7 +50,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {projects.map(p => (
-            <Link key={p.id} href={`/projects/${p.id}`} className="block border border-border rounded-xl p-4 bg-bg-secondary hover:border-brand-purple/30 transition-all group">
+            <Link key={p.id} href={`/projects/${p.id}`} className="block border border-border rounded-card p-4 bg-bg-secondary hover:border-brand-purple/30 transition-all group">
               <h3 className="text-sm font-semibold text-fg-primary group-hover:text-brand-purple transition-colors">{p.name}</h3>
               {p.description && <p className="text-xs text-fg-secondary mt-1">{p.description}</p>}
             </Link>

@@ -109,8 +109,8 @@ export default function ChatInterface({
               <div
                 className={`max-w-2xl ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-lg px-4 py-3'
-                    : 'bg-gray-100 text-gray-900 rounded-lg px-4 py-3'
+                    ? 'bg-blue-600 text-white rounded-card px-4 py-3'
+                    : 'bg-gray-100 text-gray-900 rounded-card px-4 py-3'
                 }`}
               >
                 {msg.role === 'assistant' ? (
@@ -124,7 +124,7 @@ export default function ChatInterface({
         )}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-3 flex items-center gap-2">
+            <div className="bg-gray-100 text-gray-900 rounded-card px-4 py-3 flex items-center gap-2">
               <Loader className="w-4 h-4 animate-spin" />
               <span className="text-sm text-gray-600">Thinking...</span>
             </div>
@@ -132,7 +132,7 @@ export default function ChatInterface({
         )}
         {error && (
           <div className="flex justify-center">
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 max-w-md">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-card px-4 py-3 max-w-md">
               <p className="text-sm font-medium">Error</p>
               <p className="text-xs mt-1">{error}</p>
               <button
@@ -160,12 +160,12 @@ export default function ChatInterface({
             onKeyDown={handleKeyDown}
             placeholder="Ask me to draft a blog post..."
             disabled={loading}
-            className="flex-1 min-h-10 max-h-32 px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 min-h-10 max-h-32 px-3 py-2 border border-border rounded-input text-sm resize-none focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="flex-shrink-0 px-4 py-2 bg-accent text-white rounded-input hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {loading ? (
               <>

@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import get_session
-from models import Project, Folder, Deliverable, Brief
+from models import Project, Folder, Deliverable, Brief, ScrapeItem
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import json
 
 router = APIRouter(prefix="/api", tags=["projects"])
 
@@ -221,3 +222,71 @@ def get_deliverable_brief(deliverable_id: int, session: Session = Depends(get_se
     if not b:
         return None
     return b
+
+
+class WorkspaceFromItemRequest(BaseModel):
+    scrape_item_id: int
+    title: str
+    content_type: str = "blog"
+
+
+@router.post("/workspace/from-briefing-item")
+def workspace_from_briefing_item(
+    data: WorkspaceFromItemRequest,
+    session: Session = Depends(get_session),
+):
+    """
+    Create a Deliverable + Brief with a ScrapeItem pre-attached as context,
+    then return the deliverable ID for workspace navigation.
+    """
+    item = session.get(ScrapeItem, data.scrape_item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Briefing item not found")
+
+    # Get or create the default inbox project + folder
+    project = session.exec(
+        select(Project).where(Project.user_id == "aaron")
+    ).first()
+    if not project:
+        project = Project(user_id="aaron", name="Default Project")
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+
+    folder = session.exec(
+        select(Folder).where(Folder.project_id == project.id)
+    ).first()
+    if not folder:
+        folder = Folder(project_id=project.id, name="Inbox")
+        session.add(folder)
+        session.commit()
+        session.refresh(folder)
+
+    # Create deliverable
+    deliverable = Deliverable(
+        folder_id=folder.id,
+        content_type=data.content_type,
+        title=data.title,
+        status="draft",
+    )
+    session.add(deliverable)
+    session.commit()
+    session.refresh(deliverable)
+
+    # Create brief with the scrape item pre-loaded as intelligence context
+    brief = Brief(
+        project_id=project.id,
+        deliverable_id=deliverable.id,
+        title=data.title,
+        brief_md="",
+        intelligence_items_json=json.dumps([data.scrape_item_id]),
+    )
+    session.add(brief)
+    session.commit()
+
+    # Mark item as surfaced
+    item.surfaced_to_user_at = datetime.utcnow()
+    session.add(item)
+    session.commit()
+
+    return {"deliverable_id": deliverable.id, "brief_id": brief.id}

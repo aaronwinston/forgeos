@@ -60,12 +60,12 @@ export default function CreateItemModal({
 
   if (!isOpen) return null;
 
-  const title = type === 'folder' ? 'New Folder' : 'New Deliverable';
+  const title = type === 'folder' ? 'New folder' : 'New deliverable';
   const placeholder = type === 'folder' ? 'e.g., Q1 Content' : 'e.g., Product Launch Post';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white border rounded-lg shadow-lg w-96 max-w-full mx-4">
+      <div className="bg-bg-secondary border border-border rounded-card shadow-lg w-96 max-w-full mx-4">
         <form onSubmit={handleSubmit}>
           <div className="border-b p-4">
             <h2 className="text-lg font-semibold">{title}</h2>

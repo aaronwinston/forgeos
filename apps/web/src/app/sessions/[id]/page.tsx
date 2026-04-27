@@ -35,10 +35,10 @@ export default function SessionPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="h-8 w-64 bg-bg-tertiary rounded animate-pulse mb-6" />
       <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-1 h-96 bg-bg-tertiary rounded-xl animate-pulse" />
+        <div className="col-span-1 h-96 bg-bg-tertiary rounded-card animate-pulse" />
         <div className="col-span-2 space-y-4">
-          <div className="h-80 bg-bg-tertiary rounded-xl animate-pulse" />
-          <div className="h-64 bg-bg-tertiary rounded-xl animate-pulse" />
+          <div className="h-80 bg-bg-tertiary rounded-card animate-pulse" />
+          <div className="h-64 bg-bg-tertiary rounded-card animate-pulse" />
         </div>
       </div>
     </div>

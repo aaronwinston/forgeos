@@ -43,7 +43,7 @@ export default function SessionsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 border border-red-300 rounded-lg p-4 bg-red-50">
+        <div className="mb-6 border border-red-300 rounded-card p-4 bg-red-50">
           <p className="text-sm text-red-800 mb-2">{error}</p>
           <Button size="sm" onClick={load} variant="secondary">Retry</Button>
         </div>
