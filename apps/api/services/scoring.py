@@ -1,10 +1,9 @@
-import anthropic
 import json
 import re
+import asyncio
 from config import settings
+from services.llm import get_provider
 from instrumentation import get_tracer
-
-client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 REPO_ROOT = settings.REPO_ROOT
 
 def load_scoring_prompt() -> str:
@@ -46,16 +45,17 @@ Return ONLY a JSON object: {"why_relevant": "<text>", "content_angle": "<text>"}
 def score_item(title: str, body: str, source: str) -> tuple[float, str]:
     scoring_prompt = load_scoring_prompt()
     try:
-        response = client.messages.create(
-            model=settings.MODEL_SCORING,
-            max_tokens=150,
+        provider = get_provider(settings.LLM_PROVIDER)
+        response = asyncio.run(provider.create_message(
             system=scoring_prompt,
             messages=[{
                 "role": "user",
                 "content": f"Source: {source}\nTitle: {title}\nBody: {body[:500]}"
-            }]
-        )
-        text = response.content[0].text.strip()
+            }],
+            model=settings.MODEL_SCORING,
+            max_tokens=150,
+        ))
+        text = response.strip()
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
             data = json.loads(match.group())
@@ -68,16 +68,17 @@ def synthesize_item(title: str, body: str, source: str) -> tuple[str, str]:
     """Generate why_relevant and content_angle for high-scoring items"""
     synthesis_prompt = load_synthesis_prompt()
     try:
-        response = client.messages.create(
-            model=settings.MODEL_GENERATION,
-            max_tokens=300,
+        provider = get_provider(settings.LLM_PROVIDER)
+        response = asyncio.run(provider.create_message(
             system=synthesis_prompt,
             messages=[{
                 "role": "user",
                 "content": f"Source: {source}\nTitle: {title}\nBody: {body[:500]}"
-            }]
-        )
-        text = response.content[0].text.strip()
+            }],
+            model=settings.MODEL_GENERATION,
+            max_tokens=300,
+        ))
+        text = response.strip()
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
             data = json.loads(match.group())
