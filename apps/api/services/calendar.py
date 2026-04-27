@@ -338,7 +338,7 @@ def _get_valid_credentials(integration: CalendarIntegration, session: Session) -
     Get valid OAuth credentials, refreshing if necessary.
     
     If token expires within 5 minutes, refresh immediately.
-    Raises HttpError if refresh fails.
+    Logs error but does not raise on transient failures (will be retried on next cycle).
     """
     if integration.expires_at <= datetime.utcnow() + timedelta(minutes=5):
         logger.debug("Token expiring soon, refreshing...")
@@ -350,15 +350,26 @@ def _get_valid_credentials(integration: CalendarIntegration, session: Session) -
             client_secret=settings.GOOGLE_OAUTH_CLIENT_SECRET,
         )
         
-        request = Request()
-        credentials.refresh(request)
-        
-        integration.access_token = credentials.token
-        integration.expires_at = datetime.utcnow() + timedelta(seconds=credentials.expiry.timestamp() - datetime.utcnow().timestamp())
-        session.add(integration)
-        session.commit()
-        logger.info("Token refreshed successfully")
-        return credentials
+        try:
+            request = Request()
+            credentials.refresh(request)
+            
+            integration.access_token = credentials.token
+            # Fix: Use credentials.expiry directly
+            integration.expires_at = credentials.expiry
+            session.add(integration)
+            session.commit()
+            logger.info("Token refreshed successfully")
+            return credentials
+        except Exception as e:
+            # Only retry on transient errors (5xx), not auth errors (401)
+            if "401" in str(e) or "invalid_grant" in str(e):
+                logger.error(f"Token refresh failed permanently (401 Unauthorized): {e}")
+                logger.error("User may need to reconnect Google Calendar")
+                raise  # Propagate auth errors
+            else:
+                logger.warning(f"Token refresh failed transiently: {e}. Will retry on next sync cycle.")
+                return None  # Return None to signal skip this sync
     
     return Credentials(
         token=integration.access_token,

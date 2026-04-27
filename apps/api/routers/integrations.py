@@ -1,6 +1,6 @@
 import logging
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from database import engine
@@ -8,6 +8,8 @@ from models import CalendarIntegration
 from config import settings
 import secrets
 import uuid
+import os
+from pathlib import Path
 
 try:
     from google.auth.transport.requests import Request
@@ -27,6 +29,38 @@ GOOGLE_SCOPES = [
 ]
 
 CALENDAR_NAME = "ForgeOS — Content"
+STATE_CACHE_DIR = Path("/tmp/forgeos_oauth_states")  # Store OAuth states temporarily
+STATE_CACHE_DIR.mkdir(exist_ok=True)
+
+
+def store_oauth_state(state: str, ttl_seconds: int = 600):
+    """Store OAuth state parameter for CSRF validation. Default TTL: 10 minutes."""
+    state_file = STATE_CACHE_DIR / f"{state}.json"
+    state_file.write_text(json.dumps({
+        "state": state,
+        "created_at": datetime.utcnow(timezone.utc).isoformat(),
+        "expires_at": (datetime.utcnow(timezone.utc) + timedelta(seconds=ttl_seconds)).isoformat(),
+    }))
+
+
+def validate_oauth_state(state: str) -> bool:
+    """Validate OAuth state parameter against stored value. Returns True if valid."""
+    if not state:
+        return False
+    state_file = STATE_CACHE_DIR / f"{state}.json"
+    if not state_file.exists():
+        return False
+    try:
+        data = json.loads(state_file.read_text())
+        expires_at = datetime.fromisoformat(data["expires_at"])
+        if datetime.utcnow(timezone.utc) > expires_at:
+            state_file.unlink()  # Clean up expired state
+            return False
+        state_file.unlink()  # Clean up used state
+        return True
+    except Exception as e:
+        logger.error(f"State validation error: {e}")
+        return False
 
 
 def get_db():
@@ -68,6 +102,8 @@ def authorize_google_calendar(session: Session = Depends(get_db)):
             access_type="offline",
             include_granted_scopes="true",
         )
+        # Store state for CSRF validation (valid for 10 minutes)
+        store_oauth_state(state, ttl_seconds=600)
         return {
             "authorization_url": auth_url,
             "state": state,
@@ -81,8 +117,13 @@ def authorize_google_calendar(session: Session = Depends(get_db)):
 def google_callback(code: str, state: str, session: Session = Depends(get_db)):
     """
     Step 2: Google redirects user back here with authorization code.
-    Exchange code for access token, create ForgeOS calendar, store credentials.
+    Validate state parameter to prevent CSRF, then exchange code for access token.
     """
+    # Validate state parameter (CSRF protection)
+    if not validate_oauth_state(state):
+        logger.warning(f"Invalid or expired OAuth state: {state}")
+        raise HTTPException(status_code=403, detail="Invalid or expired authorization state")
+    
     try:
         flow = create_google_oauth_flow()
         flow.fetch_token(code=code)
@@ -95,7 +136,8 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
         
         calendar_id = _create_or_get_calendar(service)
         
-        expires_at = datetime.utcnow() + timedelta(seconds=credentials.expiry.timestamp() - datetime.utcnow().timestamp())
+        # Fix: Use credentials.expiry directly (it's already a datetime object)
+        expires_at = credentials.expiry
         
         integration = session.exec(
             select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
@@ -120,6 +162,9 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
         session.commit()
         logger.info(f"Google Calendar integration established for user aaron, calendar_id={calendar_id}")
         
+        # Blocker #4 Fix: Retry offline events after OAuth connection
+        _retry_offline_events(session, integration)
+        
         return {
             "status": "success",
             "message": "Google Calendar connected successfully",
@@ -132,6 +177,34 @@ def google_callback(code: str, state: str, session: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Callback processing failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to process callback")
+
+
+def _retry_offline_events(session: Session, integration: CalendarIntegration):
+    """Retry events that were created offline before Google connection."""
+    from models import CalendarEvent
+    offline_events = session.exec(
+        select(CalendarEvent).where(
+            CalendarEvent.sync_status == "offline",
+            CalendarEvent.synced_to_google_at == None,
+        )
+    ).all()
+    
+    if not offline_events:
+        return
+    
+    logger.info(f"Retrying {len(offline_events)} offline events after OAuth connection")
+    
+    # Import sync function from services/calendar.py
+    try:
+        from services.calendar import sync_to_google
+        for event in offline_events:
+            try:
+                sync_to_google(event.id)
+                logger.info(f"Successfully synced offline event {event.id} to Google")
+            except Exception as e:
+                logger.error(f"Failed to sync offline event {event.id}: {e}")
+    except ImportError:
+        logger.error("Could not import sync_to_google; offline events will remain pending")
 
 
 def _create_or_get_calendar(service):

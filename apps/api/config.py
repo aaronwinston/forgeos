@@ -1,5 +1,7 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
+from cryptography.fernet import Fernet
+import os
 
 class Settings(BaseSettings):
     # Repo root is 3 levels up from apps/api/ (apps/api -> apps -> repo_root)
@@ -24,8 +26,18 @@ class Settings(BaseSettings):
     GOOGLE_OAUTH_CLIENT_ID: str = ""
     GOOGLE_OAUTH_CLIENT_SECRET: str = ""
     GOOGLE_OAUTH_REDIRECT_URI: str = "http://localhost:8000/api/integrations/google/callback"
+    
+    # Token encryption key (Fernet symmetric key)
+    # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    ENCRYPTION_KEY: str = ""
 
     class Config:
         env_file = ".env"
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # If ENCRYPTION_KEY not provided, generate one (should warn in production)
+        if not self.ENCRYPTION_KEY:
+            self.ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", Fernet.generate_key().decode())
 
 settings = Settings()

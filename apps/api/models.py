@@ -1,6 +1,8 @@
 from typing import Optional
 from datetime import datetime
 from sqlmodel import SQLModel, Field
+from cryptography.fernet import Fernet
+from config import settings
 
 class Project(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -107,13 +109,47 @@ class PipelineStep(SQLModel, table=True):
 class CalendarIntegration(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(default="aaron")
-    access_token: str
-    refresh_token: str
+    _access_token: str = Field(alias="_access_token")  # encrypted in DB
+    _refresh_token: str = Field(alias="_refresh_token")  # encrypted in DB
     expires_at: datetime
     calendar_id: str
     last_synced_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @property
+    def access_token(self) -> str:
+        """Decrypt access token on read."""
+        if not self._access_token:
+            return None
+        cipher = Fernet(settings.ENCRYPTION_KEY)
+        return cipher.decrypt(self._access_token.encode()).decode()
+
+    @access_token.setter
+    def access_token(self, value: str):
+        """Encrypt access token on write."""
+        if not value:
+            self._access_token = None
+            return
+        cipher = Fernet(settings.ENCRYPTION_KEY)
+        self._access_token = cipher.encrypt(value.encode()).decode()
+
+    @property
+    def refresh_token(self) -> str:
+        """Decrypt refresh token on read."""
+        if not self._refresh_token:
+            return None
+        cipher = Fernet(settings.ENCRYPTION_KEY)
+        return cipher.decrypt(self._refresh_token.encode()).decode()
+
+    @refresh_token.setter
+    def refresh_token(self, value: str):
+        """Encrypt refresh token on write."""
+        if not value:
+            self._refresh_token = None
+            return
+        cipher = Fernet(settings.ENCRYPTION_KEY)
+        self._refresh_token = cipher.encrypt(value.encode()).decode()
 
 class CalendarEvent(SQLModel, table=True):
     """
@@ -139,10 +175,10 @@ class CalendarEvent(SQLModel, table=True):
     start_at: datetime
     end_at: Optional[datetime] = Field(default=None)
     all_day: bool = Field(default=True)
-    # RFC 5545 event status
-    status: str = Field(default="confirmed")  # pending | confirmed | cancelled
-    # UI sync indicator managed by the OAuth sync layer
-    sync_status: str = Field(default="offline")  # synced | syncing | offline
+    # RFC 5545 event status + operational states: pending | confirmed | cancelled | archived
+    status: str = Field(default="confirmed")
+    # UI sync indicator managed by the OAuth sync layer: synced | syncing | offline
+    sync_status: str = Field(default="offline")
     last_synced_at: Optional[datetime] = None
     synced_to_google_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
