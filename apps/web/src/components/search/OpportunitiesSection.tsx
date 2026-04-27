@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import StartInsightModal from './StartInsightModal';
+import { getApiBase } from '@/lib/api';
 import type { SearchInsight } from '@/lib/types';
 
 export default function OpportunitiesSection() {
@@ -19,7 +20,7 @@ export default function OpportunitiesSection() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:8000/api/intelligence/search/insights');
+      const response = await fetch(`${getApiBase()}/api/intelligence/search/insights`);
       if (!response.ok) throw new Error('Failed to load insights');
       const data = await response.json();
       // Filter for opportunity gaps: rising trends + no rank or position > 10

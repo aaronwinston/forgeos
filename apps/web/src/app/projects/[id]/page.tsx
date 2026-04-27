@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { CONTENT_TYPES } from '@/lib/types';
+import { getApiBase } from '@/lib/api';
 import CreateItemModal from '@/components/projects/CreateItemModal';
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
@@ -39,12 +40,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     setFoldersLoading(true);
-    fetch(`http://localhost:8000/api/projects/${projectId}/folders`)
+    fetch(`${getApiBase()}/api/projects/${projectId}/folders`)
       .then(r => r.json())
       .then(setFolders)
       .catch(console.error)
       .finally(() => setFoldersLoading(false));
-    fetch('http://localhost:8000/api/chat/session', {
+    fetch(`${getApiBase()}/api/chat/session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ project_id: projectId }),
@@ -56,7 +57,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     if (selectedFolder) {
       setDeliverablesLoading(true);
-      fetch(`http://localhost:8000/api/folders/${selectedFolder.id}/deliverables`)
+      fetch(`${getApiBase()}/api/folders/${selectedFolder.id}/deliverables`)
         .then(r => r.json())
         .then(setDeliverables)
         .catch(console.error)
@@ -78,7 +79,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     const aiMsgId = Date.now() + 1;
     setMessages(prev => [...prev, { role: 'assistant', content: '', id: aiMsgId }]);
     try {
-      const response = await fetch('http://localhost:8000/api/chat/stream', {
+      const response = await fetch(`${getApiBase()}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, project_id: projectId, message: userContent, toggles }),
@@ -199,7 +200,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                 <div className="flex items-center justify-between">
                   <h2 className="font-medium">{selectedDeliverable.title}</h2>
                   <button className="px-3 py-1 bg-black text-white rounded text-sm" onClick={async () => {
-                    await fetch(`http://localhost:8000/api/deliverables/${selectedDeliverable.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body_md: selectedDeliverable.body_md }) });
+                    await fetch(`${getApiBase()}/api/deliverables/${selectedDeliverable.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body_md: selectedDeliverable.body_md }) });
                   }}>Save</button>
                 </div>
                 <textarea className="flex-1 font-mono text-sm resize-none border rounded p-3"
@@ -216,7 +217,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             <button onClick={async () => {
               if (!input) return alert('Enter a prompt in the chat tab first.');
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const result: any = await fetch('http://localhost:8000/api/chat/brief', {
+              const result: any = await fetch(`${getApiBase()}/api/chat/brief`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ project_id: projectId, user_prompt: input, content_type: toggles.content_type, toggles }),
               }).then(r => r.json());
@@ -268,13 +269,13 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         type="folder"
         onClose={() => setShowFolderModal(false)}
         onCreate={async (data) => {
-          const response = await fetch('http://localhost:8000/api/folders', {
+          const response = await fetch(`${getApiBase()}/api/folders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ project_id: projectId, name: data.name }),
           });
           if (!response.ok) throw new Error('Failed to create folder');
-          fetch(`http://localhost:8000/api/projects/${projectId}/folders`).then(r => r.json()).then(setFolders);
+          fetch(`${getApiBase()}/api/projects/${projectId}/folders`).then(r => r.json()).then(setFolders);
         }}
       />
 
@@ -286,7 +287,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         onClose={() => setShowDeliverableModal(false)}
         onCreate={async (data) => {
           if (!selectedFolder) throw new Error('Select a folder first');
-          const response = await fetch('http://localhost:8000/api/deliverables', {
+          const response = await fetch(`${getApiBase()}/api/deliverables`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -296,7 +297,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             }),
           });
           if (!response.ok) throw new Error('Failed to create deliverable');
-          fetch(`http://localhost:8000/api/folders/${selectedFolder.id}/deliverables`).then(r => r.json()).then(setDeliverables);
+          fetch(`${getApiBase()}/api/folders/${selectedFolder.id}/deliverables`).then(r => r.json()).then(setDeliverables);
         }}
       />
     </div>

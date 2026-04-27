@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
+import { getApiBase } from '@/lib/api';
 import type { SearchInsight, Project, Folder } from '@/lib/types';
 
 interface StartInsightModalProps {
@@ -32,7 +33,7 @@ export default function StartInsightModal({ isOpen, onClose, insight }: StartIns
 
   const loadProjects = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/projects');
+      const response = await fetch(`${getApiBase()}/api/projects`);
       if (!response.ok) throw new Error('Failed to load projects');
       const data = await response.json();
       setProjects(data);
@@ -47,7 +48,7 @@ export default function StartInsightModal({ isOpen, onClose, insight }: StartIns
 
   const loadFolders = async (projectId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/projects/${projectId}/folders`);
+      const response = await fetch(`${getApiBase()}/api/projects/${projectId}/folders`);
       if (!response.ok) throw new Error('Failed to load folders');
       const data = await response.json();
       setFolders(data);
@@ -68,7 +69,7 @@ export default function StartInsightModal({ isOpen, onClose, insight }: StartIns
     setLoading(true);
     try {
       // Create a new deliverable with the insight context
-      const response = await fetch('http://localhost:8000/api/deliverables', {
+      const response = await fetch(`${getApiBase()}/api/deliverables`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

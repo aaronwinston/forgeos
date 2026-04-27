@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getApiBase } from '@/lib/api';
 
 function WorkspaceNewInner() {
   const router = useRouter();
@@ -24,7 +23,7 @@ function WorkspaceNewInner() {
 
     async function createAndNavigate() {
       try {
-        const res = await fetch(`${API_BASE}/api/workspace/from-briefing-item`, {
+        const res = await fetch(`${getApiBase()}/api/workspace/from-briefing-item`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

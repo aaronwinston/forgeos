@@ -44,6 +44,7 @@ export default function OnboardingPage() {
           setCurrentStep('complete');
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError('Failed to load onboarding state');
     } finally {
@@ -67,6 +68,7 @@ export default function OnboardingPage() {
       if (res.ok) {
         await fetchState();
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError('Failed to save progress');
     }
@@ -154,6 +156,7 @@ function CompanyPitchStep({ onNext }: { onNext: () => void }) {
         body: JSON.stringify({ pitch })
       });
       onNext();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       console.error(err);
     } finally {
@@ -201,6 +204,7 @@ function VoiceExamplesStep({ onNext }: { onNext: () => void }) {
         body: JSON.stringify({ examples: examples.filter(e => e.trim()) })
       });
       onNext();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       console.error(err);
     } finally {
@@ -260,6 +264,7 @@ function CompetitorsStep({ onNext }: { onNext: () => void }) {
         })
       });
       onNext();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       console.error(err);
     } finally {
@@ -361,6 +366,7 @@ function RuntimeKeyStep({ onNext }: { onNext: () => void }) {
           onNext();
         }
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       console.error(err);
     } finally {
@@ -415,6 +421,7 @@ function StarterProjectStep({ onNext }: { onNext: () => void }) {
         body: JSON.stringify({ template: selected })
       });
       onNext();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       console.error(err);
     } finally {
@@ -471,7 +478,7 @@ function CompleteStep() {
   return (
     <div className="bg-white rounded-lg shadow-lg p-8 text-center">
       <div className="text-4xl mb-4">🎉</div>
-      <h2 className="text-2xl font-bold mb-4">You're all set!</h2>
+      <h2 className="text-2xl font-bold mb-4">You&apos;re all set!</h2>
       <p className="text-gray-600">Redirecting to your dashboard...</p>
     </div>
   );

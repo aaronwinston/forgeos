@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { getApiBase } from '@/lib/api';
 
 interface WorkspaceProjectTreeProps {
   projects: Array<{
@@ -25,7 +26,7 @@ export default function WorkspaceProjectTree({ projects, selectedDeliverableId }
 
   const fetchFolders = async (projectId: number) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/projects/${projectId}/folders`);
+      const res = await fetch(`${getApiBase()}/api/projects/${projectId}/folders`);
       if (res.ok) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: any = await res.json();
@@ -40,7 +41,7 @@ export default function WorkspaceProjectTree({ projects, selectedDeliverableId }
 
   const fetchDeliverables = async (folderId: number) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/folders/${folderId}/deliverables`);
+      const res = await fetch(`${getApiBase()}/api/folders/${folderId}/deliverables`);
       if (res.ok) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: any = await res.json();

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, Link2 } from 'lucide-react';
+import { getApiBase } from '@/lib/api';
 import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface EngineEditorProps {
@@ -32,7 +33,7 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
     setError('');
     onDirtyChange(false);
 
-    fetch(`http://localhost:8000/api/files/read?path=${encodeURIComponent(filePath)}`)
+    fetch(`${getApiBase()}/api/files/read?path=${encodeURIComponent(filePath)}`)
       .then(r => {
         if (!r.ok) throw new Error('Failed to load file');
         return r.json();
@@ -51,7 +52,7 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
   async function loadReferencesCount(path: string) {
     setLoadingRefs(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/settings/references?path=${encodeURIComponent(path)}`);
+      const response = await fetch(`${getApiBase()}/api/settings/references?path=${encodeURIComponent(path)}`);
       if (response.ok) {
         const refsData = await response.json();
         setReferences(refsData);
@@ -86,7 +87,7 @@ export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave 
     lines.push(content);
 
     try {
-      const response = await fetch('http://localhost:8000/api/files/write', {
+      const response = await fetch(`${getApiBase()}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, content: lines.join('\n') }),

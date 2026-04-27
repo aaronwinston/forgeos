@@ -24,18 +24,18 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
         setError(null);
 
         // Fetch deliverable data
-        const delivRes = await fetch(`http://localhost:8000/api/deliverables/${deliverableId}`);
+        const delivRes = await fetch(`${getApiBase()}/api/deliverables/${deliverableId}`);
         if (!delivRes.ok) throw new Error('Failed to fetch deliverable');
         const delivData = await delivRes.json();
         setDeliverable(delivData);
 
         // Fetch folder info for breadcrumb
-        const folderRes = await fetch(`http://localhost:8000/api/folders/${delivData.folder_id}`);
+        const folderRes = await fetch(`${getApiBase()}/api/folders/${delivData.folder_id}`);
         if (folderRes.ok) {
           const folderData = await folderRes.json();
           setFolder(folderData);
           // Get project info from folder
-          const projRes = await fetch(`http://localhost:8000/api/projects/${folderData.project_id}`);
+          const projRes = await fetch(`${getApiBase()}/api/projects/${folderData.project_id}`);
           if (projRes.ok) {
             const projData = await projRes.json();
             setProject(projData);
@@ -43,14 +43,14 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
         }
 
         // Fetch brief for this deliverable
-        const briefRes = await fetch(`http://localhost:8000/api/deliverables/${deliverableId}/brief`);
+        const briefRes = await fetch(`${getApiBase()}/api/deliverables/${deliverableId}/brief`);
         if (briefRes.ok) {
           const briefData = await briefRes.json();
           setBrief(briefData);
         }
 
         // Fetch all projects for the tree
-        const projRes = await fetch('http://localhost:8000/api/projects');
+        const projRes = await fetch(`${getApiBase()}/api/projects`);
         if (!projRes.ok) throw new Error('Failed to fetch projects');
         const projData = await projRes.json();
         setProjects(projData);

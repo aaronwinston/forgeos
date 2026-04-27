@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getApiBase } from '@/lib/api';
 
 interface UsageData {
   period: string;
@@ -26,8 +27,7 @@ export default function UsageSettings() {
 
   const fetchUsage = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE}/api/usage/current-month`, {
+      const res = await fetch(`${getApiBase()}/api/usage/current-month`, {
         credentials: 'include'
       });
       
@@ -36,6 +36,7 @@ export default function UsageSettings() {
       } else {
         setError('Failed to load usage data');
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError('Error loading usage data');
     } finally {

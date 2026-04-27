@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, FileText, Folder } from 'lucide-react';
+import { getApiBase } from '@/lib/api';
 
 interface TreeNode {
   name: string;
@@ -115,7 +116,7 @@ export default function EngineTree({ selectedPath, onSelect }: EngineTreeProps) 
   }, [buildContextTree]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/files/tree')
+    fetch(`${getApiBase()}/api/files/tree`)
       .then(r => r.json())
       .then((fileTree: Record<string, string[]>) => {
         const nodes = buildTree(fileTree);

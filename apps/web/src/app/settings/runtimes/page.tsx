@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getApiBase } from '@/lib/api';
 
 interface RuntimeKey {
   runtime: string;
@@ -23,8 +24,7 @@ export default function RuntimesSettings() {
 
   const fetchKeys = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE}/api/runtimes`, {
+      const res = await fetch(`${getApiBase()}/api/runtimes`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -42,8 +42,7 @@ export default function RuntimesSettings() {
     setSuccess('');
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE}/api/runtimes/${selectedRuntime}/add`, {
+      const res = await fetch(`${getApiBase()}/api/runtimes/${selectedRuntime}/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,8 +68,7 @@ export default function RuntimesSettings() {
 
   const handleValidate = async (runtime: string) => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE}/api/runtimes/${runtime}/validate`, {
+      const res = await fetch(`${getApiBase()}/api/runtimes/${runtime}/validate`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -91,8 +89,7 @@ export default function RuntimesSettings() {
     if (!confirm(`Delete ${runtime} key?`)) return;
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_BASE}/api/runtimes/${runtime}`, {
+      const res = await fetch(`${getApiBase()}/api/runtimes/${runtime}`, {
         method: 'DELETE',
         credentials: 'include'
       });

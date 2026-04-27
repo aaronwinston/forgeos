@@ -23,7 +23,7 @@ export default function SignIn() {
     setError('');
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
       const response = await fetch(`${API_BASE}/api/auth/signin`, {
         method: 'POST',
         headers: getHeadersWithCSRF({

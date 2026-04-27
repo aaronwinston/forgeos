@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { getApiBase } from '@/lib/api';
 
 interface ApiKey {
   name: string;
@@ -56,8 +57,8 @@ export default function SettingsConfig({ onNavigateTo }: SettingsConfigProps) {
     setLoading(true);
     try {
       const [apiRes, scrapeRes] = await Promise.all([
-        fetch('http://localhost:8000/api/settings/api-keys'),
-        fetch('http://localhost:8000/api/settings/scrape-config'),
+        fetch(`${getApiBase()}/api/settings/api-keys`),
+        fetch(`${getApiBase()}/api/settings/scrape-config`),
       ]);
 
       if (apiRes.ok) {

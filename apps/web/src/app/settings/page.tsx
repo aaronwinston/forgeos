@@ -8,10 +8,9 @@ import KeywordClusterConfig from '@/components/settings/KeywordClusterConfig';
 import UploadZone from '@/components/settings/UploadZone';
 import UploadDestinationModal, { type UploadDestination } from '@/components/settings/UploadDestinationModal';
 import { AlertCircle } from 'lucide-react';
+import { getApiBase } from '@/lib/api';
 
 type Tab = 'engine' | 'settings' | 'search';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function SettingsPage() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -87,7 +86,7 @@ export default function SettingsPage() {
       form.append('file', pendingFile);
       form.append('destination', destination);
       if (projectId) form.append('project_id', projectId);
-      const res = await fetch(`${API_BASE}/api/settings/upload`, { method: 'POST', body: form });
+      const res = await fetch(`${getApiBase()}/api/settings/upload`, { method: 'POST', body: form });
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
       const data = await res.json();
       setUploadResult(data);

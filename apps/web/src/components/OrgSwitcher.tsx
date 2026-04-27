@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiBase } from '@/lib/api';
 
 interface Organization {
   id: string;
@@ -32,7 +33,7 @@ export default function OrgSwitcher() {
 
   async function fetchOrgs() {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/api/orgs`, {
         credentials: 'include', // Send cookies
       });
@@ -62,7 +63,7 @@ export default function OrgSwitcher() {
     
     setLoading(true);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_BASE = getApiBase();
       const slug = orgName.toLowerCase().replace(/\s+/g, '-');
       
       const response = await fetch(`${API_BASE}/api/orgs`, {

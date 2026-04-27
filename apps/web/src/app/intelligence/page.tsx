@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { getApiBase } from '@/lib/api';
 
 export default function IntelligencePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,7 +15,7 @@ export default function IntelligencePage() {
       setLoading(true);
       setError(null);
       console.debug('[Intelligence] Loading items...');
-      const response = await fetch('http://localhost:8000/api/intelligence/items');
+      const response = await fetch(`${getApiBase()}/api/intelligence/items`);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
@@ -38,7 +39,7 @@ export default function IntelligencePage() {
 
   const dismiss = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/intelligence/items/${id}/dismiss`, { method: 'POST' });
+      const response = await fetch(`${getApiBase()}/api/intelligence/items/${id}/dismiss`, { method: 'POST' });
       if (!response.ok) throw new Error('Failed to dismiss item');
       loadItems();
     } catch (err) {
@@ -48,7 +49,7 @@ export default function IntelligencePage() {
 
   const markAsContext = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/intelligence/items/${id}/use-as-context`, { method: 'POST' });
+      const response = await fetch(`${getApiBase()}/api/intelligence/items/${id}/use-as-context`, { method: 'POST' });
       if (!response.ok) throw new Error('Failed to mark item');
       alert('Item marked for context use.');
     } catch (err) {
@@ -61,7 +62,7 @@ export default function IntelligencePage() {
     setRefreshing(true);
     try {
       console.debug('[Intelligence] Starting intelligence scrape...');
-      const response = await fetch('http://localhost:8000/api/intelligence/scrape', { method: 'POST' });
+      const response = await fetch(`${getApiBase()}/api/intelligence/scrape`, { method: 'POST' });
       if (!response.ok) {
         throw new Error(`Scrape failed: ${response.status}`);
       }

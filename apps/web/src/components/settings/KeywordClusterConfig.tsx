@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { getApiBase } from '@/lib/api';
 import type { KeywordCluster } from '@/lib/types';
 
 export default function KeywordClusterConfig() {
@@ -20,7 +21,7 @@ export default function KeywordClusterConfig() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:8000/api/intelligence/search/keywords');
+      const response = await fetch(`${getApiBase()}/api/intelligence/search/keywords`);
       if (!response.ok) throw new Error('Failed to load keyword clusters');
       const data = await response.json();
       setClusters(data);
@@ -40,7 +41,7 @@ export default function KeywordClusterConfig() {
 
     setSaving(true);
     try {
-      const response = await fetch('http://localhost:8000/api/intelligence/search/keywords', {
+      const response = await fetch(`${getApiBase()}/api/intelligence/search/keywords`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keyword: newKeyword, region: newRegion }),
@@ -65,7 +66,7 @@ export default function KeywordClusterConfig() {
   const handleRemoveKeyword = async (clusterId: number) => {
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/intelligence/search/keywords/${clusterId}`, {
+      const response = await fetch(`${getApiBase()}/api/intelligence/search/keywords/${clusterId}`, {
         method: 'DELETE',
       });
 
@@ -83,7 +84,7 @@ export default function KeywordClusterConfig() {
   const handleToggleActive = async (cluster: KeywordCluster) => {
     setSaving(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/intelligence/search/keywords/${cluster.id}`, {
+      const response = await fetch(`${getApiBase()}/api/intelligence/search/keywords/${cluster.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !cluster.active }),
