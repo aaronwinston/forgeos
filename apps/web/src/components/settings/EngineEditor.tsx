@@ -11,12 +11,6 @@ interface EngineEditorProps {
   onSave?: () => Promise<void>;
 }
 
-interface FileMetadata {
-  metadata: Record<string, unknown>;
-  content: string;
-  path: string;
-}
-
 export default function EngineEditor({ filePath, isDirty, onDirtyChange, onSave }: EngineEditorProps) {
   const [content, setContent] = useState('');
   const [metadata, setMetadata] = useState<Record<string, unknown>>({});
