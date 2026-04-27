@@ -62,6 +62,13 @@ class FolderCreate(BaseModel):
 def list_folders(project_id: int, session: Session = Depends(get_session)):
     return session.exec(select(Folder).where(Folder.project_id == project_id)).all()
 
+@router.get("/folders/{folder_id}")
+def get_folder(folder_id: int, session: Session = Depends(get_session)):
+    f = session.get(Folder, folder_id)
+    if not f:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return f
+
 @router.post("/folders")
 def create_folder(data: FolderCreate, session: Session = Depends(get_session)):
     f = Folder(**data.dict())

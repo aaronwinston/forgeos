@@ -1,16 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import ProjectTree from '@/components/workspace/ProjectTree';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [projects, setProjects] = useState<any[]>([]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { api.getProjects().then(setProjects).catch(() => {}); }, []);
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -20,7 +14,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-56 border-r bg-background flex flex-col">
+    <aside className="w-56 border-r bg-background flex flex-col h-screen">
       <div className="p-4 border-b">
         <h1 className="font-bold text-sm">ForgeOS</h1>
         <p className="text-xs text-muted-foreground">Marketing Command Center</p>
@@ -36,30 +30,13 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="p-2 border-t mt-2">
-        <p className="text-xs text-muted-foreground px-3 mb-1 uppercase font-semibold">Projects</p>
-        {projects.map(p => (
-          <Link
-            key={p.id}
-            href={`/projects/${p.id}`}
-            className={`block px-3 py-1.5 rounded text-xs ${pathname === `/projects/${p.id}` ? 'bg-accent font-medium' : 'hover:bg-accent/50'}`}
-          >
-            {p.name}
-          </Link>
-        ))}
-        <button
-          className="w-full text-left px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-          onClick={async () => {
-            const name = prompt('Project name:');
-            if (name) {
-              await api.createProject({ name });
-              api.getProjects().then(setProjects);
-            }
-          }}
-        >
-          + New project
-        </button>
+      <div className="flex-1 border-t mt-2 flex flex-col min-h-0">
+        <p className="text-xs text-muted-foreground px-3 py-2 uppercase font-semibold">Projects</p>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ProjectTree />
+        </div>
       </div>
     </aside>
   );
 }
+

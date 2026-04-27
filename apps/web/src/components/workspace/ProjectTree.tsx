@@ -1,130 +1,499 @@
 'use client';
-import { useEffect, useState } from 'react';
 
-interface ProjectTreeProps {
-  projects: Array<{
-    id: number;
-    name: string;
-    folders?: Array<{
-      id: number;
-      name: string;
-      deliverables?: Array<{
-        id: number;
-        title: string;
-        content_type: string;
-      }>;
-    }>;
-  }>;
-  selectedDeliverableId?: number;
-  onSelectDeliverable?: (id: number) => void;
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import TreeItemModal from './TreeItemModal';
+
+export interface Deliverable {
+  id: number;
+  folder_id: number;
+  content_type: string;
+  title: string;
+  status: 'draft' | 'active' | 'published';
+  body_md?: string;
+  metadata_json?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export default function ProjectTree({ projects, selectedDeliverableId, onSelectDeliverable }: ProjectTreeProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [folders, setFolders] = useState<Record<number, any[]>>({});
+export interface Folder {
+  id: number;
+  project_id: number;
+  parent_folder_id?: number;
+  name: string;
+  created_at: string;
+  deliverables?: Deliverable[];
+  subfolders?: Folder[];
+}
 
-  const toggleProject = (projectId: number) => {
-    const key = `project-${projectId}`;
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
-    if (!expanded[key]) {
-      fetchFolders(projectId);
-    }
-  };
+export interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  folders?: Folder[];
+}
 
-  const fetchFolders = async (projectId: number) => {
+type TreeItemType = 'project' | 'folder' | 'subfolder' | 'deliverable';
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+  itemType: TreeItemType;
+  itemId: number;
+  itemParentId?: number;
+}
+
+interface SelectedItem {
+  type: TreeItemType;
+  id: number;
+  parentId?: number;
+}
+
+export default function ProjectTree() {
+  const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set());
+  const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: TreeItemType;
+    parentId?: number;
+  }>({ isOpen: false, type: 'project' });
+
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const treeRef = useRef<HTMLDivElement>(null);
+
+  // Load projects with nested structure
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/projects/${projectId}/folders`);
-      if (res.ok) {
-        const data = await res.json();
-        setFolders(prev => ({ ...prev, [projectId]: data }));
-        data.forEach((f: any) => fetchDeliverables(f.id));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+      const result = await api.getProjects();
+      if (Array.isArray(result)) {
+        // Enrich projects with folder and deliverable data
+        const enrichedProjects = await Promise.all(
+          result.map(async (project: Project) => {
+            const foldersResult = await api.getFolders(project.id);
+            const folders = Array.isArray(foldersResult) ? foldersResult : [];
 
-  const fetchDeliverables = async (folderId: number) => {
-    try {
-      const res = await fetch(`http://localhost:8000/api/folders/${folderId}/deliverables`);
-      if (res.ok) {
-        const data = await res.json();
-        setFolders(prev => {
-          const updated = { ...prev };
-          Object.keys(updated).forEach(projectId => {
-            updated[parseInt(projectId)] = updated[parseInt(projectId)].map((f: any) =>
-              f.id === folderId ? { ...f, deliverables: data } : f
+            const enrichedFolders = await Promise.all(
+              folders.map(async (folder: Folder) => {
+                const deliverableResult = await api.getDeliverables(folder.id);
+                const deliverables = Array.isArray(deliverableResult) ? deliverableResult : [];
+                return { ...folder, deliverables };
+              })
             );
-          });
-          return updated;
+
+            return { ...project, folders: enrichedFolders };
+          })
+        );
+        setProjects(enrichedProjects);
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleFolder = (folderId: number) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  };
+
+  const handleDeliverableClick = (deliverable: Deliverable) => {
+    router.push(`/deliverables/${deliverable.id}`);
+  };
+
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    itemType: TreeItemType,
+    itemId: number,
+    parentId?: number
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, itemType, itemId, itemParentId: parentId });
+  };
+
+  const handleDeleteProject = async (projectId: number) => {
+    if (confirm('Delete this project and all its contents?')) {
+      try {
+        const deleteApi = api.deleteProject || (async (id: number) => {
+          const result = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+          return result.ok;
+        });
+        await deleteApi(projectId);
+        await loadProjects();
+      } catch (error) {
+        console.error('Error deleting project:', error);
+      }
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: number) => {
+    if (confirm('Delete this folder and all its contents?')) {
+      try {
+        const deleteApi = api.deleteFolder || (async (id: number) => {
+          const result = await fetch(`/api/folders/${id}`, { method: 'DELETE' });
+          return result.ok;
+        });
+        await deleteApi(folderId);
+        await loadProjects();
+      } catch (error) {
+        console.error('Error deleting folder:', error);
+      }
+    }
+  };
+
+  const handleDeleteDeliverable = async (deliverableId: number) => {
+    if (confirm('Delete this deliverable?')) {
+      try {
+        const deleteApi = api.deleteDeliverable || (async (id: number) => {
+          const result = await fetch(`/api/deliverables/${id}`, { method: 'DELETE' });
+          return result.ok;
+        });
+        await deleteApi(deliverableId);
+        await loadProjects();
+      } catch (error) {
+        console.error('Error deleting deliverable:', error);
+      }
+    }
+  };
+
+  const openCreateModal = (type: TreeItemType, parentId?: number) => {
+    setModalState({ isOpen: true, type, parentId });
+    setContextMenu(null);
+  };
+
+  const handleCreateItem = async (itemData: {
+    name: string;
+    contentType?: string;
+    description?: string;
+  }) => {
+    try {
+      if (modalState.type === 'project') {
+        await api.createProject({ name: itemData.name, description: itemData.description });
+      } else if (modalState.type === 'folder' && modalState.parentId) {
+        await api.createFolder({
+          project_id: modalState.parentId,
+          name: itemData.name,
+          parent_folder_id: null,
+        });
+      } else if (modalState.type === 'subfolder' && modalState.parentId) {
+        const parentProject = projects.find((p) =>
+          p.folders?.some((f) => f.id === modalState.parentId)
+        );
+        await api.createFolder({
+          project_id: parentProject?.id,
+          name: itemData.name,
+          parent_folder_id: modalState.parentId,
+        });
+      } else if (modalState.type === 'deliverable' && modalState.parentId) {
+        await api.createDeliverable({
+          folder_id: modalState.parentId,
+          content_type: itemData.contentType || 'blog',
+          title: itemData.name,
         });
       }
-    } catch (e) {
-      console.error(e);
+
+      await loadProjects();
+      setModalState({ isOpen: false, type: 'project' });
+    } catch (error) {
+      console.error('Error creating item:', error);
     }
   };
 
-  const toggleFolder = (projectId: number, folderId: number) => {
-    const key = `folder-${projectId}-${folderId}`;
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return '#999';
+      case 'active':
+        return '#22c55e';
+      case 'published':
+        return '#3b82f6';
+      default:
+        return '#999';
+    }
+  };
+
+  const getContentTypeBadgeColor = (contentType: string) => {
+    const colors: Record<string, string> = {
+      blog: 'bg-blue-100 text-blue-800',
+      email: 'bg-purple-100 text-purple-800',
+      'press-release': 'bg-red-100 text-red-800',
+      'case-study': 'bg-green-100 text-green-800',
+      whitepaper: 'bg-gray-100 text-gray-800',
+    };
+    return colors[contentType] || 'bg-gray-100 text-gray-800';
+  };
+
+  const filteredProjects = projects.filter((p) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const renderDeliverable = (deliverable: Deliverable) => {
+    const statusColor = getStatusColor(deliverable.status);
+    const badgeColor = getContentTypeBadgeColor(deliverable.content_type);
+
+    return (
+      <div
+        key={`del-${deliverable.id}`}
+        className="ml-12 py-1 px-2 text-sm hover:bg-accent/50 rounded cursor-pointer flex items-center justify-between group"
+        onClick={() => handleDeliverableClick(deliverable)}
+        onContextMenu={(e) => handleContextMenu(e, 'deliverable', deliverable.id, deliverable.folder_id)}
+      >
+        <span className="flex items-center gap-2 flex-1">
+          <span
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: statusColor }}
+            title={deliverable.status}
+          />
+          <span className="truncate">{deliverable.title}</span>
+          <span className={`text-xs px-2 py-0.5 rounded font-medium ${badgeColor}`}>
+            {deliverable.content_type}
+          </span>
+        </span>
+        <button
+          className="opacity-0 group-hover:opacity-100 text-xs text-muted-foreground hover:text-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleContextMenu(e, 'deliverable', deliverable.id, deliverable.folder_id);
+          }}
+        >
+          ⋮
+        </button>
+      </div>
+    );
+  };
+
+  const renderFolder = (folder: Folder, depth: number = 1) => {
+    const isExpanded = expandedFolders.has(folder.id);
+    const marginLeft = depth * 12;
+    const folderType = depth === 1 ? 'folder' : 'subfolder';
+
+    return (
+      <div key={`folder-${folder.id}`}>
+        <div
+          className="py-1 px-2 text-sm hover:bg-accent/50 rounded flex items-center gap-2 group cursor-pointer"
+          style={{ marginLeft: `${marginLeft}px` }}
+          onContextMenu={(e) => handleContextMenu(e, folderType, folder.id, folder.project_id)}
+        >
+          <span
+            className="text-xs cursor-pointer"
+            onClick={() => toggleFolder(folder.id)}
+          >
+            {isExpanded ? '▼' : '▶'}
+          </span>
+          <span>{folder.name}</span>
+          <button
+            className="opacity-0 group-hover:opacity-100 text-xs text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleContextMenu(e, folderType, folder.id, folder.project_id);
+            }}
+          >
+            ⋮
+          </button>
+        </div>
+
+        {isExpanded && (
+          <>
+            {folder.subfolders?.map((subfolder) => renderFolder(subfolder, depth + 1))}
+            {folder.deliverables?.map((deliverable) => renderDeliverable(deliverable))}
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="h-full overflow-auto text-sm">
-      {projects.map(project => (
-        <div key={project.id} className="space-y-0">
-          <button
-            onClick={() => toggleProject(project.id)}
-            className="w-full text-left px-2 py-1.5 hover:bg-gray-100 flex items-center gap-1"
-          >
-            <span className="text-gray-400 select-none">
-              {expanded[`project-${project.id}`] ? '▼' : '▶'}
-            </span>
-            <span className="font-medium text-gray-900">{project.name}</span>
-          </button>
+    <div className="h-full flex flex-col bg-background" ref={treeRef}>
+      {/* Search input */}
+      <div className="p-3 border-b">
+        <input
+          type="text"
+          placeholder="Search projects..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-2 py-1 text-sm border rounded bg-input text-foreground"
+        />
+      </div>
 
-          {expanded[`project-${project.id}`] && folders[project.id] && (
-            <div className="pl-4 space-y-0">
-              {folders[project.id].map((folder: any) => (
-                <div key={folder.id}>
-                  <button
-                    onClick={() => toggleFolder(project.id, folder.id)}
-                    className="w-full text-left px-2 py-1.5 hover:bg-gray-100 flex items-center gap-1"
+      {/* Projects list */}
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="p-4 text-sm text-muted-foreground">Loading...</div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="p-4 text-sm text-muted-foreground">No projects found</div>
+        ) : (
+          filteredProjects.map((project) => {
+            const isExpanded = expandedFolders.has(project.id);
+
+            return (
+              <div key={`proj-${project.id}`}>
+                <div
+                  className="py-1 px-2 text-sm hover:bg-accent/50 rounded flex items-center gap-2 group cursor-pointer mx-2 mt-1"
+                  onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
+                >
+                  <span
+                    className="text-xs cursor-pointer"
+                    onClick={() => toggleFolder(project.id)}
                   >
-                    <span className="text-gray-400 select-none">
-                      {expanded[`folder-${project.id}-${folder.id}`] ? '▼' : '▶'}
-                    </span>
-                    <span className="text-gray-700">{folder.name}</span>
+                    {isExpanded ? '▼' : '▶'}
+                  </span>
+                  <span className="font-medium">{project.name}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleContextMenu(e, 'project', project.id);
+                    }}
+                  >
+                    ⋮
                   </button>
-
-                  {expanded[`folder-${project.id}-${folder.id}`] && folder.deliverables && (
-                    <div className="pl-4 space-y-0">
-                      {folder.deliverables.map((deliv: any) => (
-                        <button
-                          key={deliv.id}
-                          onClick={() => onSelectDeliverable?.(deliv.id)}
-                          className={`w-full text-left px-2 py-1.5 rounded flex items-center gap-2 ${
-                            selectedDeliverableId === deliv.id
-                              ? 'bg-blue-100 text-blue-900'
-                              : 'hover:bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          <span className="inline-block border rounded px-1 text-[10px] font-mono bg-gray-100">
-                            {deliv.content_type}
-                          </span>
-                          <span>{deliv.title}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
+
+                {isExpanded && (
+                  <>
+                    {project.folders?.map((folder) => renderFolder(folder))}
+                    {(!project.folders || project.folders.length === 0) && (
+                      <div className="ml-6 py-1 px-2 text-xs text-muted-foreground">
+                        No folders yet
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* New project button */}
+      <div className="p-3 border-t">
+        <button
+          className="w-full text-left px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded"
+          onClick={() => openCreateModal('project')}
+        >
+          + New project
+        </button>
+      </div>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed bg-popover border rounded shadow-lg z-50"
+          style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
+        >
+          {contextMenu.itemType === 'project' && (
+            <>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap"
+                onClick={() => openCreateModal('folder', contextMenu.itemId)}
+              >
+                New folder
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap text-destructive"
+                onClick={() => {
+                  handleDeleteProject(contextMenu.itemId);
+                  setContextMenu(null);
+                }}
+              >
+                Delete
+              </button>
+            </>
+          )}
+
+          {(contextMenu.itemType === 'folder' || contextMenu.itemType === 'subfolder') && (
+            <>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap"
+                onClick={() => openCreateModal('subfolder', contextMenu.itemId)}
+              >
+                New subfolder
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap"
+                onClick={() => openCreateModal('deliverable', contextMenu.itemId)}
+              >
+                New deliverable
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap text-destructive"
+                onClick={() => {
+                  handleDeleteFolder(contextMenu.itemId);
+                  setContextMenu(null);
+                }}
+              >
+                Delete
+              </button>
+            </>
+          )}
+
+          {contextMenu.itemType === 'deliverable' && (
+            <>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap"
+                onClick={() => {
+                  const deliverableId = contextMenu.itemId;
+                  router.push(`/deliverables/${deliverableId}`);
+                  setContextMenu(null);
+                }}
+              >
+                Open
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-accent cursor-pointer whitespace-nowrap text-destructive"
+                onClick={() => {
+                  handleDeleteDeliverable(contextMenu.itemId);
+                  setContextMenu(null);
+                }}
+              >
+                Delete
+              </button>
+            </>
           )}
         </div>
-      ))}
+      )}
+
+      {/* Modal */}
+      <TreeItemModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        onClose={() => setModalState({ isOpen: false, type: 'project' })}
+        onCreate={handleCreateItem}
+      />
     </div>
   );
 }

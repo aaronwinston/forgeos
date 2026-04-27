@@ -10,6 +10,10 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
   const [brief, setBrief] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [projects, setProjects] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [folder, setFolder] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +28,19 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
         if (!delivRes.ok) throw new Error('Failed to fetch deliverable');
         const delivData = await delivRes.json();
         setDeliverable(delivData);
+
+        // Fetch folder info for breadcrumb
+        const folderRes = await fetch(`http://localhost:8000/api/folders/${delivData.folder_id}`);
+        if (folderRes.ok) {
+          const folderData = await folderRes.json();
+          setFolder(folderData);
+          // Get project info from folder
+          const projRes = await fetch(`http://localhost:8000/api/projects/${folderData.project_id}`);
+          if (projRes.ok) {
+            const projData = await projRes.json();
+            setProject(projData);
+          }
+        }
 
         // Fetch brief for this deliverable
         const briefRes = await fetch(`http://localhost:8000/api/deliverables/${deliverableId}/brief`);
@@ -77,6 +94,8 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
       deliverable={deliverable}
       brief={brief}
       projects={projects}
+      folder={folder}
+      project={project}
     />
   );
 }

@@ -32,6 +32,7 @@ class Brief(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(default="aaron")
     project_id: int = Field(foreign_key="project.id")
+    deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
     title: str
     audience: Optional[str] = None
     description: Optional[str] = None
