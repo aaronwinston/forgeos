@@ -1,6 +1,7 @@
 <img width="1082" height="607" alt="Screenshot 2026-04-26 at 9 18 56 PM" src="https://github.com/user-attachments/assets/e712f82b-f49a-47f8-9cef-37784dafd509" />
 
-_Brought to you by LLMs and espresso. Buyer beware._
+
+#### _Brought to you by LLMs and espresso. Buyer beware._
 
 # **ForgeOS: Mission control for content.**
  
@@ -20,7 +21,7 @@ Two layers, one product.
  
 The whole system is built on a single bet: that the gap between AI-generated slop and content that sounds like you came out of it is almost entirely a function of what's in the system prompt before the user types anything. So the engine is canonical. The cockpit is in service to it.
 
-## The name is earned, not invented.
+## The name is earned, not invented
 
 A forge is where raw material becomes something shaped and useful. The ore goes in rough. It comes out with form and purpose. The smith doesn't replace the material — she reveals what it was always capable of being.
 
@@ -298,6 +299,6 @@ Open an issue. Start a discussion. The best contributions usually start with a c
  
 MIT. Use it, fork it, build on it. If it helps you, tell me.
 
-## Who built this freaking thing 
+## You clearly read this far, good job
 
 ForgeOS was built by Aaron Winston. It is an AI-native editorial operating system for teams building technical content for developers, engineering leaders, AI builders, and enterprise buyers. It is not a prompt dump. It is not a generic content bot. It is a structured system of specialized agents that work like a high-performing editorial team — with a philosophy, a voice, a quality bar, and a chain of accountability from brief to published asset. The judgment is yours. The system executes your direction.
