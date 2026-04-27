@@ -42,6 +42,18 @@ export interface Project {
   created_at: string;
 }
 
+export interface Deliverable {
+  id: number;
+  folder_id: number;
+  content_type: string;
+  title: string;
+  status: 'draft' | 'active' | 'published';
+  body_md?: string;
+  metadata_json?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiError {
   error: 'API_UNAVAILABLE';
 }
@@ -70,7 +82,7 @@ export async function checkHealth(): Promise<{ ok: boolean; reason?: string }> {
   try {
     const resp = await fetch(`${API_BASE}/api/health`, { method: 'GET' });
     return { ok: resp.ok };
-  } catch (err) {
+  } catch {
     return { ok: false, reason: 'api-unreachable' };
   }
 }

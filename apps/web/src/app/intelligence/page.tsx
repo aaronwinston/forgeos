@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 export default function IntelligencePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadItems = () => fetch('http://localhost:8000/api/intelligence/items')

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import ProjectTree from './ProjectTree';
+import WorkspaceProjectTree from './WorkspaceProjectTree';
 import ChatTab from './ChatTab';
 import EditorTab from './EditorTab';
 import BriefTab from './BriefTab';
@@ -67,7 +67,7 @@ export default function WorkspaceLayout({
           </button>
         </div>
         {!sidebarCollapsed && (
-          <ProjectTree
+          <WorkspaceProjectTree
             projects={projects}
             selectedDeliverableId={deliverable.id}
           />
