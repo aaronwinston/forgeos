@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { CONTENT_TYPES } from '@/lib/types';
+import CreateItemModal from '@/components/projects/CreateItemModal';
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const projectId = parseInt(params.id);
@@ -26,6 +27,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     playbook: 'auto',
     yolo: false,
   });
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [showDeliverableModal, setShowDeliverableModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,13 +101,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             {f.name}
           </button>
         ))}
-        <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={async () => {
-          const name = prompt('Folder name:');
-          if (name) {
-            await fetch('http://localhost:8000/api/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, name }) });
-            fetch(`http://localhost:8000/api/projects/${projectId}/folders`).then(r => r.json()).then(setFolders);
-          }
-        }}>+ New folder</button>
+        <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={() => setShowFolderModal(true)}>+ New folder</button>
         {selectedFolder && (<>
           <p className="text-xs font-semibold text-gray-500 uppercase mt-3">Deliverables</p>
           {deliverables.map(d => (
@@ -113,13 +110,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               <span className="inline-block border rounded px-1 text-[10px] mr-1">{d.content_type}</span>{d.title}
             </button>
           ))}
-          <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={async () => {
-            const title = prompt('Deliverable title:');
-            if (title && selectedFolder) {
-              await fetch('http://localhost:8000/api/deliverables', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: selectedFolder.id, content_type: toggles.content_type, title }) });
-              fetch(`http://localhost:8000/api/folders/${selectedFolder.id}/deliverables`).then(r => r.json()).then(setDeliverables);
-            }
-          }}>+ New deliverable</button>
+          <button className="text-xs text-gray-500 hover:text-gray-700 w-full text-left" onClick={() => setShowDeliverableModal(true)}>+ New deliverable</button>
         </>)}
       </aside>
 
