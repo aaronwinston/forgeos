@@ -343,33 +343,65 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
     setLoading(true);
     try {
       let assistantMessage = '';
-      await streamChat(
-        userMessage,
-        undefined,
-        (chunk) => {
-          assistantMessage += chunk;
-          setMessages((prev) => {
-            const updated = [...prev];
-            if (updated[updated.length - 1]?.role === 'assistant') {
-              updated[updated.length - 1].content = assistantMessage;
-            } else {
-              updated.push({ role: 'assistant', content: assistantMessage });
+      // First check if we have a chat session and messages
+      const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
+      
+      // Call the guided brief endpoint
+      const response = await fetch('/api/chat/brief-guided', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages,
+          toggles,
+          mode: 'guided',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.chunk) {
+                assistantMessage += data.chunk;
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  if (updated[updated.length - 1]?.role === 'assistant') {
+                    updated[updated.length - 1].content = assistantMessage;
+                  } else {
+                    updated.push({ role: 'assistant', content: assistantMessage });
+                  }
+                  return updated;
+                });
+              }
+              if (data.done) {
+                // Check if we have enough for a brief
+                if (newMessages.length >= 3) {
+                  generateBriefFromChat(assistantMessage);
+                }
+              }
+            } catch (e) {
+              // Silent parse error
             }
-            return updated;
-          });
-        },
-        () => {
-          // Check if we have enough for a brief (simple heuristic: 2+ exchanges)
-          if (messages.length >= 3) {
-            generateBriefFromChat(assistantMessage);
           }
-          setLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
         }
-      );
+      }
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chat failed');
       setLoading(false);
@@ -420,15 +452,48 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
     setLoading(true);
     try {
-      // Create brief first
+      // Get or create default project and folder
+      const projectsRes = await fetch('/api/projects');
+      const projects = await projectsRes.json();
+      let projectId = projects[0]?.id;
+
+      if (!projectId) {
+        const createProjectRes = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Default Project' }),
+        });
+        const project = await createProjectRes.json();
+        projectId = project.id;
+      }
+
+      // Get or create default folder
+      const foldersRes = await fetch(`/api/projects/${projectId}/folders`);
+      const folders = await foldersRes.json();
+      let folderId = folders[0]?.id;
+
+      if (!folderId) {
+        const createFolderRes = await fetch('/api/folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            name: 'Deliverables',
+          }),
+        });
+        const folder = await createFolderRes.json();
+        folderId = folder.id;
+      }
+
+      // Create brief
       const briefRes = await fetch('/api/briefs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: briefPreview.title,
+          project_id: projectId,
+          title: briefPreview.title || (toggles.content_type || 'Untitled'),
           brief_md: briefPreview.brief_md,
           toggles_json: briefPreview.toggles_json,
-          content_type: toggles.content_type,
         }),
       });
 
@@ -441,9 +506,10 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          brief_id: brief.id,
-          content_type: toggles.content_type,
-          title: briefPreview.title,
+          folder_id: folderId,
+          content_type: toggles.content_type || 'blog',
+          title: briefPreview.title || (toggles.content_type || 'Untitled'),
+          status: 'draft',
           body_md: '',
         }),
       });

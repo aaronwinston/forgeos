@@ -300,3 +300,82 @@ def update_brief(brief_id: int, req: BriefUpdateRequest, session: Session = Depe
         "brief_md": brief.brief_md,
         "toggles": json.loads(brief.toggles_json) if brief.toggles_json else {},
     }
+
+
+# Let's Build modal endpoints
+class BriefGuideRequest(BaseModel):
+    messages: list[dict]
+    toggles: dict = {}
+    mode: str = "guided"
+
+
+class BriefYoloRequest(BaseModel):
+    prompt: str
+    toggles: dict = {}
+
+
+@router.post("/brief-guided")
+async def brief_guided(req: BriefGuideRequest, session: Session = Depends(get_session)):
+    """Guided mode: conversational brief creation with streaming."""
+    system = """You are a creative brief guide helping Aaron create marketing content.
+    
+Ask only the key questions needed for a complete brief:
+1. Audience: Who is this for?
+2. Voice: What tone? (opinionated/thoughtful/objective/technical/founder)
+3. Format: What format? (blog/email/social/press release/etc)
+4. Success Criteria: How will we know this worked?
+5. Supporting Context: Any important details?
+
+Skip questions where the user already provided an answer.
+When you have enough to write a complete brief, generate the brief in markdown format with these sections:
+- Objective
+- Audience  
+- Core Message
+- Supporting Points
+- Tone
+- Success Criteria
+- Next Steps
+
+Then output: BRIEF_COMPLETE with the markdown."""
+
+    messages = req.messages + [{"role": "user", "content": "Help me write this brief. Use the toggles I've provided."}]
+    
+    # Add toggle context to system
+    if req.toggles:
+        toggle_text = "\n\nUser's Toggle Settings:\n"
+        for k, v in req.toggles.items():
+            if v:
+                toggle_text += f"- {k}: {v}\n"
+        system += toggle_text
+
+    async def event_generator():
+        full_response = ""
+        try:
+            async for chunk in stream_chat(
+                messages=messages,
+                toggles=req.toggles,
+            ):
+                full_response += chunk
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            
+            # Signal completion
+            yield f"data: {json.dumps({'done': True, 'brief_md': full_response})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/brief-yolo")
+async def brief_yolo(req: BriefYoloRequest, session: Session = Depends(get_session)):
+    """YOLO mode: one-shot brief + deliverable generation."""
+    content_type = req.toggles.get("content_type", "blog")
+    
+    # Generate brief using existing function
+    brief_md = await generate_brief(
+        user_prompt=req.prompt,
+        content_type=content_type,
+        toggles=req.toggles,
+    )
+    
+    return {"brief_md": brief_md}
