@@ -24,10 +24,30 @@ interface WorkspaceLayoutProps {
     id: number;
     name: string;
   }>;
+  folder?: {
+    id: number;
+    name: string;
+    project_id: number;
+  };
+  project?: {
+    id: number;
+    name: string;
+  };
 }
 
-export default function WorkspaceLayout({ deliverable, brief, projects }: WorkspaceLayoutProps) {
+export default function WorkspaceLayout({ 
+  deliverable, 
+  brief, 
+  projects, 
+  folder, 
+  project 
+}: WorkspaceLayoutProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'editor' | 'brief'>('chat');
+
+  const formatTime = (date: string | undefined) => {
+    if (!date) return null;
+    return new Date(date).toLocaleTimeString();
+  };
 
   return (
     <div className="flex h-screen bg-white">
@@ -44,22 +64,35 @@ export default function WorkspaceLayout({ deliverable, brief, projects }: Worksp
 
       {/* Center Pane: Tabs */}
       <div className="flex-1 flex flex-col min-w-0 bg-white">
-        {/* Toolbar */}
+        {/* Breadcrumb and Toolbar */}
         <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 space-y-2">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            {project && <span>{project.name}</span>}
+            {project && folder && <span className="text-gray-400">/</span>}
+            {folder && <span>{folder.name}</span>}
+            {folder && <span className="text-gray-400">/</span>}
+            <span className="font-medium text-gray-900">{deliverable.title}</span>
+          </div>
+
+          {/* Toolbar */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Workspace</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Deliverable</p>
               <h1 className="text-lg font-semibold text-gray-900">{deliverable.title}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-1 rounded-full bg-white border border-gray-300 text-gray-700 font-medium">
+              <span className="text-xs px-2.5 py-1 rounded-full bg-white border border-gray-300 text-gray-700 font-medium capitalize">
                 {deliverable.status}
               </span>
               {deliverable.updated_at && (
                 <span className="text-xs text-gray-500">
-                  Saved {new Date(deliverable.updated_at).toLocaleTimeString()}
+                  Saved {formatTime(deliverable.updated_at)}
                 </span>
               )}
+              <button className="text-xs px-3 py-1.5 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+                Export
+              </button>
             </div>
           </div>
         </div>

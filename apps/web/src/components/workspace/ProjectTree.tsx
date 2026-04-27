@@ -68,6 +68,128 @@ export default function ProjectTree() {
 
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const treeRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Build flat list of all visible tree items for keyboard navigation
+  const getVisibleItems = useCallback(() => {
+    const items: Array<{ type: TreeItemType; id: number; parentId?: number; object?: any }> = [];
+
+    projects.forEach((project) => {
+      items.push({ type: 'project', id: project.id, object: project });
+
+      if (expandedFolders.has(project.id)) {
+        project.folders?.forEach((folder) => {
+          items.push({ type: 'folder', id: folder.id, parentId: project.id, object: folder });
+
+          if (expandedFolders.has(folder.id)) {
+            folder.subfolders?.forEach((subfolder) => {
+              items.push({ type: 'subfolder', id: subfolder.id, parentId: folder.id, object: subfolder });
+
+              if (expandedFolders.has(subfolder.id)) {
+                subfolder.deliverables?.forEach((deliv) => {
+                  items.push({ type: 'deliverable', id: deliv.id, parentId: subfolder.id, object: deliv });
+                });
+              }
+            });
+
+            folder.deliverables?.forEach((deliv) => {
+              items.push({ type: 'deliverable', id: deliv.id, parentId: folder.id, object: deliv });
+            });
+          }
+        });
+      }
+    });
+
+    return items;
+  }, [projects, expandedFolders]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!treeRef.current?.contains(document.activeElement as Node) && document.activeElement !== searchInputRef.current) {
+        return;
+      }
+
+      const visibleItems = getVisibleItems();
+      const currentIndex = selectedItem
+        ? visibleItems.findIndex((item) => item.type === selectedItem.type && item.id === selectedItem.id)
+        : -1;
+
+      switch (e.key) {
+        case 'ArrowUp': {
+          e.preventDefault();
+          if (currentIndex > 0) {
+            const item = visibleItems[currentIndex - 1];
+            setSelectedItem({ type: item.type, id: item.id, parentId: item.parentId });
+          } else if (visibleItems.length > 0) {
+            const item = visibleItems[visibleItems.length - 1];
+            setSelectedItem({ type: item.type, id: item.id, parentId: item.parentId });
+          }
+          break;
+        }
+        case 'ArrowDown': {
+          e.preventDefault();
+          if (currentIndex < visibleItems.length - 1) {
+            const item = visibleItems[currentIndex + 1];
+            setSelectedItem({ type: item.type, id: item.id, parentId: item.parentId });
+          } else if (visibleItems.length > 0) {
+            const item = visibleItems[0];
+            setSelectedItem({ type: item.type, id: item.id, parentId: item.parentId });
+          }
+          break;
+        }
+        case 'ArrowLeft': {
+          e.preventDefault();
+          if (selectedItem && (selectedItem.type === 'project' || selectedItem.type === 'folder' || selectedItem.type === 'subfolder')) {
+            if (expandedFolders.has(selectedItem.id)) {
+              toggleFolder(selectedItem.id);
+            }
+          }
+          break;
+        }
+        case 'ArrowRight': {
+          e.preventDefault();
+          if (selectedItem && (selectedItem.type === 'project' || selectedItem.type === 'folder' || selectedItem.type === 'subfolder')) {
+            if (!expandedFolders.has(selectedItem.id)) {
+              toggleFolder(selectedItem.id);
+            }
+          }
+          break;
+        }
+        case 'Enter': {
+          e.preventDefault();
+          if (selectedItem) {
+            if (selectedItem.type === 'deliverable') {
+              handleDeliverableClick(visibleItems.find((i) => i.id === selectedItem.id)?.object as Deliverable);
+            } else if (selectedItem.type === 'project' || selectedItem.type === 'folder' || selectedItem.type === 'subfolder') {
+              toggleFolder(selectedItem.id);
+            }
+          }
+          break;
+        }
+        case 'Escape': {
+          e.preventDefault();
+          if (searchTerm) {
+            setSearchTerm('');
+          } else {
+            setSelectedItem(null);
+          }
+          break;
+        }
+        case 'n': {
+          if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+            e.preventDefault();
+            openCreateModal('project');
+            setSelectedItem(null);
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItem, expandedFolders, projects, searchTerm, getVisibleItems]);
 
   // Load projects with nested structure
   const loadProjects = useCallback(async () => {
@@ -340,11 +462,12 @@ export default function ProjectTree() {
       {/* Search input */}
       <div className="p-3 border-b">
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search projects..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded bg-input text-foreground"
+          className="w-full px-2 py-1 text-sm border rounded bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
