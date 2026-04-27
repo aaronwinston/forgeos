@@ -1,15 +1,13 @@
 from typing import AsyncGenerator, Optional
-import anthropic
 from datetime import datetime
 from config import settings
 from services.file_engine import (
     load_skill, load_playbook, load_core_doc, load_context_layer,
     REPO_ROOT
 )
+from services.llm import get_provider
 from instrumentation import get_tracer
 from sqlmodel import Session
-
-client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 CONTENT_TYPE_TO_PLAYBOOK = {
     "blog": "blog-production",
@@ -110,15 +108,15 @@ async def stream_chat(
         system = "\n\n---\n\n".join(system_parts)
         full_response = ""
 
-        with client.messages.stream(
-            model=settings.MODEL_GENERATION,
-            max_tokens=4096,
+        provider = get_provider(settings.LLM_PROVIDER)
+        async for text in provider.stream_message(
             system=system,
             messages=messages,
-        ) as stream:
-            for text in stream.text_stream:
-                full_response += text
-                yield text
+            model=settings.MODEL_GENERATION,
+            max_tokens=4096,
+        ):
+            full_response += text
+            yield text
 
         if span:
             span.set_attribute("output.value", full_response[:2000])
@@ -157,13 +155,13 @@ Generate a structured brief in markdown format with these sections:
 - **Distribution**: Where this will live and how it will be shared
 - **Success Criteria**: How we'll know this worked
 """
-        response = client.messages.create(
-            model=settings.MODEL_GENERATION,
-            max_tokens=2048,
+        provider = get_provider(settings.LLM_PROVIDER)
+        result = await provider.create_message(
             system=system + "\n\n" + brief_instruction,
             messages=[{"role": "user", "content": user_prompt}],
+            model=settings.MODEL_GENERATION,
+            max_tokens=2048,
         )
-        result = response.content[0].text
 
         if span and tracer:
             span.set_attribute("output.value", result[:2000])
