@@ -37,13 +37,11 @@ jobs:
       
       - name: Build static export
         run: cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8000 npx next build
-        env:
-          NEXT_EXPORT: true
       
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web/.next
+          path: apps/web/out
       
       - name: Deploy to GitHub Pages
         id: deployment
