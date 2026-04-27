@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlmodel import Session, select
 from database import get_session
-from models import ScrapeItem
+from models import ScrapeItem, SearchInsight, KeywordCluster
 from services.scraping import run_all_scrapers, DEFAULT_SUBREDDITS, GITHUB_TOPICS, ARXIV_FEEDS, DEFAULT_RSS_FEEDS
 from services.scoring import score_items_batch, synthesize_items_batch
 from datetime import datetime
+from typing import Optional
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
@@ -84,4 +85,70 @@ def get_config():
             "https://arize.com/blog/feed/",
         ],
     }
+
+@router.get("/search/insights")
+def get_search_insights(session: Session = Depends(get_session)):
+    """Get all search insights."""
+    insights = session.exec(
+        select(SearchInsight)
+        .order_by(SearchInsight.generated_at.desc())
+        .limit(100)
+    ).all()
+    return insights
+
+@router.get("/search/keywords")
+def get_keyword_clusters(session: Session = Depends(get_session)):
+    """Get all active keyword clusters."""
+    clusters = session.exec(
+        select(KeywordCluster)
+        .where(KeywordCluster.active == True)  # noqa: E712
+        .order_by(KeywordCluster.created_at.desc())
+    ).all()
+    return clusters
+
+@router.post("/search/keywords")
+def add_keyword_cluster(keyword: str, region: str = "US", session: Session = Depends(get_session)):
+    """Add a new keyword cluster."""
+    existing = session.exec(
+        select(KeywordCluster)
+        .where(KeywordCluster.keyword == keyword)
+        .where(KeywordCluster.region == region)
+    ).first()
+    if existing:
+        return {"error": f"Keyword '{keyword}' already exists for region {region}"}
+    
+    cluster = KeywordCluster(keyword=keyword, region=region, active=True)
+    session.add(cluster)
+    session.commit()
+    session.refresh(cluster)
+    return cluster
+
+@router.put("/search/keywords/{cluster_id}")
+def update_keyword_cluster(cluster_id: int, active: Optional[bool] = None, keyword: Optional[str] = None, session: Session = Depends(get_session)):
+    """Update a keyword cluster."""
+    cluster = session.get(KeywordCluster, cluster_id)
+    if not cluster:
+        return {"error": f"Cluster {cluster_id} not found"}
+    
+    if active is not None:
+        cluster.active = active
+    if keyword is not None:
+        cluster.keyword = keyword
+    cluster.updated_at = datetime.utcnow()
+    
+    session.add(cluster)
+    session.commit()
+    session.refresh(cluster)
+    return cluster
+
+@router.delete("/search/keywords/{cluster_id}")
+def delete_keyword_cluster(cluster_id: int, session: Session = Depends(get_session)):
+    """Delete a keyword cluster."""
+    cluster = session.get(KeywordCluster, cluster_id)
+    if not cluster:
+        return {"error": f"Cluster {cluster_id} not found"}
+    
+    session.delete(cluster)
+    session.commit()
+    return {"ok": True}
 

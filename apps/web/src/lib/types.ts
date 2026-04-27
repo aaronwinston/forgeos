@@ -64,8 +64,47 @@ export interface Toggles {
   content_type: string;
 }
 
+export interface SearchInsight {
+  id: number;
+  topic: string;
+  source_item_ids: string;
+  our_gsc_position?: number;
+  our_gsc_clicks?: number;
+  trends_momentum: 'rising' | 'steady' | 'falling' | 'no_data';
+  insight_text: string;
+  generated_at: string;
+}
+
+export interface TrendsData {
+  id: number;
+  keyword: string;
+  region: string;
+  interest_over_time_json?: string;
+  related_queries_json?: string;
+  fetched_at: string;
+}
+
+export interface GscQuery {
+  id: number;
+  query: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  position: number;
+}
+
+export interface KeywordCluster {
+  id: number;
+  keyword: string;
+  region: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const CONTENT_TYPES = [
   'blog', 'email', 'press_release', 'analyst_briefing',
   'social_post', 'case_study', 'launch_copy', 'lifecycle_email',
   'newsletter', 'thought_leadership', 'other'
 ] as const;
+

@@ -355,3 +355,58 @@ export async function getProjectFolders(projectId: number): Promise<Folder[]> {
   if (isApiError(result)) return [];
   return result;
 }
+
+// Search Intelligence API
+
+export interface SearchInsight {
+  id: number;
+  topic: string;
+  source_item_ids: string;
+  our_gsc_position?: number;
+  our_gsc_clicks?: number;
+  trends_momentum: 'rising' | 'steady' | 'falling' | 'no_data';
+  insight_text: string;
+  generated_at: string;
+}
+
+export interface KeywordCluster {
+  id: number;
+  keyword: string;
+  region: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getSearchInsights(): Promise<SearchInsight[]> {
+  const result = await apiFetch<SearchInsight[]>('/api/intelligence/search/insights');
+  if (isApiError(result)) return [];
+  return result;
+}
+
+export async function getKeywordClusters(): Promise<KeywordCluster[]> {
+  const result = await apiFetch<KeywordCluster[]>('/api/intelligence/search/keywords');
+  if (isApiError(result)) return [];
+  return result;
+}
+
+export async function addKeywordCluster(keyword: string, region: string = 'US'): Promise<KeywordCluster | ApiError> {
+  return apiFetch<KeywordCluster>('/api/intelligence/search/keywords', {
+    method: 'POST',
+    body: JSON.stringify({ keyword, region }),
+  });
+}
+
+export async function updateKeywordCluster(
+  clusterId: number,
+  data: { active?: boolean; keyword?: string },
+): Promise<KeywordCluster | ApiError> {
+  return apiFetch<KeywordCluster>(`/api/intelligence/search/keywords/${clusterId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteKeywordCluster(clusterId: number): Promise<void> {
+  await apiFetch(`/api/intelligence/search/keywords/${clusterId}`, { method: 'DELETE' });
+}
