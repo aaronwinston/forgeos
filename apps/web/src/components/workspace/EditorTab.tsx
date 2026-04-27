@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import TipTapEditor from './TipTapEditor';
 import { Save, AlertCircle } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export default function EditorTab({ deliverable }: EditorTabProps) {
     setSaveError(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     setSaveError(null);
 
@@ -56,7 +56,7 @@ export default function EditorTab({ deliverable }: EditorTabProps) {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [markdown, deliverable.id]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -70,7 +70,7 @@ export default function EditorTab({ deliverable }: EditorTabProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasUnsavedChanges, markdown]);
+  }, [hasUnsavedChanges, handleSave]);
 
   return (
     <div className="h-full flex flex-col bg-white">

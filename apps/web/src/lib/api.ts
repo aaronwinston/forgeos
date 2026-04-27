@@ -155,6 +155,8 @@ export function streamChat(
   message: string,
   sessionId: number | undefined,
   onChunk: (chunk: string) => void,
+  onComplete?: () => void,
+  onError?: (error: string) => void,
 ): () => void {
   const controller = new AbortController();
   
@@ -164,24 +166,40 @@ export function streamChat(
     body: JSON.stringify({ message, session_id: sessionId }),
     signal: controller.signal,
   }).then(async (res) => {
+    if (!res.ok) {
+      onError?.(`Failed to send message: ${res.status}`);
+      return;
+    }
     const reader = res.body?.getReader();
-    if (!reader) return;
+    if (!reader) {
+      onError?.('No response body');
+      return;
+    }
     const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const text = decoder.decode(value);
-      const lines = text.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.chunk) onChunk(data.chunk);
-          } catch {}
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          onComplete?.();
+          break;
+        }
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.chunk) onChunk(data.chunk);
+            } catch {}
+          }
         }
       }
+    } catch (e) {
+      onError?.(e instanceof Error ? e.message : 'Unknown error');
     }
-  }).catch(() => {});
+  }).catch((e) => {
+    onError?.(e instanceof Error ? e.message : 'Network error');
+  });
   
   return () => controller.abort();
 }

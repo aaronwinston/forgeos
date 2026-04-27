@@ -53,33 +53,36 @@ export default function ChatInterface({
     setLoading(true);
 
     let assistantMessage = '';
-    const cancelStream = streamChat(userMessage, sessionId, (chunk) => {
-      assistantMessage += chunk;
-      setMessages((prev) => {
-        const updated = [...prev];
-        if (updated[updated.length - 1]?.role === 'assistant') {
-          updated[updated.length - 1].content = assistantMessage;
-        } else {
-          updated.push({ role: 'assistant', content: assistantMessage });
-        }
-        return updated;
-      });
-    });
-
-    // Wait a bit to detect when stream ends (stream_chat doesn't provide a callback for completion)
-    // For now, we'll use a timeout to detect when streaming is done
-    const checkCompletion = setInterval(() => {
-      if (assistantMessage && !loading) {
-        clearInterval(checkCompletion);
+    const cancelStream = streamChat(
+      userMessage,
+      sessionId,
+      (chunk) => {
+        assistantMessage += chunk;
+        setMessages((prev) => {
+          const updated = [...prev];
+          if (updated[updated.length - 1]?.role === 'assistant') {
+            updated[updated.length - 1].content = assistantMessage;
+          } else {
+            updated.push({ role: 'assistant', content: assistantMessage });
+          }
+          return updated;
+        });
+      },
+      () => {
+        // Stream completed successfully
+        setLoading(false);
+      },
+      (errorMsg) => {
+        // Stream error
+        setError(errorMsg);
+        setLoading(false);
       }
-    }, 100);
+    );
 
-    // Set a reasonable timeout for the stream
-    setTimeout(() => {
+    // Cleanup function for component unmount
+    return () => {
       cancelStream();
-      setLoading(false);
-      clearInterval(checkCompletion);
-    }, 60000); // 60 second timeout
+    };
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
