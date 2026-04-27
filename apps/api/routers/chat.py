@@ -6,6 +6,8 @@ from sqlmodel import Session, select
 from database import get_session
 from models import ChatSession, ChatMessage, ScrapeItem, Brief
 from services.generation import stream_chat, generate_brief, execute_playbook, CONTENT_TYPE_TO_PLAYBOOK
+from services.usage import UsageTracker
+from middleware.auth import get_current_user, AuthContext
 from pydantic import BaseModel
 from typing import Optional
 
@@ -58,29 +60,41 @@ class BriefUpdateRequest(BaseModel):
 @router.post("/session")
 def create_session(
     project_id: Optional[int] = None,
+    auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    s = ChatSession(project_id=project_id)
+    s = ChatSession(project_id=project_id, organization_id=auth.org_id)
     session.add(s)
     session.commit()
     session.refresh(s)
     return s
 
 @router.get("/session/{session_id}/messages")
-def get_messages(session_id: int, session: Session = Depends(get_session)):
+def get_messages(
+    session_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     msgs = session.exec(
-        select(ChatMessage).where(ChatMessage.session_id == session_id)
+        select(ChatMessage).where(
+            (ChatMessage.session_id == session_id) &
+            (ChatMessage.organization_id == auth.org_id)
+        )
     ).all()
     return msgs
 
 @router.post("/stream")
-async def chat_stream(req: ChatRequest, session: Session = Depends(get_session)):
+async def chat_stream(
+    req: ChatRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     if req.session_id:
         chat_session = session.get(ChatSession, req.session_id)
         if not chat_session:
             raise HTTPException(status_code=404, detail="Session not found")
     else:
-        chat_session = ChatSession(project_id=req.project_id)
+        chat_session = ChatSession(project_id=req.project_id, organization_id=auth.org_id)
         session.add(chat_session)
         session.commit()
         session.refresh(chat_session)
@@ -103,6 +117,7 @@ async def chat_stream(req: ChatRequest, session: Session = Depends(get_session))
 
     session_bind = session.bind
     chat_session_id = chat_session.id
+    org_id = auth.org_id
 
     async def event_generator():
         full_response = ""
@@ -125,6 +140,17 @@ async def chat_stream(req: ChatRequest, session: Session = Depends(get_session))
                 )
                 save_session.add(ai_msg)
                 save_session.commit()
+                
+                # Track usage: estimate 1500 input tokens, output tokens from response
+                output_tokens = len(full_response.split()) * 1.3
+                cost_cents = UsageTracker.estimate_token_cost(1500, int(output_tokens))
+                UsageTracker.record_usage(
+                    save_session,
+                    org_id,
+                    "chat",
+                    {"session_id": chat_session_id, "tokens": 1500 + int(output_tokens)},
+                    cost_cents
+                )
 
             yield f"data: {json.dumps({'done': True, 'session_id': chat_session_id})}\n\n"
         except Exception as e:
@@ -133,7 +159,11 @@ async def chat_stream(req: ChatRequest, session: Session = Depends(get_session))
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.post("/brief")
-async def generate_brief_endpoint(req: BriefRequest, session: Session = Depends(get_session)):
+async def generate_brief_endpoint(
+    req: BriefRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     brief_md = await generate_brief(
         user_prompt=req.user_prompt,
         content_type=req.content_type,
@@ -141,16 +171,32 @@ async def generate_brief_endpoint(req: BriefRequest, session: Session = Depends(
     )
     b = Brief(
         project_id=req.project_id,
+        organization_id=auth.org_id,
         brief_md=brief_md,
         toggles_json=json.dumps(req.toggles),
     )
     session.add(b)
     session.commit()
     session.refresh(b)
+    
+    # Track usage for brief generation
+    output_tokens = len(brief_md.split()) * 1.3
+    cost_cents = UsageTracker.estimate_token_cost(1000, int(output_tokens))
+    UsageTracker.record_usage(
+        session,
+        auth.org_id,
+        "brief",
+        {"brief_id": b.id, "tokens": 1000 + int(output_tokens)},
+        cost_cents
+    )
+    
     return {"brief_id": b.id, "brief_md": brief_md}
 
 @router.post("/generate")
-async def generate_deliverable(req: GenerateRequest):
+async def generate_deliverable(
+    req: GenerateRequest,
+    auth: AuthContext = Depends(get_current_user),
+):
     playbook_name = req.playbook
     if playbook_name == "auto":
         playbook_name = CONTENT_TYPE_TO_PLAYBOOK.get(req.content_type, "blog-production")
@@ -165,10 +211,15 @@ async def generate_deliverable(req: GenerateRequest):
 
 # Brief toggles and context management
 @router.post("/briefs/{brief_id}/toggles")
-def update_brief_toggles(brief_id: int, req: TogglesRequest, session: Session = Depends(get_session)):
+def update_brief_toggles(
+    brief_id: int,
+    req: TogglesRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Update Brief toggles (brief_first, audience, voice, skills, playbook, content_type)"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     toggles = req.dict()
@@ -181,10 +232,15 @@ def update_brief_toggles(brief_id: int, req: TogglesRequest, session: Session = 
 
 
 @router.post("/briefs/{brief_id}/context-layers")
-def update_context_layers(brief_id: int, req: ContextLayersRequest, session: Session = Depends(get_session)):
+def update_context_layers(
+    brief_id: int,
+    req: ContextLayersRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Update Brief context_layers array"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     brief.context_layers_json = json.dumps(req.layers)
@@ -195,10 +251,15 @@ def update_context_layers(brief_id: int, req: ContextLayersRequest, session: Ses
 
 
 @router.delete("/briefs/{brief_id}/context-layers/{layer_name}")
-def remove_context_layer(brief_id: int, layer_name: str, session: Session = Depends(get_session)):
+def remove_context_layer(
+    brief_id: int,
+    layer_name: str,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Remove one context layer from Brief"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     layers = json.loads(brief.context_layers_json or "[]")
@@ -211,10 +272,15 @@ def remove_context_layer(brief_id: int, layer_name: str, session: Session = Depe
 
 
 @router.post("/briefs/{brief_id}/skills")
-def update_skills(brief_id: int, req: SkillsRequest, session: Session = Depends(get_session)):
+def update_skills(
+    brief_id: int,
+    req: SkillsRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Update Brief skills array"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     brief.skills_json = json.dumps(req.skills)
@@ -225,10 +291,15 @@ def update_skills(brief_id: int, req: SkillsRequest, session: Session = Depends(
 
 
 @router.delete("/briefs/{brief_id}/skills/{skill_name}")
-def remove_skill(brief_id: int, skill_name: str, session: Session = Depends(get_session)):
+def remove_skill(
+    brief_id: int,
+    skill_name: str,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Remove one skill from Brief"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     skills = json.loads(brief.skills_json or "[]")
@@ -241,10 +312,15 @@ def remove_skill(brief_id: int, skill_name: str, session: Session = Depends(get_
 
 
 @router.post("/briefs/{brief_id}/intelligence-items")
-def update_intelligence_items(brief_id: int, req: IntelligenceItemsRequest, session: Session = Depends(get_session)):
+def update_intelligence_items(
+    brief_id: int,
+    req: IntelligenceItemsRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Update Brief intelligence_items array"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     brief.intelligence_items_json = json.dumps(req.items)
@@ -255,10 +331,15 @@ def update_intelligence_items(brief_id: int, req: IntelligenceItemsRequest, sess
 
 
 @router.delete("/briefs/{brief_id}/intelligence-items/{item_id}")
-def remove_intelligence_item(brief_id: int, item_id: int, session: Session = Depends(get_session)):
+def remove_intelligence_item(
+    brief_id: int,
+    item_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Remove one intelligence item from Brief"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     items = json.loads(brief.intelligence_items_json or "[]")
@@ -271,10 +352,15 @@ def remove_intelligence_item(brief_id: int, item_id: int, session: Session = Dep
 
 
 @router.put("/briefs/{brief_id}")
-def update_brief(brief_id: int, req: BriefUpdateRequest, session: Session = Depends(get_session)):
+def update_brief(
+    brief_id: int,
+    req: BriefUpdateRequest,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     """Update Brief fields: title, audience, description, and toggles"""
     brief = session.get(Brief, brief_id)
-    if not brief:
+    if not brief or brief.organization_id != auth.org_id:
         raise HTTPException(status_code=404, detail="Brief not found")
     
     if req.title is not None:
