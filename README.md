@@ -1,218 +1,288 @@
 <img width="1082" height="607" alt="Screenshot 2026-04-26 at 9 18 56 PM" src="https://github.com/user-attachments/assets/e712f82b-f49a-47f8-9cef-37784dafd509" />
 
 
-## What is ForgeOS
-
-ForgeOS is a **local-first marketing command center** that wraps a markdown-based "engine" of voice rules, skills, playbooks, and context with a Next.js cockpit. You use it to produce developer marketing at the throughput of a small team. The markdown directories at the repo root (`core/`, `context/`, `skills/`, `playbooks/`, `rubrics/`, `briefs/`, `prompts/`) are the system's brain and remain canonical — the app reads from and writes to them. The database (SQLite via SQLModel) holds runtime state only: projects, folders, deliverables, briefs, chat sessions and messages, scrape items, and pipeline run state.
-
+**Mission control for content.**
+ 
+A local-first marketing operating system. You point it at your voice, your messaging, your competitive POV. It points back at the work.
+ 
+Most AI writing tools start with a chat box. That's a search bar with extra steps. ForgeOS starts with a knowledge base. The chat box is downstream of it.
+ 
 ---
-
-## How to run
-
-### Prerequisites
-
-- Python 3.9+
-- Node.js 18+
+ 
+## What this is
+ 
+Two layers, one product.
+ 
+**The engine** is a markdown brain at the repo root. Voice rules, claims policy, skills, playbooks, context layers, rubrics. You own these files. You edit them in your editor of choice or in the app. The agents read them before they read your prompt.
+ 
+**The cockpit** is a Next.js app you run on localhost. Dashboard, briefing, projects, deliverables, chat, pipeline runs, engine editor. It writes back to the same markdown files. Your `git log` is the audit trail.
+ 
+The whole system is built on a single bet: that the gap between AI-generated slop and content that sounds like you came out of it is almost entirely a function of what's in the system prompt before the user types anything. So the engine is canonical. The cockpit is in service to it.
+ 
+---
+ 
+## Why I built this
+ 
+I run content, comms, and analyst relations at Arize. The job demands a small team's worth of output from one person. The available tools either generated faster slop or organized slower slop. Neither solved the actual problem.
+ 
+The actual problem: every output needs voice, point of view, and technical fluency that doesn't survive a generic prompt. Loading those things into context manually, every time, doesn't scale. Saving prompts in a Notion doc doesn't scale either, because prompts decay and Notion isn't a runtime.
+ 
+ForgeOS is what happens when you treat your editorial standards as code, version them, and put a runtime in front of them.
+ 
+---
+ 
+## Two ways to work
+ 
+**Chat mode.** Conversational. Optional brief-first flow that asks you only what materially changes the output, then composes a brief, then runs the relevant playbook to produce a deliverable. This is where most of the work happens.
+ 
+**Pipeline mode.** Fire-and-forget. One prompt enters, eleven specialist agents work it in sequence, a finished draft comes out the other side. For when you know what you want and want it batched.
+ 
+Both modes draw from the same engine. Both write back to the same deliverables. Pick the one that fits the moment.
+ 
+---
+ 
+## The engine
+ 
+The markdown directories at the repo root are the source of truth. Every agent reads from them. The app writes back to them.
+ 
+```
+core/         Voice, style, claims policy, editorial principles, brand standards
+context/      Eight composable layers from philosophy through research
+skills/       Twenty-two specialist agent definitions, organized by category
+playbooks/    Sequenced workflows that orchestrate skills for each content type
+rubrics/      Quality bars used during review and scoring
+briefs/       Intake brief templates per content type
+prompts/      Reusable prompt fragments composed into the system prompt
+```
+ 
+`core/` is doctrine. `context/` is composable. `skills/` are the actors. `playbooks/` are the choreography. `rubrics/` are the bar. Each layer is editable. None of them are sacred.
+ 
+**A note on what's intentionally thin.** Several files in `context/02_narrative/`, `context/03_strategy/`, and `context/04_execution/` ship as placeholders. That's deliberate, not unfinished. The shape is right; the content needs to be your company's, not a generic template.
+ 
+---
+ 
+## The cockpit
+ 
+```
+Dashboard       Daily briefing curated from HN, Reddit, GitHub, and arXiv
+Workspace       Three pane editor with chat, brief, and WYSIWYG over the deliverable
+Pipelines       Fire-and-forget runs of the eleven-agent chain
+Intelligence    Full scored feed of everything the scrapers surfaced
+Projects        Nested projects, folders, deliverables organized by content type
+Settings        Engine editor, runtime keys, scrape config, integrations
+```
+ 
+Everything streams. Chat tokens stream. Pipeline progress streams. The dashboard updates without a refresh.
+ 
+The right rail in the workspace shows which context layers, skills, and intelligence items are composed into the current prompt. You can see exactly what the agent sees. You can also remove anything you don't want in the prompt with one click.
+ 
+---
+ 
+## The eleven agents
+ 
+Each pipeline run executes this chain in order. Each agent reads its own `SKILL.md` before running, so its behavior is fully inspectable and editable.
+ 
+```
+editorial-director       Frames the narrative, sets the strategy
+ai-researcher            Pulls sources, validates context
+dev-copywriter           Writes the draft
+dev-reviewer             Tightens copy, fixes structure
+technical-fact-checker   Verifies technical claims
+seo-strategist           Optimizes for search without losing the voice
+copy-chief               Final editorial pass
+claims-risk-reviewer     Flags unsupported or risky claims
+final-publish-reviewer   Last sanity check before publish
+social-editor            Derives social from the long form
+content-ops-manager      Distribution and repurposing plan
+```
+ 
+Eleven specialists running on rails. Change the skill file, change the agent. Add a skill, add a step.
+ 
+---
+ 
+## The briefing
+ 
+Every morning the system reads what the internet is talking about and tells you what's worth your attention.
+ 
+Sources: Hacker News (Algolia API), Reddit JSON, GitHub trending, arXiv RSS, plus a configurable list of blog feeds. Twice a day on a cron. Every item gets scored by Claude Haiku against a prompt at `context/07_research/intelligence-scoring-prompt.md`. Items scoring seven or higher land in the dashboard's briefing card.
+ 
+You edit the scoring prompt the same way you edit any other context layer. The system gets sharper as your taste does.
+ 
+---
+ 
+## Run it
+ 
+**Prerequisites**
+ 
+- Python 3.9 or newer
+- Node.js 18 or newer
 - An [Anthropic API key](https://console.anthropic.com/)
-
-### Backend (API)
-
+**Backend**
+ 
 ```bash
 cd apps/api
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate              # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 ```
-
-Edit `.env` and add your key:
+ 
+Open `.env` and add your key:
+ 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ```
-
-Then start the API:
+ 
+Start the API:
+ 
 ```bash
-python -m uvicorn main:app --reload
+python -m uvicorn main:app --reload --port 8000
 ```
-
-The API runs at `http://localhost:8000`. Check `/api/health` to confirm it's up.
-
-### Frontend (Web App)
-
+ 
+Confirm it's up:
+ 
+```bash
+curl http://localhost:8000/api/health
+```
+ 
+**Frontend**
+ 
 ```bash
 cd apps/web
 npm install
 npm run dev
 ```
-
-Open `http://localhost:3000`. The dashboard loads instantly — quote, layout, and nav are all static. Data comes from the local API.
-
+ 
+Open `http://localhost:3000`. Empty states are real. If the API is down the app says so and tells you how to start it. Nothing breaks. Nothing red.
+ 
+**First run**
+ 
+```bash
+cd apps/api
+python scripts/seed_demo.py
+```
+ 
+Seeds a project, a folder, a brief, and a deliverable so the cockpit has something to render while you wait for your first scrape to finish.
+ 
 ---
-
-## Architecture overview
-
-ForgeOS has two run modes:
-
-### Chat mode
-Conversational, optionally producing a brief first, optionally executing a playbook to produce a deliverable. This is the primary path. You interact with the system in `/workspace`, where you can chat, edit briefs, and manage deliverables. Backed by `ChatSession`, `ChatMessage`, `Brief`, `Deliverable` in the database.
-
-### Pipeline mode
-Fire-and-forget execution of the full agent chain against a single prompt. The system runs 11 specialized agents in sequence, each reading the brief and the previous agent's output, then passing an improved draft forward. Backed by `PipelineRun` in the database. Legacy "Sessions" UI.
-
-Both modes exist for different reasons and both remain. Choose chat for interactive work; choose pipeline for batch production.
-
+ 
+## How to use it
+ 
+**Make something.**
+ 
+1. Click **Let's build** on the dashboard.
+2. Pick guided (chat walks you through the brief) or YOLO (one prompt, no questions).
+3. Set toggles in the right rail: audience, voice, content type, which skills to invoke. Auto is fine for most things.
+4. Confirm or edit the brief.
+5. Watch the chain run in real time. Open the deliverable when it lands.
+**Edit your voice.**
+ 
+`core/VOICE.md` in any editor. Or Settings → Engine → Voice in the app. Save explicitly. The next chat will use the new version. No restart needed.
+ 
+**Add a skill.**
+ 
+```
+skills/{category}/{agent-name}/SKILL.md
+```
+ 
+Frontmatter at the top, prose below. Reference it from a playbook or invoke it directly from the workspace toggles. The lint will tell you if the structure is wrong.
+ 
+```bash
+python scripts/lint_skill_files.py
+python scripts/validate_repo_structure.py
+```
+ 
+**Refresh the briefing.**
+ 
+Click refresh on the dashboard. Or hit `POST /api/intelligence/scrape`. The synthesis pass that produces the curated briefing runs once per scrape, not once per page load, so the dashboard is fast.
+ 
 ---
-
-## The markdown engine
-
-The `core/`, `context/`, `skills/`, `playbooks/`, `rubrics/` directories at repo root are the system's **canonical source of truth**. Every agent reads from these before running. You own and control these files.
-
-### core/
-Load-bearing doctrine. You edit these from the Settings page (explicit save required):
-- `VOICE.md` — your brand voice, tone, audience POV
-- `STYLE_GUIDE.md` — formatting, conventions, visual style
-- `CLAIMS_POLICY.md` — what claims are safe, what needs evidence, what's off-limits
-
-### context/
-Narrative, strategy, and execution layers. Composable per brief. Thin by design in v1 (Aaron's intention — needs expansion later):
-- `00_orchestration/` — context routing instructions for agents
-- `01_philosophy/` — marketing principles (developer relations, positioning)
-- `02_narrative/` — messaging frameworks, competitive POV, campaign messaging
-- `03_strategy/` — content strategy, audience insights
-- `04_execution/` — campaign blueprints, launch playbooks
-- `05_patterns/` — proven content patterns
-- `06_influence/` — analyst relations strategy
-- `07_research/` — market research playbooks, intelligence scoring prompt
-
-**Which context layers are thin?** `02_narrative/` (messaging frameworks, competitive POV, campaign messaging), `03_strategy/` (content strategy), and `04_execution/` (launch frameworks) are placeholder-scale. PMM-led expansion here will unlock better output. Document in Settings which files need growth and how to expand them.
-
-### skills/
-11 agent definitions, organized by category. Each has a `SKILL.md` that defines the agent's role, constraints, and process. Read them to understand what each agent does. Agents load their own SKILL.md before running — change the file, change the agent.
-
-### playbooks/
-Agent orchestration specs. Define the order of agents, the context layers to use, and the branching logic for different content types. Composable with named context layers.
-
-### rubrics/
-Scoring guidance. Used for draft quality assessment and content filtering. Editable from Settings.
-
+ 
+## Architecture
+ 
+```
+forgeos/
+├── core/                       Voice, style, claims, editorial principles
+├── context/                    Eight composable context layers
+│   ├── 00_orchestration/       Routing rules for the engine
+│   ├── 01_philosophy/          Developer marketing principles
+│   ├── 02_narrative/           Messaging, competitive POV, campaign messaging
+│   ├── 03_strategy/            Content strategy, AR strategy
+│   ├── 04_execution/           Launch playbooks, post-launch frameworks
+│   ├── 05_patterns/            Proven content patterns
+│   ├── 06_influence/           Analyst relations
+│   └── 07_research/            Market research, intelligence scoring prompt
+├── skills/                     Twenty-two agent definitions
+│   ├── editorial/              Director, copy chief, content-ops manager
+│   ├── foundation/             Researcher, copywriter, reviewer
+│   ├── specialization/         SEO, social, fact-checker, repurposer, more
+│   └── quality/                Claims risk, publish readiness
+├── playbooks/                  Workflow definitions
+├── rubrics/                    Scoring rubrics
+├── briefs/                     Intake templates
+├── prompts/                    Composable prompt fragments
+└── apps/
+    ├── api/                    FastAPI backend
+    │   ├── main.py             Entry, router registration, scheduler
+    │   ├── routers/            chat, projects, sessions, intelligence, files
+    │   ├── services/           generation, scraping, scoring, file_engine
+    │   ├── models.py           Project, Folder, Deliverable, Brief, ScrapeItem
+    │   ├── database.py         SQLite via SQLModel
+    │   └── instrumentation.py  Arize AX (OpenTelemetry)
+    └── web/                    Next.js 14
+        └── src/
+            ├── app/            Routes
+            ├── components/     UI, layout, dashboard, workspace
+            └── lib/            API client, types, utilities
+```
+ 
+No cloud database. No auth service. No Redis. No Vercel. SQLite on disk. Static frontend. One API key. One person can run it.
+ 
 ---
-
-## Scrape schedule
-
-The system runs a scraper twice daily (configurable via cron). It reads from:
-- Hacker News (Algolia API)
-- GitHub (topics RSS)
-- ArXiv (RSS)
-- Reddit (JSON API)
-- Generic RSS feeds (configured in Settings)
-
-Each item gets a score (≥7 for inclusion in briefing). The synthesis pass (why_relevant, content_angle) runs once per scrape, not on every dashboard load. The Briefing Book shows curated items from the last 24 hours; the Intelligence page shows the full scored feed.
-
----
-
-## Empty context layers (intentional for v1)
-
-The narrative layer (`context/02_narrative/`) contains three thin placeholder files:
-- `messaging-framework.md` — needs ~10x expansion
-- `competitive-pov.md` — placeholder
-- `campaign-messaging.md` — placeholder
-
-Similarly, `context/03_strategy/ar-strategy.md` and `context/04_execution/` are thin. These are not bugs — Aaron's intention for v1 is to ship with a strong voice/style/claims foundation and thin narrative/strategy layers. You'll expand them as your team uses the system.
-
-**How to expand them:**
-1. Open Settings → Engine tree
-2. Navigate to the relevant context file
-3. Edit it directly (markdown editor, explicit save required)
-4. The next pipeline run or brief generation will use the new content
-
----
-
-## Contributing
-
-### Adding a skill
-
-1. Create `skills/{category}/{agent-name}/SKILL.md`
-2. Define role, constraints, input/output shape
-3. Reference it in a playbook or use it as a standalone agent in chat
-
-### Adding a context layer
-
-1. Create `context/{layer_number}_{name}/{file}.md`
-2. Reference it by path in the orchestrator or playbook
-3. Use it to compose briefs or pipeline runs
-
-### Adding a playbook
-
-1. Create `playbooks/{content_type}.md`
-2. Define the agent order, context layers, branching logic
-3. Reference it in chat toggles or pipeline runs
-
-### Style guide
-
-Read `core/VOICE.md`. All contributions should match the voice and style defined there.
-
----
-
+ 
 ## Tech stack
-
+ 
 | Layer | Technology |
-|-------|-----------|
-| Backend | FastAPI + Python 3.9+ |
-| Database | SQLite (via SQLModel) |
-| LLM | Anthropic Claude (Opus for generation, Haiku for scoring) |
-| Frontend | Next.js 14 + TypeScript |
+|---|---|
+| Backend | FastAPI, Python 3.9+ |
+| Database | SQLite via SQLModel |
+| Models | Anthropic Claude (Opus 4.7 for generation, Haiku 4.5 for scoring) |
+| Frontend | Next.js 14, TypeScript |
 | Styling | Tailwind CSS |
-| Data fetching | React Query |
-| Observability | Arize AX (OpenTelemetry) |
-
-**No cloud database. No auth service. No Redis.** SQLite on disk. One API key. One person can run it.
-
+| Data | React Query |
+| Observability | Arize AX |
+ 
+ForgeOS is instrumented end to end with Arize AX. Every model call, every retrieval, every chain step is traced. The system that helps you write about agent observability is itself observable. That's not a coincidence.
+ 
 ---
-
-## v1 Release Status
-
-ForgeOS v1 (phases 1–4 of FORGEOS_PRD.md) is production-ready. Key components:
-
-### 4.1 Showstopper fixes ✅
-- API health endpoint (`GET /api/health`)
-- Model configuration (Claude Opus for generation, Haiku for scoring)
-- Error handling: frontend distinguishes API unreachable, HTTP errors, and empty data states
-
-### 4.2–4.4 Unified execution pipeline ✅
-- Single agent chain execution path via `execute_playbook()`
-- Pipeline step persistence: each agent's input/output logged to DB
-- Final output persisted to Deliverable on pipeline completion
-
-### 4.3 Intelligence unification ✅
-- Briefing Book: curated ScrapeItem view (score ≥7, last 24h, with why_relevant + content_angle)
-- Intelligence page: full scored feed with filters
-- Refresh button triggers `/api/intelligence/scrape` and reloads briefing
-
-### 4.4 PipelineRun refactor ✅
-- Model properly links Brief → PipelineRun → Deliverable
-- Output lives on Deliverable.body_md, not PipelineRun.output
-- Sessions UI displays run state + progress
-
-### 4.5 Workspace surface ✅
-- Three-pane layout: project tree (left), chat/editor/brief tabs (center), toggles + context (right)
-- Full CRUD for projects/folders/deliverables
-- TipTap markdown editor with round-trip fidelity
-- Streaming chat with Claude integration
-
-### 4.6 Settings/Engine editor ✅
-- Tree view for core/, context/, skills/, playbooks/, rubrics/
-- WYSIWYG markdown editor with frontmatter support
-- References indicator shows skills/playbooks using each file
-- Unsaved changes warning (browser + UI level)
-- Explicit save with error handling
-
-### 4.7–4.8 Frontend polish ✅
-- React Query for data fetching (chosen; SWR not present)
-- All async surfaces have loading/empty/error states
-- Documentation updated
-
+ 
+## What's next
+ 
+The roadmap moves in three directions. Not all at once.
+ 
+**Near term.** Calendar with bidirectional Google sync. The "Let's build" guided flow as the default entry point. Content strategy upload that routes documents to the right context layer. Sentence case across the entire UI. Light and dark themes that earn their pixels.
+ 
+**Medium term.** Search intelligence. Google Search Console plus Trends plus the existing scrape pipeline, joined by a daily LLM pass that tells you where the gaps are. Real per-skill model routing once a second LLM provider is wired. A skill marketplace where the engine becomes shareable.
+ 
+**Longer term.** Multi-tenancy. Auth. Team plans. Billing. The version of this that other people pay for.
+ 
+The PRDs that govern each of these live in the repo at `FORGEOS_PRD.md`, `FORGEOS_PHASE_PLAN.md`, and `FORGEOS_COMMERCIALIZATION_PRD.md`. Read them before opening a PR.
+ 
 ---
-
+ 
+## Contributing
+ 
+I'm one person building this between other work. The roadmap is real and the gaps are real.
+ 
+- **Frontend.** The cockpit is functional. It is not yet excellent.
+- **Backend.** The agent runner, the scrape pipeline, the engine watcher all have meaningful improvements queued up.
+- **AI engineering.** Evals, scoring calibration, parallelism, smarter context composition. All open problems.
+- **Technical writers.** The engine is the product. Good writers who understand AI tooling matter as much as good engineers here.
+- **Marketers who code.** This tool is built for people like you. Your feedback shapes everything.
+Open an issue. Start a discussion. The best contributions usually start with a conversation.
+ 
+---
+ 
 ## License
-
-MIT. Use it, fork it, build on it.
+ 
+MIT. Use it, fork it, build on it. If it helps you, tell me.
