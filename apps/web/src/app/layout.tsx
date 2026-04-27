@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import { AgentTracker } from '@/components/layout/AgentTracker';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { CommandPalette } from '@/components/CommandPalette';
 
 export const metadata: Metadata = {
   title: 'ForgeOS',
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AgentTracker />
           </div>
           <ThemeToggle />
+          <CommandPalette />
         </ErrorBoundary>
       </body>
     </html>

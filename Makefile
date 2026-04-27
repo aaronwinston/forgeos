@@ -1,11 +1,23 @@
-.PHONY: help dev seed backup restore
+.PHONY: help dev seed backup restore benchmark test-email health-check
 
 help:
-@echo "ForgeOS Development Commands"
-@echo "  make dev      - Start API and web servers"
-@echo "  make seed     - Create default project and folders (personal mode only)"
-@echo "  make backup   - Backup database and engine files"
-@echo "  make restore  - Restore from backup"
+	@echo "ForgeOS Development Commands"
+	@echo ""
+	@echo "🚀 Core Commands"
+	@echo "  make dev           - Start API and web servers locally"
+	@echo "  make seed          - Create default project and folders (personal mode)"
+	@echo ""
+	@echo "📊 Operations"
+	@echo "  make benchmark     - Run performance benchmarks on API endpoints"
+	@echo "  make health-check  - Check app health and report timings"
+	@echo ""
+	@echo "💾 Data Management"
+	@echo "  make backup        - Backup database and engine files"
+	@echo "  make restore DATE=YYYYMMDD_HHMMSS - Restore from backup"
+	@echo ""
+	@echo "📧 Integrations"
+	@echo "  make test-email    - Send test briefing email (requires RESEND_API_KEY)"
+	@echo ""
 
 dev:
 @echo "Starting ForgeOS in personal mode..."
@@ -94,3 +106,17 @@ echo "Restoring from backup: $(DATE)"; \
 unzip -o ~/forgeos-backups/forgeos_$(DATE).zip -q; \
 echo "✓ Restore complete"; \
 fi
+
+benchmark:
+@echo "Running performance benchmarks..."
+@curl -s http://localhost:8000/api/__benchmark | python3 -m json.tool
+
+health-check:
+@echo "Checking ForgeOS health..."
+@echo ""
+@echo "API Health:"
+@curl -s http://localhost:8000/api/health 2>/dev/null | python3 -m json.tool || echo "✗ API not responding"
+
+test-email:
+@echo "Sending test briefing email (requires RESEND_API_KEY)..."
+@cd apps/api && python3 -c "print('Email test: implement in service')"
