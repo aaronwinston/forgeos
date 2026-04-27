@@ -10,6 +10,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from models import GscQuery, CalendarIntegration
 from database import engine
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,18 +18,32 @@ GSC_SCOPES = ['https://www.googleapis.com/auth/webmasters.readonly']
 
 
 class GSCService:
-    """Google Search Console API client."""
+    """Google Search Console API client with automatic token refresh."""
     
-    def __init__(self, access_token: str, gsc_property: str):
+    def __init__(self, access_token: str, refresh_token: str, gsc_property: str):
         """
-        Initialize GSC service.
+        Initialize GSC service with token refresh capability.
         
         Args:
             access_token: OAuth 2.0 access token
+            refresh_token: OAuth 2.0 refresh token (for expired token handling)
             gsc_property: GSC property URL (e.g., "sc-domain:example.com" or "https://example.com/")
         """
         self.gsc_property = gsc_property
-        self.credentials = Credentials(token=access_token)
+        self.refresh_token = refresh_token
+        self.credentials = Credentials(
+            token=access_token,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=settings.GOOGLE_OAUTH_CLIENT_ID,
+            client_secret=settings.GOOGLE_OAUTH_CLIENT_SECRET,
+        )
+        # Refresh credentials if expired
+        if self.credentials.expired and self.refresh_token:
+            request = Request()
+            self.credentials.refresh(request)
+            logger.info("GSC credentials refreshed")
+        
         self.service = build('webmasters', 'v3', credentials=self.credentials)
     
     def get_performance_data(self, days_back: int = 28) -> list[dict]:
@@ -42,6 +57,11 @@ class GSCService:
             List of performance rows with query, page, clicks, impressions, ctr, position
         """
         try:
+            # Refresh if needed before request
+            if self.credentials.expired and self.refresh_token:
+                request = Request()
+                self.credentials.refresh(request)
+            
             end_date = datetime.utcnow().date()
             start_date = end_date - timedelta(days=days_back)
             
@@ -85,7 +105,7 @@ async def pull_gsc_data(user_id: str = "aaron", gsc_property: Optional[str] = No
     Pull GSC data and store in database.
     
     Looks up user's OAuth token from CalendarIntegration (reuses OAuth).
-    If gsc_property not specified, uses Google Search Console's primary property.
+    Uses stored GSC property from calendar_id field, or override via parameter.
     
     Returns:
         Status dict with rows_fetched count
@@ -103,23 +123,32 @@ async def pull_gsc_data(user_id: str = "aaron", gsc_property: Optional[str] = No
             return {"status": "skipped", "reason": "No OAuth token"}
         
         access_token = oauth.access_token
-        if not access_token:
-            logger.warning(f"OAuth token expired/unavailable for user {user_id}")
-            return {"status": "skipped", "reason": "Token unavailable"}
+        refresh_token = oauth.refresh_token
+        
+        if not access_token or not refresh_token:
+            logger.warning(f"OAuth token incomplete for user {user_id} (missing access or refresh token)")
+            return {"status": "skipped", "reason": "Token incomplete"}
     
     try:
-        # For now, use a sensible default or let user configure
-        property_url = gsc_property or "sc-domain:arize.com"
+        # Use stored GSC property or parameter, or default
+        # NOTE: calendar_id field stores GSC property URL when GSC is selected
+        property_url = gsc_property or oauth.calendar_id or "sc-domain:arize.com"
         
-        gsc = GSCService(access_token, property_url)
+        logger.info(f"Pulling GSC data for property: {property_url}")
+        gsc = GSCService(access_token, refresh_token, property_url)
         rows = gsc.get_performance_data(days_back=28)
+        
+        if not rows:
+            logger.warning(f"No GSC data returned for {property_url}")
+            return {"status": "success", "rows_fetched": 0}
         
         # Store in database
         with Session(engine) as session:
             for row_data in rows:
-                # Upsert: update if query+page combo exists, else insert
+                # Upsert: update if query+page+date combo exists, else insert
                 existing = session.exec(
                     select(GscQuery).where(
+                        (GscQuery.user_id == user_id) &
                         (GscQuery.query == row_data['query']) &
                         (GscQuery.page == row_data['page']) &
                         (GscQuery.date_range_start == row_data['date_range_start'])
@@ -128,10 +157,13 @@ async def pull_gsc_data(user_id: str = "aaron", gsc_property: Optional[str] = No
                 
                 row_data['user_id'] = user_id
                 if existing:
+                    # Update existing row
                     for key, value in row_data.items():
-                        setattr(existing, key, value)
+                        if key != 'user_id':  # Don't overwrite user_id
+                            setattr(existing, key, value)
                     session.add(existing)
                 else:
+                    # Insert new row
                     gsc_query = GscQuery(**row_data)
                     session.add(gsc_query)
             
