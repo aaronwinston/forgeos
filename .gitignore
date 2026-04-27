@@ -21,6 +21,10 @@ venv/
 *.sqlite
 *.sqlite3
 
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
 # Node/Next
 node_modules/
 **/node_modules/

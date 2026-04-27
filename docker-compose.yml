@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: forgeos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Celery worker for processing background tasks
+  celery-worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.celery
+    container_name: forgeos-celery-worker
+    command: celery -A celery_app worker --loglevel=info --concurrency=4 -Q intelligence,integrations,notifications,maintenance,reports
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - ./apps/api/.env
+    volumes:
+      - ./apps/api:/app
+    restart: unless-stopped
+
+  # Celery beat for scheduling periodic tasks
+  celery-beat:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.celery
+    container_name: forgeos-celery-beat
+    command: celery -A celery_app beat --loglevel=info
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - ./apps/api/.env
+    volumes:
+      - ./apps/api:/app
+    restart: unless-stopped
+
+  # Flower for monitoring (optional)
+  celery-flower:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.celery
+    container_name: forgeos-celery-flower
+    command: celery -A celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - ./apps/api/.env
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local

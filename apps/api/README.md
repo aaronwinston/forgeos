@@ -43,6 +43,37 @@ python -m uvicorn main:app --reload
 
 The API runs at `http://localhost:8000`. Check `/api/health` for a health ping.
 
+## Rate limiting
+
+ForgeOS API uses **slowapi** to rate limit requests to protect against DoS and brute-force attacks.
+
+**Keying policy:**
+- Authenticated requests are limited **per user** (JWT `sub`).
+- Unauthenticated requests are limited **per IP**.
+
+**Default limits (configurable via env):**
+- Auth endpoints (`/api/auth/*`): `RATE_LIMIT_AUTH` (default: `10/minute`)
+- Public endpoints (`/api/health`, `/api/trust/legal/*`, `/api/trust/status`): `RATE_LIMIT_PUBLIC` (default: `60/minute`)
+- Internal endpoints (most authenticated endpoints): `RATE_LIMIT_INTERNAL` (default: `100/minute`)
+- Expensive endpoints also have a global cap: `RATE_LIMIT_EXPENSIVE_GLOBAL` (default: `30/minute`)
+
+When rate limited, the API returns **429 Too Many Requests** with `X-RateLimit-*` headers.
+
+### Configuration
+
+Add to `.env` as needed:
+
+```env
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STORAGE_URI=memory://
+RATE_LIMIT_TRUST_X_FORWARDED_FOR=false
+
+RATE_LIMIT_AUTH=10/minute
+RATE_LIMIT_PUBLIC=60/minute
+RATE_LIMIT_INTERNAL=100/minute
+RATE_LIMIT_EXPENSIVE_GLOBAL=30/minute
+```
+
 ## API Overview
 
 ### Health & Status
@@ -169,18 +200,66 @@ apps/api/
 │   ├── intelligence.py      # /api/intelligence/* (full feed + scraping)
 │   ├── sessions.py          # /api/sessions/* (legacy pipeline mode)
 │   ├── settings.py          # /api/settings/* (engine management)
+│   ├── jobs.py              # /api/jobs/* (job queue monitoring)
 │   └── files.py             # /api/files/* (markdown engine file I/O)
 ├── services/                # Business logic
 │   ├── file_engine.py       # Markdown engine abstraction
 │   ├── generation.py        # Playbook execution & content generation
 │   ├── scoring.py           # Intelligence item scoring
 │   └── scraping.py          # Web scraper implementations
+├── tasks.py                 # Celery background tasks
+├── celery_app.py            # Celery configuration
+├── manage_jobs.py           # Job queue management CLI
 └── scripts/                 # Utilities
     ├── validate_repo_structure.py
     └── lint_skill_files.py
 ```
 
-**No Redis, no background workers.** Scheduled jobs (scraping) use APScheduler with in-process persistence. All async I/O uses Python's native `asyncio`.
+## Background Jobs
+
+ForgeOS uses **Celery** with **Redis** for reliable background job processing. This provides automatic retries, monitoring, and distributed task execution.
+
+### Quick Start
+
+1. **Start services with Docker:**
+   ```bash
+   cd /path/to/forgeos
+   docker-compose up -d
+   ```
+
+2. **Or run locally:**
+   ```bash
+   # Terminal 1: Redis
+   redis-server
+   
+   # Terminal 2: Celery worker
+   cd apps/api
+   celery -A celery_app worker --loglevel=info
+   
+   # Terminal 3: Celery beat (scheduler)
+   celery -A celery_app beat --loglevel=info
+   ```
+
+3. **Monitor at** http://localhost:5555 (Flower UI)
+
+### Documentation
+
+- **[CELERY_QUICKSTART.md](./CELERY_QUICKSTART.md)** - Get started in 5 minutes
+- **[BACKGROUND_JOBS.md](./BACKGROUND_JOBS.md)** - Complete job queue documentation
+- **[CELERY_MIGRATION.md](./CELERY_MIGRATION.md)** - Migration from APScheduler
+
+### Scheduled Tasks
+
+| Task | Schedule | What it does |
+|------|----------|--------------|
+| Intelligence Scraping | 8 AM & 6 PM | Scrape and score intelligence sources |
+| Calendar Sync | Every 5 min | Poll Google Calendar for updates |
+| Trends Polling | 9 AM daily | Fetch Google Trends data |
+| Email/Slack Digests | 8 AM daily | Send daily notifications |
+| Data Cleanup | 2 AM daily | Archive old data |
+| Weekly Report | Monday 7 AM | Generate analytics reports |
+
+See [BACKGROUND_JOBS.md](./BACKGROUND_JOBS.md) for the complete list and details.
 
 ---
 

@@ -2,18 +2,57 @@
 import instrumentation
 instrumentation.setup_tracing()
 
-from fastapi import FastAPI
+from logging_config import configure_logging
+
+configure_logging()
+
+# Register audit listeners (SQLAlchemy session hooks)
+import audit as audit_trail  # noqa: F401
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 from database import create_db_and_tables
-from routers import projects, chat, intelligence, settings as settings_router, files, sessions, briefing, integrations, calendar, search, orgs, runtimes, billing, usage, onboarding, doctrine, mission_control, skills, trust, auth
+from middleware.request_logging import RequestLoggingMiddleware
+from routers import (
+    projects,
+    chat,
+    intelligence,
+    settings as settings_router,
+    files,
+    sessions,
+    briefing,
+    integrations,
+    calendar,
+    search,
+    orgs,
+    runtimes,
+    billing,
+    usage,
+    onboarding,
+    doctrine,
+    mission_control,
+    skills,
+    trust,
+    auth,
+    audit as audit_router,
+    jobs,
+)
 from config import settings
+from middleware.rate_limit import limiter, setup_rate_limiting
 
 app = FastAPI(title="ForgeOS API", version="1.0.0")
+
+setup_rate_limiting(app)
+
+# Request/response logging (method, path, status, latency, sizes, auth context)
+app.add_middleware(RequestLoggingMiddleware)
 
 # Parse CORS allowed origins from comma-separated env var
 allowed_origins = [origin.strip() for origin in settings.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
 
+# Add CORS after rate limiting so CORS headers are present even on 429 responses.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -42,6 +81,8 @@ app.include_router(doctrine.router)
 app.include_router(mission_control.router)
 app.include_router(skills.router)
 app.include_router(trust.router)
+app.include_router(audit_router.router)
+app.include_router(jobs.router)
 
 scheduler = AsyncIOScheduler()
 
@@ -127,5 +168,6 @@ async def shutdown():
     scheduler.shutdown()
 
 @app.get("/api/health")
-def health():
+@limiter.limit(settings.RATE_LIMIT_PUBLIC)
+def health(request: Request):
     return {"status": "ok", "version": "1.0.0"}

@@ -45,6 +45,32 @@ class Settings(BaseSettings):
     # JWT secret key for auth tokens
     JWT_SECRET_KEY: str = ""
 
+    # Rate limiting (slowapi)
+    RATE_LIMIT_ENABLED: bool = True
+    # If behind a trusted proxy/load balancer, enable to derive client IP from X-Forwarded-For.
+    RATE_LIMIT_TRUST_X_FORWARDED_FOR: bool = False
+    # Storage backend for slowapi/limits (default: in-memory). Examples: "memory://", "redis://localhost:6379".
+    RATE_LIMIT_STORAGE_URI: str = "memory://"
+
+    # Per-endpoint-category limits
+    RATE_LIMIT_AUTH: str = "10/minute"        # signup/signin/signout (brute-force protection)
+    RATE_LIMIT_PUBLIC: str = "60/minute"      # health/legal/status (unauthenticated)
+    RATE_LIMIT_INTERNAL: str = "100/minute"   # authenticated endpoints (per-user)
+
+    # Extra global caps for expensive endpoints (applied in addition to per-user limits)
+    RATE_LIMIT_EXPENSIVE_GLOBAL: str = "30/minute"
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    # Request/audit log retention (days) for rotated log files
+    LOG_RETENTION_DAYS: int = 14
+    # Directory to write api.log* files into
+    LOG_DIR: Path = Path(__file__).parent / "logs"
+
+    # Celery/Redis configuration
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
     class Config:
         env_file = ".env"
     
