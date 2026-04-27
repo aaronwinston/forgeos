@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     # Repo root is 3 levels up from apps/api/ (apps/api -> apps -> repo_root)
     REPO_ROOT: Path = Path(__file__).parent.parent.parent
     ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    LLM_PROVIDER: str = "anthropic"
     MODEL_GENERATION: str = "claude-opus-4-7"
     MODEL_SCORING: str = "claude-haiku-4-5"
     DATABASE_URL: str = "sqlite:///./forgeos.db"
