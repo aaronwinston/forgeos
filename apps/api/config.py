@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     
     # LLM key encryption (M2)
     LLM_KEY_ENCRYPTION_SECRET: str = ""
+    
+    # CORS allowed origins (comma-separated list)
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
 
     class Config:
         env_file = ".env"
