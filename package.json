@@ -4,8 +4,8 @@
   "description": "ForgeOS - Mission control for content",
   "private": true,
   "scripts": {
-    "dev": "cd apps/web && npm run dev",
-    "build": "cd apps/web && npm run build",
-    "start": "cd apps/web && npm start"
+    "build": "cd apps/web && npm install && npm run build && mv .next ../../.next",
+    "start": "cd apps/web && npm start",
+    "dev": "cd apps/web && npm run dev"
   }
 }
