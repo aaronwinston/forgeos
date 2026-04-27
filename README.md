@@ -1,5 +1,6 @@
 <img width="1082" height="607" alt="Screenshot 2026-04-26 at 9 18 56 PM" src="https://github.com/user-attachments/assets/e712f82b-f49a-47f8-9cef-37784dafd509" />
 
+_Brought to you by LLMs and espresso. Buyer beware._
 
 # **ForgeOS: Mission control for content.**
  
@@ -296,3 +297,7 @@ Open an issue. Start a discussion. The best contributions usually start with a c
 ## License
  
 MIT. Use it, fork it, build on it. If it helps you, tell me.
+
+## Who built this freaking thing 
+
+ForgeOS was built by Aaron Winston. It is an AI-native editorial operating system for teams building technical content for developers, engineering leaders, AI builders, and enterprise buyers. It is not a prompt dump. It is not a generic content bot. It is a structured system of specialized agents that work like a high-performing editorial team — with a philosophy, a voice, a quality bar, and a chain of accountability from brief to published asset. The judgment is yours. The system executes your direction.
