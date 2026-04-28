@@ -51,6 +51,7 @@ This implementation package gives you everything needed to execute a cohesive, p
    - A/B testing approach and monitoring metrics
 
 ### Event Experience
+### Event Experience
 6. **SESSION-DESCRIPTIONS.md** (17 KB)
    - 4 hero sessions (keynote, deep-dives, technical talks)
    - Before/after descriptions (old → new, problem-focused)
@@ -65,6 +66,15 @@ This implementation package gives you everything needed to execute a cohesive, p
    - Speaker brief: how to make talks developer-focused
    - Post-event measurement and follow-up strategy
    - Tone & language guide (descriptions, materials, swag)
+
+### Tools & Utilities
+
+8. **SOCIAL-POST-GENERATOR-TOOL.md** (5.3 KB)
+   - CLI tool for generating posts on-demand
+   - Installation guide
+   - Usage examples (LinkedIn, Twitter, Email, Banner)
+   - Integration with scripts/copy tools
+   - Executable: `~/.copilot/extensions/social-post-generator-cli.sh`
 
 ---
 
@@ -391,5 +401,5 @@ June 4 ➜ EVENT DAY
 ---
 
 **Questions?** Contact: [Event organizer email]  
-**Files in this campaign:** 8 markdown files, 110+ KB total  
+**Files in this campaign:** 9 markdown files + 2 executable tools (social-post-generator.js, social-post-generator-cli.sh), 120+ KB total  
 **Estimated team hours to execute:** 200-250 hours across marketing, DevRel, events
