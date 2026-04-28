@@ -1,7 +1,7 @@
 <img width="1082" height="607" alt="Screenshot 2026-04-26 at 9 18 56 PM" src="https://github.com/user-attachments/assets/e712f82b-f49a-47f8-9cef-37784dafd509" />
 
 
-#### _Brought to you by LLMs and espresso. Buyer beware._
+#### _Brought to you by LLMs and espresso. Buyer beware (well at least once I figure out how to build in a payment menu)._
 
 # **ForgeOS: Mission control for content.**
  
