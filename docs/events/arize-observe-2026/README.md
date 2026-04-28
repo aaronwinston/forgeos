@@ -12,6 +12,7 @@ This implementation package gives you everything needed to execute a cohesive, p
 
 ### 📁 Files in This Directory
 
+### Core Strategy
 1. **MESSAGING-PLAYBOOK.md** (19 KB, 19,000 words)
    - Core positioning and message architecture
    - Message variants by audience segment
@@ -19,31 +20,51 @@ This implementation package gives you everything needed to execute a cohesive, p
    - Messaging by channel (LinkedIn, X/Twitter, Email, In-product, Partner)
    - Summary framework and implementation checklist
 
-2. **PAID-CREATIVE.md** (7.6 KB)
+2. **SOCIAL-POSTS-BY-CHANNEL.md** (22.6 KB)
+   - **LinkedIn:** 5-week posting strategy (3 posts/week → daily)
+   - **X/Twitter:** 4 detailed threads + quote cards + daily series
+   - **Community:** Phoenix Discord + partner co-promo templates
+   - **In-product:** 4-phase rotating banner copy
+   - **Tone guide:** Developer-focused language (problem-first, specific, technical)
+   - **Hashtag strategy:** Ownership keywords threaded throughout
+   - All copy references 7 target keywords: agent harness, harness engineering, architecture patterns, orchestration layer, multi-agent design, memory architecture, tool calling
+
+### Campaign Execution
+3. **PAID-CREATIVE.md** (7.6 KB)
    - 4 creative variants: Problem, Authority, FOMO, Specificity
    - Targeting strategy (Lookalike, Retargeting, Job titles)
    - Deployment timeline and urgency messaging
    - Success metrics (CTR, CPM, conversion rate targets)
 
-3. **SPEAKER-AMPLIFICATION-KIT.md** (13 KB)
+4. **SPEAKER-AMPLIFICATION-KIT.md** (13 KB)
    - Speaker positioning guide (4 speakers with specific angles)
    - Pre-written social posts (LinkedIn, X/Twitter, quote cards)
    - One-pager template to send to speakers
    - Optional: Email template for speakers to send to their networks
    - Timing and checkpoint tracking
 
-4. **EMAIL-CAMPAIGN.md** (17.3 KB)
+5. **EMAIL-CAMPAIGN.md** (17.3 KB)
    - 4 audience segments with warmth assessment
    - 6 email sends (May 1 - June 3) with full copy
    - Segmentation strategy (warm vs cold, persona-based)
    - Expected conversion rates and volume per segment (~810 registrations)
    - A/B testing approach and monitoring metrics
 
-5. **SESSION-DESCRIPTIONS.md** (17 KB)
+### Event Experience
+6. **SESSION-DESCRIPTIONS.md** (17 KB)
    - 4 hero sessions (keynote, deep-dives, technical talks)
    - Before/after descriptions (old → new, problem-focused)
    - 4 hands-on workshops with learning outcomes
    - Schedule layout and marketing deliverables checklist
+
+7. **DEVELOPER-FOCUSED-EXPERIENCE.md** (15.9 KB)
+   - Core principles (problem-first, hands-on, peer authority)
+   - Full day schedule (9am-5pm with sessions + workshops)
+   - Workshop design (evals, observability, multi-agent systems)
+   - Day-of experience (registration, signage, wifi, code repo)
+   - Speaker brief: how to make talks developer-focused
+   - Post-event measurement and follow-up strategy
+   - Tone & language guide (descriptions, materials, swag)
 
 ---
 
@@ -370,5 +391,5 @@ June 4 ➜ EVENT DAY
 ---
 
 **Questions?** Contact: [Event organizer email]  
-**Files in this campaign:** 5 markdown files, 54 KB total  
+**Files in this campaign:** 8 markdown files, 110+ KB total  
 **Estimated team hours to execute:** 200-250 hours across marketing, DevRel, events
