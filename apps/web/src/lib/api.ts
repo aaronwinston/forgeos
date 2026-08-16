@@ -1,21 +1,21 @@
-import { validateConfig } from './config';
 import { getHeadersWithCSRF, getCSRFToken } from './csrf';
 
-// Validate configuration on module load
-if (typeof window !== 'undefined') {
-  try {
-    validateConfig();
-  } catch (error) {
-    console.error('Configuration validation failed:', error);
-    // In development, we'll log but not crash - fallback to localhost:8000
-    // In production, this should fail hard
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/$/, '');
   }
+
+  // Safe browser fallback: use same-origin API routes when env is not set.
+  if (typeof window !== 'undefined') {
+    return window.location.origin.replace(/\/$/, '');
+  }
+
+  // SSR/build-time fallback for static generation paths.
+  return '';
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+const API_BASE = resolveApiBase();
 
 export function getApiBase(): string {
   return API_BASE;

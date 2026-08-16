@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCSRFToken, getHeadersWithCSRF } from '@/lib/csrf';
+import { getApiBase } from '@/lib/api';
 
 export default function SignUp() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: getHeadersWithCSRF({
