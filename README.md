@@ -129,6 +129,7 @@ You edit the scoring prompt the same way you edit any other context layer. The s
 - Python 3.9 or newer
 - Node.js 18 or newer
 - An [Anthropic API key](https://console.anthropic.com/)
+
 **Backend**
  
 ```bash
@@ -156,16 +157,33 @@ Confirm it's up:
 ```bash
 curl http://localhost:8000/api/health
 ```
+
+**Run tests:**
+
+```bash
+# Unit tests only
+pytest -m unit
+
+# Integration tests only
+pytest -m integration
+
+# Rate limit tests only
+pytest -m rate_limit
+
+# All tests
+pytest
+```
  
 **Frontend**
  
 ```bash
 cd apps/web
 npm install
-npm run dev
+npm run build    # TypeScript strict checks enabled; build will fail on type errors
+npm run dev      # or: npm run build && npm start for production
 ```
  
-Open `http://localhost:3000`. Empty states are real. If the API is down the app says so and tells you how to start it. Nothing breaks. Nothing red.
+Open `http://localhost:3000`. Empty states are real. If the API is down the app says so and tells you how to start it. Error boundaries on critical pages provide graceful fallback UI. Nothing breaks. Nothing red.
  
 **First run**
  
@@ -272,16 +290,66 @@ Production deployment: `apps/web` deploys to Vercel with dynamic Next.js runtime
  
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI, Python 3.9+ |
-| Database | SQLite via SQLModel |
+| Backend | FastAPI, Python 3.9+ (3.14 forward-compatible) |
+| Database | SQLite via SQLModel with Alembic migrations |
 | Models | Anthropic Claude (Opus 4.7 for generation, Haiku 4.5 for scoring) |
-| Frontend | Next.js 14, TypeScript |
+| Frontend | Next.js 14, TypeScript with strict checks enabled |
 | Styling | Tailwind CSS |
-| Data | React Query |
+| Data | React Query with typed API client |
 | Observability | Arize AX |
+| Testing | Pytest with marker-based test discovery (unit, integration, rate_limit) |
  
 ForgeOS is instrumented end to end with Arize AX. Every model call, every retrieval, every chain step is traced. The system that helps you write about agent observability is itself observable. That's not a coincidence.
+
+### Code Quality & Robustness
+
+**Backend:**
+- Python 3.14 forward-compatible: all `datetime.utcnow()` calls modernized to `datetime.now(timezone.utc)`
+- Pydantic v2 patterns: modern `model_config = ConfigDict()` throughout
+- Secret validation: warnings in personal mode, fail-fast in multi-tenant production
+- Enhanced scraping: per-source error logging and URL-level deduplication
+- Graceful fallbacks: Alembic migrations first, legacy SQL runner as fallback
+
+**Frontend:**
+- TypeScript strict mode enabled: all build-time type checking active
+- Typed API client: `apiClient.ts` with CSRF token, 401 redirect, error handling
+- Error boundaries: critical pages (dashboard, intelligence, workspace) guarded with fallback UI
+- Friendly 404: custom not-found page with dashboard navigation
+
+**Testing & CI:**
+- 242+ tests with pytest markers: 137 unit, 85 integration, 20 rate_limit
+- Marker-based test discovery: CI runs `pytest -m unit`, `-m integration`, `-m rate_limit` separately
+- Build validation: ESLint + TypeScript strict checks on every deploy
  
+---
+ 
+## Recent Improvements (Latest Refactor)
+
+ForgeOS underwent a comprehensive refactor to modernize all systems and ensure production readiness:
+
+**Backend Modernization:**
+- Fixed 42+ deprecated `datetime.utcnow()` calls → `datetime.now(timezone.utc)` (Python 3.14 compatible)
+- Modernized Pydantic v1 patterns → v2 `ConfigDict()` throughout
+- Enhanced secret management: warnings in personal mode, fail-fast validation in production
+- Improved scraper resilience: per-source error logging, URL-level deduplication, service-level error handling
+
+**Frontend Robustness:**
+- TypeScript strict mode enabled: all type checking enforced at build time
+- Typed API client layer: type-safe fetch wrapper with CSRF, 401 redirect, error handling
+- Error boundaries: critical pages wrapped with graceful fallback UI
+- Custom 404: friendly not-found page replacing Next.js default
+
+**Testing & Quality:**
+- Pytest markers: 242+ tests categorized (137 unit, 85 integration, 20 rate_limit)
+- Marker-based CI: separate test runs for unit/integration/rate-limit
+- Build validation: TypeScript strict checks + ESLint on every deploy
+
+**Data Integrity:**
+- Migration consolidation: Alembic first, legacy SQL runner as graceful fallback
+- Duplicate key fixes: migration numbering cleaned up and validated
+
+See [`docs/README.md`](./docs/README.md) for full documentation structure.
+
 ---
  
 ## What's next
