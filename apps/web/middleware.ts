@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  // Allow public paths without middleware
+  const pathname = request.nextUrl.pathname;
+  const publicPaths = ['/', '/api', '/_next', '/favicon.ico', '/not-found'];
+  
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
   // Check if running in personal mode
   const personalMode = process.env.NEXT_PUBLIC_FORGEOS_MODE === 'personal';
 
   // In personal mode, redirect signin/signup to dashboard
   if (personalMode) {
-    const pathname = request.nextUrl.pathname;
-
     if (pathname === '/auth/signin' || pathname === '/auth/signup') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
