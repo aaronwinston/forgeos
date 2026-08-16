@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Allow public paths without middleware
   const pathname = request.nextUrl.pathname;
-  const publicPaths = ['/', '/api', '/_next', '/favicon.ico', '/not-found'];
   
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  // Allow public paths without middleware
+  const publicPaths = ['/', '/_not-found'];
+  
+  if (publicPaths.includes(pathname)) {
     return NextResponse.next();
   }
 
