@@ -30,7 +30,7 @@ export default function RuntimesSettings() {
       if (res.ok) {
         setKeys(await res.json());
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load runtime keys');
     }
   };
@@ -59,8 +59,8 @@ export default function RuntimesSettings() {
       setSuccess(`${selectedRuntime} key added successfully`);
       setApiKey('');
       fetchKeys();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add key');
     } finally {
       setLoading(false);
     }
@@ -80,8 +80,8 @@ export default function RuntimesSettings() {
         setError(`${runtime} key validation failed: ${data.error}`);
       }
       fetchKeys();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to validate key');
     }
   };
 
@@ -98,8 +98,8 @@ export default function RuntimesSettings() {
         setSuccess(`${runtime} key deleted`);
         fetchKeys();
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete key');
     }
   };
 

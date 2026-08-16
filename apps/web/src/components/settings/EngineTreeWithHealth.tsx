@@ -42,9 +42,9 @@ export default function EngineTreeWithHealth({ selectedPath, onSelect }: EngineT
     async function loadHealth() {
       try {
         const result = await api.getEngineHealth();
-        if (!('error' in result) && result.files) {
+        if (!('error' in result) && Array.isArray((result as { files?: unknown }).files)) {
           const healthMap: HealthData = {};
-          result.files.forEach((f: FileHealth) => {
+          (result as { files: FileHealth[] }).files.forEach((f: FileHealth) => {
             healthMap[f.path] = f;
           });
           setHealth(healthMap);

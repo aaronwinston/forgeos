@@ -9,7 +9,7 @@ export interface UseAsyncState<T> {
 }
 
 export interface UseAsyncActions<T> {
-  execute: <Args extends unknown[]>(promise: Promise<T>) => Promise<T>;
+  execute: (promise: Promise<T>) => Promise<T>;
   reset: () => void;
   setData: (data: T) => void;
   setLoading: (loading: boolean) => void;
@@ -43,7 +43,7 @@ export function useAsync<T>(initialData?: T): UseAsyncState<T> & UseAsyncActions
     data: initialData ?? null,
   });
 
-  const execute = useCallback(async <Args extends unknown[]>(promise: Promise<T>): Promise<T> => {
+  const execute = useCallback(async (promise: Promise<T>): Promise<T> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const data = await promise;

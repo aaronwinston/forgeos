@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getApiBase } from '@/lib/api';
 import { Send, ArrowLeft } from 'lucide-react';
@@ -11,7 +12,7 @@ interface Message {
   content: string;
 }
 
-export default function ExpandPage() {
+function ExpandPageContent() {
   const searchParams = useSearchParams();
   const filePath = searchParams?.get('file') || '';
   
@@ -237,5 +238,13 @@ export default function ExpandPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ExpandPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen bg-bg-primary"><p className="text-fg-secondary">Loading expansion flow...</p></div>}>
+      <ExpandPageContent />
+    </Suspense>
   );
 }

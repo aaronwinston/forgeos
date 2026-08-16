@@ -14,9 +14,26 @@ interface EngineHealthReport {
     thinness_pct: number;
     badge: string;
   }>;
-  highest_leverage_file: { path: string; thinness_pct: number };
+  highest_leverage_file: {
+    path: string;
+    thinness_pct: number;
+    word_count?: number;
+    recommended?: number;
+  } | null;
   timestamp: string;
   cached: boolean;
+}
+
+function isEngineHealthReport(value: unknown): value is EngineHealthReport {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.total_files === 'number' &&
+    typeof v.placeholder_count === 'number' &&
+    typeof v.thin_count === 'number' &&
+    Array.isArray(v.files) &&
+    typeof v.timestamp === 'string'
+  );
 }
 
 export function EngineHealthCard() {
@@ -27,8 +44,8 @@ export function EngineHealthCard() {
     async function fetchHealth() {
       try {
         const result = await api.getEngineHealth();
-        if (!('error' in result)) {
-          setHealth(result as EngineHealthReport);
+        if (!('error' in result) && isEngineHealthReport(result)) {
+          setHealth(result);
         }
       } catch (err) {
         console.error('[EngineHealthCard] Error:', err);
@@ -107,7 +124,7 @@ export function EngineHealthCard() {
             {highestFile.path}
           </p>
           <p className="text-xs text-fg-tertiary mb-3">
-            {highestFile.word_count} / {highestFile.recommended} words
+            {(highestFile.word_count ?? 0)} / {(highestFile.recommended ?? 0)} words
             <span className="ml-2 font-medium">
               {Math.round(highestFile.thinness_pct)}%
             </span>

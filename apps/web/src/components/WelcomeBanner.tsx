@@ -29,11 +29,11 @@ export function WelcomeBanner() {
           <div className="flex-1">
             <h3 className="font-bold text-fg-primary mb-1">Welcome to ForgeOS</h3>
             <p className="text-sm text-fg-secondary mb-3">
-              Here's how to get the most out of your personal writing assistant:
+              Here&apos;s how to get the most out of your personal writing assistant:
             </p>
             <ul className="text-sm text-fg-secondary space-y-1 list-disc list-inside">
               <li><strong className="text-fg-primary">Daily briefing:</strong> Check your inbox each morning for curated topics</li>
-              <li><strong className="text-fg-primary">Let's Build:</strong> Press Cmd+K → "New deliverable" to start writing</li>
+              <li><strong className="text-fg-primary">Let&apos;s Build:</strong> Press Cmd+K → &quot;New deliverable&quot; to start writing</li>
               <li><strong className="text-fg-primary">Expand engine:</strong> Go to Settings to strengthen your doctrine files</li>
               <li><strong className="text-fg-primary">Cmd+K:</strong> Universal command palette available everywhere</li>
             </ul>
