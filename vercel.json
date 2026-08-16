@@ -1,5 +1,8 @@
 {
-  "buildCommand": "cd apps/web && npm ci --legacy-peer-deps && npm run build",
-  "installCommand": null,
-  "outputDirectory": "apps/web/.next"
+  "buildCommand": "npm --prefix apps/web ci --legacy-peer-deps && npm --prefix apps/web run build",
+  "installCommand": "npm --prefix apps/web ci --legacy-peer-deps",
+  "outputDirectory": "apps/web/.next",
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
