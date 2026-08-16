@@ -60,23 +60,23 @@ export default function DashboardPage() {
       <WelcomeBanner />
 
       {/* ── Hero + actions ── */}
-      <div className="surface-card p-6 flex items-start justify-between gap-6">
-        <div className="flex-1 space-y-4">
+      <div className="surface-elevated p-5 sm:p-6 flex flex-col lg:flex-row items-start justify-between gap-6">
+        <div className="flex-1 min-w-0 space-y-4">
           <HeroSection />
           <QuoteCallout />
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button onClick={() => setShowLetsBuildModal(true)}>
+        <div className="flex flex-wrap gap-2 shrink-0 lg:pt-1">
+          <Button onClick={() => setShowLetsBuildModal(true)} className="min-w-[130px]">
             ✨ Let&apos;s Build
           </Button>
-          <Button onClick={() => setShowSessionModal(true)} variant="secondary">+ New session</Button>
+          <Button onClick={() => setShowSessionModal(true)} variant="secondary" className="min-w-[130px]">+ New session</Button>
         </div>
       </div>
 
       {/* ── Main content + sidebar ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         {/* Main column */}
-        <div className="min-w-0 space-y-8">
+        <div className="min-w-0 space-y-6">
           <EngineHealthCard />
           <ActiveSessions />
           <BriefingBook />

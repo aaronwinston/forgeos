@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ErrorBoundary>
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-auto border-x border-border/70">{children}</main>
+            <main className="flex-1 overflow-auto">{children}</main>
             <ErrorBoundary>
               <AgentTracker />
             </ErrorBoundary>

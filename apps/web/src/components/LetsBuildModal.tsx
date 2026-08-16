@@ -42,6 +42,12 @@ interface LetsBuildModalProps {
 const VOICE_OPTIONS = ['opinionated', 'thoughtful', 'objective', 'technical', 'founder'];
 const CONTENT_TYPES = ['blog', 'email', 'press_release', 'social_post', 'case_study', 'analyst_briefing'];
 
+const formatContentTypeLabel = (value: string) =>
+  value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
 export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuildModalProps) {
   const [mode, setMode] = useState<'guided' | 'yolo'>('guided');
   const [toggles, setToggles] = useState<Toggles>({
@@ -93,38 +99,44 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-bg-secondary rounded-card shadow-lg w-full max-w-3xl h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+      <div className="surface-elevated w-full max-w-6xl h-[86vh] min-h-[640px] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="border-b p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-        <h2 className="text-xl font-semibold">Let&apos;s build</h2>
-          <div className="flex gap-2">
+        <div className="border-b border-border/80 px-5 py-4 flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-fg-primary">Let&apos;s build</h2>
+              <p className="text-sm text-fg-secondary mt-1">
+                Turn a rough idea into a ready-to-edit deliverable.
+              </p>
+            </div>
+            <div className="inline-flex items-center rounded-lg border border-border bg-bg-tertiary p-1 gap-1">
             <button
               onClick={() => handleModeChange('guided')}
-              className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 mode === 'guided'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-bg-secondary text-fg-primary border border-border shadow-sm'
+                    : 'text-fg-secondary hover:text-fg-primary'
               }`}
             >
               Guided
             </button>
             <button
               onClick={() => handleModeChange('yolo')}
-              className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
                 mode === 'yolo'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-bg-secondary text-fg-primary border border-border shadow-sm'
+                    : 'text-fg-secondary hover:text-fg-primary'
               }`}
             >
               YOLO
             </button>
-          </div>
+            </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded transition"
+            className="p-1.5 text-fg-tertiary hover:text-fg-primary hover:bg-bg-tertiary rounded-md border border-transparent hover:border-border transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,20 +144,20 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
         <div className="flex flex-1 overflow-hidden">
           {/* Toggles Panel */}
-          <div className="w-64 border-r p-4 overflow-y-auto bg-gray-50">
-            <h3 className="font-semibold text-sm mb-4">Settings</h3>
+          <div className="w-[300px] border-r border-border/80 p-4 overflow-y-auto bg-bg-tertiary/40">
+            <h3 className="font-semibold text-sm tracking-tight mb-4 text-fg-primary">Session settings</h3>
 
             {/* Voice */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Voice</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-fg-tertiary mb-2">Voice</label>
               <select
                 value={toggles.voice || ''}
                 onChange={(e) => handleToggleChange('voice', e.target.value)}
-                className="w-full px-2 py-1 border rounded text-sm"
+                className="w-full px-3 py-2 border border-border bg-bg-secondary rounded-lg text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
                 {VOICE_OPTIONS.map((v) => (
                   <option key={v} value={v}>
-                    {v}
+                    {v.charAt(0).toUpperCase() + v.slice(1)}
                   </option>
                 ))}
               </select>
@@ -153,27 +165,27 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
             {/* Audience */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Audience</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-fg-tertiary mb-2">Audience</label>
               <input
                 type="text"
                 value={toggles.audience || ''}
                 onChange={(e) => handleToggleChange('audience', e.target.value)}
                 placeholder="e.g., AI engineers"
-                className="w-full px-2 py-1 border rounded text-sm"
+                className="w-full px-3 py-2 border border-border bg-bg-secondary rounded-lg text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30"
               />
             </div>
 
             {/* Content Type */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Type</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-fg-tertiary mb-2">Type</label>
               <select
                 value={toggles.content_type || ''}
                 onChange={(e) => handleToggleChange('content_type', e.target.value)}
-                className="w-full px-2 py-1 border rounded text-sm"
+                className="w-full px-3 py-2 border border-border bg-bg-secondary rounded-lg text-sm text-fg-primary focus:outline-none focus:ring-2 focus:ring-accent/30"
               >
                 {CONTENT_TYPES.map((ct) => (
                   <option key={ct} value={ct}>
-                    {ct}
+                    {formatContentTypeLabel(ct)}
                   </option>
                 ))}
               </select>
@@ -181,14 +193,20 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
             {/* Playbook */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Playbook</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-fg-tertiary mb-2">Playbook</label>
               <input
                 type="text"
                 value={toggles.playbook || ''}
                 onChange={(e) => handleToggleChange('playbook', e.target.value)}
                 placeholder="auto"
-                className="w-full px-2 py-1 border rounded text-sm"
+                className="w-full px-3 py-2 border border-border bg-bg-secondary rounded-lg text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30"
               />
+            </div>
+
+            <div className="mt-6 rounded-xl border border-border bg-bg-secondary/70 p-3 text-xs text-fg-secondary leading-relaxed">
+              {mode === 'guided'
+                ? 'Guided asks follow-up questions and builds a stronger brief before drafting.'
+                : 'YOLO creates a complete brief and deliverable from a single prompt.'}
             </div>
           </div>
 
@@ -198,18 +216,18 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
             {!briefPreview && !deliverable && (
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   {messages.length === 0 && mode === 'guided' && (
-                    <div className="text-center text-gray-500 mt-8">
-                      <p className="text-lg mb-2">Ask away, I&apos;ll learn as you talk</p>
-                      <p className="text-sm">Tell me about what you want to create</p>
+                    <div className="surface-muted p-6 text-center mt-10 max-w-xl mx-auto">
+                      <p className="text-lg mb-2 text-fg-primary">Ask away, I&apos;ll learn as you talk</p>
+                      <p className="text-sm text-fg-secondary">Share your goal and constraints. I&apos;ll shape the brief with you.</p>
                     </div>
                   )}
 
                   {messages.length === 0 && mode === 'yolo' && (
-                    <div className="text-center text-gray-500 mt-8">
-                      <p className="text-lg mb-2">What do you want to create?</p>
-                      <p className="text-sm">Be specific, give me context</p>
+                    <div className="surface-muted p-6 text-center mt-10 max-w-xl mx-auto">
+                      <p className="text-lg mb-2 text-fg-primary">What do you want to create?</p>
+                      <p className="text-sm text-fg-secondary">Describe your goal clearly and include the audience and angle.</p>
                     </div>
                   )}
 
@@ -221,8 +239,8 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                       <div
                         className={`max-w-xl px-4 py-2 rounded-card ${
                           msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-none'
-                            : 'bg-gray-100 text-gray-900 rounded-bl-none'
+                            ? 'bg-accent text-white rounded-br-none shadow-sm'
+                            : 'bg-bg-tertiary text-fg-primary rounded-bl-none border border-border'
                         }`}
                       >
                         <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
@@ -232,8 +250,8 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
 
                   {loading && (
                     <div className="flex justify-start">
-                      <div className="bg-bg-tertiary px-4 py-2 rounded-card rounded-bl-none">
-                        <Loader className="w-4 h-4 animate-spin text-gray-600" />
+                      <div className="bg-bg-tertiary border border-border px-4 py-2 rounded-card rounded-bl-none">
+                        <Loader className="w-4 h-4 animate-spin text-fg-secondary" />
                       </div>
                     </div>
                   )}
@@ -250,7 +268,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                 </div>
 
                 {/* Input */}
-                <div className="border-t p-4">
+                <div className="border-t border-border/80 p-4">
                   <div className="flex gap-2">
                     <textarea
                       value={input}
@@ -265,17 +283,19 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                           ? "Tell me about your content idea..."
                           : "Describe what you want to create..."
                       }
-                      className="flex-1 px-3 py-2 border rounded text-sm resize-none"
+                      className="flex-1 px-3 py-2.5 border border-border bg-bg-tertiary/50 rounded-lg text-sm resize-none text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent/30"
                       rows={3}
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={!input.trim() || loading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition h-fit"
+                      className="px-4 py-2.5 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition h-fit border border-transparent"
+                      aria-label="Send message"
                     >
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
+                  <p className="text-xs text-fg-tertiary mt-2">Tip: press Ctrl+Enter to send</p>
                 </div>
               </div>
             )}
@@ -296,7 +316,7 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                 <div className="text-center">
                   <div className="text-5xl mb-4">✨</div>
                     <h3 className="text-xl font-semibold mb-2">Deliverable created!</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-fg-secondary mb-6">
                     {deliverable.title} is ready in your workspace
                   </p>
                   <div className="flex gap-3">
@@ -305,13 +325,13 @@ export default function LetsBuildModal({ isOpen, onClose, onSuccess }: LetsBuild
                         onSuccess?.(deliverable);
                         handleClose();
                       }}
-                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                      className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition"
                     >
                       Open workspace
                     </button>
                     <button
                       onClick={resetForm}
-                      className="px-6 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
+                      className="px-6 py-2 bg-bg-tertiary text-fg-primary border border-border rounded-lg hover:bg-bg-tertiary/80 transition"
                     >
                       Create another
                     </button>
@@ -567,19 +587,19 @@ interface BriefPreviewProps {
 function BriefPreview({ brief, onConfirm, onEdit, loading }: BriefPreviewProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4">
-        <h3 className="font-semibold mb-4">Brief preview</h3>
+      <div className="flex-1 overflow-y-auto p-5">
+        <h3 className="font-semibold mb-4 tracking-tight text-fg-primary">Brief preview</h3>
         <textarea
           value={brief.brief_md}
           onChange={(e) => onEdit(e.target.value)}
-          className="w-full h-full px-3 py-2 border rounded font-mono text-sm resize-none"
+          className="w-full h-full min-h-[340px] px-3 py-2 border border-border bg-bg-tertiary/50 rounded-lg font-mono text-sm resize-none text-fg-primary focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </div>
-      <div className="border-t p-4 flex gap-2 justify-end">
+      <div className="border-t border-border/80 p-4 flex gap-2 justify-end">
         <button
           onClick={onConfirm}
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition"
+          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {loading ? 'Creating...' : 'Create deliverable'}
         </button>

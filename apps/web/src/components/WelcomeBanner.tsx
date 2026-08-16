@@ -22,16 +22,18 @@ export function WelcomeBanner() {
   };
 
   return (
-    <div className="mx-6 mb-6 rounded-lg border border-accent/30 bg-accent/5 p-4">
+    <div className="surface-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1">
-          <Lightbulb size={20} className="text-accent mt-0.5 flex-shrink-0" />
+          <div className="h-9 w-9 rounded-lg border border-accent/30 bg-accent/10 flex items-center justify-center flex-shrink-0">
+            <Lightbulb size={18} className="text-accent" />
+          </div>
           <div className="flex-1">
-            <h3 className="font-bold text-fg-primary mb-1">Welcome to ForgeOS</h3>
-            <p className="text-sm text-fg-secondary mb-3">
+            <h3 className="font-semibold text-fg-primary mb-1 tracking-tight">Welcome to ForgeOS</h3>
+            <p className="text-sm text-fg-secondary mb-3 leading-relaxed">
               Here&apos;s how to get the most out of your personal writing assistant:
             </p>
-            <ul className="text-sm text-fg-secondary space-y-1 list-disc list-inside">
+            <ul className="text-sm text-fg-secondary space-y-1.5 list-disc list-inside">
               <li><strong className="text-fg-primary">Daily briefing:</strong> Check your inbox each morning for curated topics</li>
               <li><strong className="text-fg-primary">Let&apos;s Build:</strong> Press Cmd+K → &quot;New deliverable&quot; to start writing</li>
               <li><strong className="text-fg-primary">Expand engine:</strong> Go to Settings to strengthen your doctrine files</li>
@@ -41,7 +43,7 @@ export function WelcomeBanner() {
         </div>
         <button
           onClick={handleDismiss}
-          className="text-fg-tertiary hover:text-fg-secondary flex-shrink-0"
+          className="text-fg-tertiary hover:text-fg-secondary hover:bg-bg-tertiary border border-transparent hover:border-border rounded-md p-1.5 flex-shrink-0 transition-colors"
         >
           <X size={18} />
         </button>
