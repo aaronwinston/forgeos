@@ -16,9 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="dark">
       <body suppressHydrationWarning={true}>
         <ErrorBoundary>
-          <div className="flex h-screen bg-bg-primary overflow-hidden">
+          <div className="flex h-screen overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-auto">{children}</main>
+            <main className="flex-1 overflow-auto border-x border-border/70">{children}</main>
             <ErrorBoundary>
               <AgentTracker />
             </ErrorBoundary>

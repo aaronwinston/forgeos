@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import StartInsightModal from './StartInsightModal';
-import { getApiBase } from '@/lib/api';
+import { ApiError, apiGet } from '@/lib/apiClient';
 import type { SearchInsight } from '@/lib/types';
 
 export default function OpportunitiesSection() {
@@ -20,9 +20,7 @@ export default function OpportunitiesSection() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${getApiBase()}/api/intelligence/search/insights`);
-      if (!response.ok) throw new Error('Failed to load insights');
-      const data = await response.json();
+      const data = await apiGet<SearchInsight[]>('/api/intelligence/search/insights');
       // Filter for opportunity gaps: rising trends + no rank or position > 10
       const opportunities = data.filter((insight: SearchInsight) =>
         insight.trends_momentum === 'rising' &&
@@ -30,6 +28,11 @@ export default function OpportunitiesSection() {
       );
       setInsights(opportunities);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setInsights([]);
+        setError(null);
+        return;
+      }
       setError('Failed to load opportunity gaps. Try refreshing.');
       console.error('Load error:', err);
     } finally {

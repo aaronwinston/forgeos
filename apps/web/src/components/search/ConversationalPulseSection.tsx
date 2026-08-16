@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import StartSocialItemModal from './StartSocialItemModal';
-import { getApiBase } from '@/lib/api';
+import { ApiError, apiGet } from '@/lib/apiClient';
 import type { ScrapeItem } from '@/lib/types';
 
 export default function ConversationalPulseSection() {
@@ -20,11 +20,14 @@ export default function ConversationalPulseSection() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${getApiBase()}/api/intelligence/items?limit=20`);
-      if (!response.ok) throw new Error('Failed to load items');
-      const data = await response.json();
+      const data = await apiGet<ScrapeItem[]>('/api/intelligence/items?limit=20');
       setItems(data);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setItems([]);
+        setError(null);
+        return;
+      }
       setError('Failed to load conversational pulse. Try refreshing.');
       console.error('Load error:', err);
     } finally {

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getApiBase } from '@/lib/api';
+import { ApiError, apiGet } from '@/lib/apiClient';
 import type { SeoRecommendation } from '@/lib/types';
 
 interface RecommendationsResponse {
@@ -21,11 +21,14 @@ export default function ActionableRecommendationsSection() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${getApiBase()}/api/intelligence/search/recommendations?limit=5`);
-      if (!response.ok) throw new Error('Failed to load recommendations');
-      const data = (await response.json()) as RecommendationsResponse;
+      const data = await apiGet<RecommendationsResponse>('/api/intelligence/search/recommendations?limit=5');
       setRecommendations(Array.isArray(data.recommendations) ? data.recommendations : []);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setRecommendations([]);
+        setError(null);
+        return;
+      }
       console.error('Failed to load actionable recommendations:', err);
       setError('Unable to load actionable recommendations right now.');
       setRecommendations([]);

@@ -55,28 +55,28 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary fallback={dashboardFallback}>
-    <div className="p-6 max-w-6xl mx-auto space-y-8">
+    <div className="page-shell">
       {/* Welcome banner */}
       <WelcomeBanner />
 
       {/* ── Hero + actions ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="surface-card p-6 flex items-start justify-between gap-6">
         <div className="flex-1 space-y-4">
           <HeroSection />
           <QuoteCallout />
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowLetsBuildModal(true)} className="bg-blue-600 hover:bg-blue-700">
+        <div className="flex gap-2 shrink-0">
+          <Button onClick={() => setShowLetsBuildModal(true)}>
             ✨ Let&apos;s Build
           </Button>
-          <Button onClick={() => setShowSessionModal(true)}>+ New session</Button>
+          <Button onClick={() => setShowSessionModal(true)} variant="secondary">+ New session</Button>
         </div>
       </div>
 
       {/* ── Main content + sidebar ── */}
-      <div className="flex gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
         {/* Main column */}
-        <div className="flex-1 min-w-0 space-y-8">
+        <div className="min-w-0 space-y-8">
           <EngineHealthCard />
           <ActiveSessions />
           <BriefingBook />

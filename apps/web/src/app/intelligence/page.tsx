@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { apiGet, apiPost } from '@/lib/apiClient';
+import { ApiError, apiGet, apiPost } from '@/lib/apiClient';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface PlanningQueueItem {
@@ -101,6 +101,12 @@ export default function IntelligencePage() {
       setItems(data);
       console.debug('[Intelligence] Loaded', data.length, 'items');
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        // API routes are unavailable in this deployment; show empty state instead of error.
+        setItems([]);
+        setError(null);
+        return;
+      }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const message = err instanceof Error ? err.message : 'Failed to load intelligence';
       const userMessage = err instanceof Error && err.message.includes('API error')
@@ -119,6 +125,11 @@ export default function IntelligencePage() {
       const data = await apiGet<PlanningQueueItem[]>('/api/intelligence/planning/queue?limit=10');
       setPlanningQueue(Array.isArray(data) ? data : []);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setPlanningQueue([]);
+        setPlanningError(null);
+        return;
+      }
       console.error('[Intelligence] Planning queue load error:', err);
       setPlanningError('Unable to load the weekly planning queue right now.');
       setPlanningQueue([]);
@@ -172,6 +183,10 @@ export default function IntelligencePage() {
       await new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.all([loadItems(), loadPlanningQueue()]);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setError(null);
+        return;
+      }
       const userMessage = err instanceof Error && err.message.includes('Scrape failed')
         ? 'Failed to start intelligence scrape. Check the API and try again.'
         : 'Error refreshing intelligence. Please check your configuration.';
@@ -245,9 +260,12 @@ export default function IntelligencePage() {
 
   return (
     <ErrorBoundary fallback={intelligenceFallback}>
-    <div className="p-6 space-y-4">
+    <div className="page-shell">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Intelligence feed</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Intelligence feed</h1>
+          <p className="text-sm text-fg-secondary mt-1">Content signals, ranking priorities, and conversion loop artifacts.</p>
+        </div>
         <Button 
           variant="secondary" 
           size="sm" 
@@ -259,8 +277,8 @@ export default function IntelligencePage() {
       </div>
 
       {error && (
-        <div className="border border-red-300 rounded-card p-4 bg-red-50">
-          <p className="text-sm text-red-800 mb-2">{error}</p>
+        <div className="surface-card border-error/40 bg-error/10 p-4">
+          <p className="text-sm text-error mb-2">{error}</p>
           <Button size="sm" onClick={loadItems} variant="secondary">Retry</Button>
         </div>
       )}
@@ -275,9 +293,9 @@ export default function IntelligencePage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="border rounded-card p-8 text-center">
-          <p className="text-sm text-gray-700">No intelligence items yet.</p>
-          <p className="text-xs text-gray-500 mt-1">Click &quot;Refresh now&quot; to fetch the latest articles and content from your configured sources.</p>
+        <div className="surface-card p-8 text-center">
+          <p className="text-sm text-fg-primary">No intelligence items yet.</p>
+          <p className="text-xs text-fg-tertiary mt-1">Click &quot;Refresh now&quot; to fetch the latest articles and content from your configured sources.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -315,16 +333,16 @@ export default function IntelligencePage() {
         </div>
 
         {planningError && (
-          <div className="border border-red-300 rounded-card p-4 bg-red-50">
-            <p className="text-sm text-red-800 mb-2">{planningError}</p>
+          <div className="surface-card border-error/40 bg-error/10 p-4">
+            <p className="text-sm text-error mb-2">{planningError}</p>
             <Button size="sm" onClick={loadPlanningQueue} variant="secondary">Retry queue</Button>
           </div>
         )}
 
         {!planningError && planningQueue.length === 0 && (
-          <div className="border rounded-card p-6 text-center">
-            <p className="text-sm text-gray-700">No ranked planning items yet.</p>
-            <p className="text-xs text-gray-500 mt-1">Run refresh and add keyword/insight signals to generate the weekly queue.</p>
+          <div className="surface-card p-6 text-center">
+            <p className="text-sm text-fg-primary">No ranked planning items yet.</p>
+            <p className="text-xs text-fg-tertiary mt-1">Run refresh and add keyword/insight signals to generate the weekly queue.</p>
           </div>
         )}
 

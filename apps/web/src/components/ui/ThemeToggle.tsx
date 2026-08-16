@@ -23,10 +23,10 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="fixed bottom-4 right-4 z-50 w-8 h-8 rounded-chip flex items-center justify-center text-sm bg-bg-secondary border border-border text-fg-secondary hover:text-fg-primary hover:border-accent transition-colors"
+      className="fixed bottom-5 right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center text-sm bg-bg-secondary/95 backdrop-blur-sm border border-border text-fg-secondary hover:text-fg-primary hover:border-accent transition-colors shadow-lg"
       aria-label="Toggle theme"
     >
-      {theme === 'dark' ? '☀' : '●'}
+      {theme === 'dark' ? '☀' : '☾'}
     </button>
   );
 }
