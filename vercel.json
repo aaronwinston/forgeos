@@ -1,4 +1,4 @@
 {
-  "buildCommand": "cd apps/web && npm ci --legacy-peer-deps && npm run build",
-  "outputDirectory": "apps/web/.next"
+  "buildCommand": "cd apps/web && npm ci --legacy-peer-deps && npm run build && cp -r .next ../../.next && cp package.json ../../ && [ -d public ] && cp -r public ../../public || true",
+  "outputDirectory": ".next"
 }
