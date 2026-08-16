@@ -288,6 +288,54 @@ def run_migrations(database_url: Optional[str] = None) -> None:
             conn.executescript(sql_text)
             conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
             conn.execute("COMMIT")
+
+        # Migration 0004: Distribution integration targets
+        version = "0004_distribution_integration_targets"
+        already = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=?", (version,)
+        ).fetchone()
+        if not already:
+            sql_path = migrations_dir / f"{version}.sql"
+            if not sql_path.exists():
+                raise FileNotFoundError(f"Missing migration file: {sql_path}")
+
+            conn.execute("BEGIN")
+            sql_text = sql_path.read_text(encoding="utf-8")
+            conn.executescript(sql_text)
+            conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
+            conn.execute("COMMIT")
+
+        # Migration 0005: Content eval runs
+        version = "0005_content_eval_runs"
+        already = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=?", (version,)
+        ).fetchone()
+        if not already:
+            sql_path = migrations_dir / f"{version}.sql"
+            if not sql_path.exists():
+                raise FileNotFoundError(f"Missing migration file: {sql_path}")
+
+            conn.execute("BEGIN")
+            sql_text = sql_path.read_text(encoding="utf-8")
+            conn.executescript(sql_text)
+            conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
+            conn.execute("COMMIT")
+
+        # Migration 0005: Conversion feedback loop artifacts
+        version = "0005_conversion_feedback_loop"
+        already = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=?", (version,)
+        ).fetchone()
+        if not already:
+            sql_path = migrations_dir / f"{version}.sql"
+            if not sql_path.exists():
+                raise FileNotFoundError(f"Missing migration file: {sql_path}")
+
+            conn.execute("BEGIN")
+            sql_text = sql_path.read_text(encoding="utf-8")
+            conn.executescript(sql_text)
+            conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
+            conn.execute("COMMIT")
     except Exception:
         conn.execute("ROLLBACK")
         raise
@@ -331,7 +379,7 @@ def _ensure_personal_org_and_user():
     to guarantee that aaron / personal exists before any other operations.
     """
     from personal_mode import PERSONAL_USER_ID, PERSONAL_ORG_ID, PERSONAL_ORG_NAME
-    from models import Organization, User, Membership
+    from models import Organization, Membership
     from sqlmodel import Session, select
     import logging
     
@@ -355,36 +403,20 @@ def _ensure_personal_org_and_user():
             session.commit()
             session.refresh(personal_org)
         
-        # Check if personal user exists
-        personal_user = session.exec(
-            select(User).where(User.user_id == PERSONAL_USER_ID)
-        ).first()
-        
-        if not personal_user:
-            logger.info(f"Creating personal user: {PERSONAL_USER_ID}")
-            personal_user = User(
-                user_id=PERSONAL_USER_ID,
-                email=f"{PERSONAL_USER_ID}@personal.local",
-                name="Aaron",
-            )
-            session.add(personal_user)
-            session.commit()
-            session.refresh(personal_user)
-        
         # Check if membership exists
         membership = session.exec(
             select(Membership).where(
-                Membership.user_id == personal_user.id
+                Membership.user_id == PERSONAL_USER_ID
             ).where(
-                Membership.org_id == personal_org.id
+                Membership.organization_id == personal_org.id
             )
         ).first()
         
         if not membership:
             logger.info(f"Creating membership for {PERSONAL_USER_ID} in {PERSONAL_ORG_ID}")
             membership = Membership(
-                user_id=personal_user.id,
-                org_id=personal_org.id,
+                user_id=PERSONAL_USER_ID,
+                organization_id=personal_org.id,
                 role="owner",
             )
             session.add(membership)

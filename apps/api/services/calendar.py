@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from sqlmodel import Session, select
 from database import engine
-from models import CalendarIntegration, CalendarEvent, CalendarSyncLog, Deliverable, Organization
+from models import CalendarIntegration, CalendarEvent, CalendarSyncLog, Deliverable
 from config import settings
 import asyncio
 
@@ -179,7 +179,7 @@ def sync_to_google(event_id: int) -> Dict[str, Any]:
             return {"status": "error", "error": str(e)}
 
 
-def poll_from_google() -> Dict[str, Any]:
+def poll_from_google(organization_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Poll Google Calendar for changes since last sync.
     
@@ -190,77 +190,137 @@ def poll_from_google() -> Dict[str, Any]:
         Dict with updated_count, archived_count, errors
     """
     with Session(engine) as session:
-        integration = session.exec(
-            select(CalendarIntegration).order_by(CalendarIntegration.created_at)
-        ).first()
-        
-        if not integration:
+        integration_query = select(CalendarIntegration).order_by(CalendarIntegration.created_at)
+        if organization_id:
+            integration_query = integration_query.where(
+                CalendarIntegration.organization_id == organization_id
+            )
+        integrations = session.exec(integration_query).all()
+
+        if not integrations:
             logger.debug("Google Calendar not connected, skipping poll")
             return {"status": "skipped", "reason": "Not connected"}
-        
-        try:
-            credentials = _get_valid_credentials(integration, session)
-            service = build("calendar", "v3", credentials=credentials)
-            
-            updated_min = integration.last_synced_at or (datetime.now(timezone.utc) - timedelta(hours=24))
-            
-            events_result = service.events().list(
-                calendarId=integration.calendar_id,
-                updatedMin=updated_min.isoformat() + "Z",
-                showDeleted=True,
-                pageSize=100,
-            ).execute()
-            
-            events = events_result.get("items", [])
-            updated_count = 0
-            archived_count = 0
-            errors = []
-            
-            for google_event in events:
-                try:
-                    result = _apply_google_event(session, integration, google_event)
-                    if result["action"] == "updated":
-                        updated_count += 1
-                    elif result["action"] == "archived":
-                        archived_count += 1
-                except Exception as e:
-                    error_msg = f"Failed to apply event {google_event.get('id')}: {str(e)}"
-                    logger.error(error_msg)
-                    errors.append(error_msg)
-                    _log_sync("poll", None, "error", error_msg)
-            
-            integration.last_synced_at = datetime.now(timezone.utc)
-            session.add(integration)
-            session.commit()
-            
-            logger.info(f"Poll completed: {updated_count} updated, {archived_count} archived")
-            _log_sync("poll", None, "success", None, json.dumps({
-                "updated": updated_count,
-                "archived": archived_count,
-                "errors": len(errors)
-            }))
-            
-            return {
-                "status": "success",
-                "updated_count": updated_count,
-                "archived_count": archived_count,
-                "errors": errors,
-            }
-        
-        except HttpError as e:
-            if e.resp.status == 401:
-                logger.warning("Token expired during poll, will retry next cycle")
-                _log_sync("poll", None, "pending", "Token expired")
-                return {"status": "pending", "reason": "Token expired"}
-            else:
-                logger.error(f"Google API error during poll: {e}")
-                _log_sync("poll", None, "error", str(e))
-                return {"status": "error", "error": str(e)}
-        
-        except Exception as e:
-            logger.error(f"Unexpected error during poll: {str(e)}")
-            _log_sync("poll", None, "error", str(e))
-            return {"status": "error", "error": str(e)}
+
+        total_updated_count = 0
+        total_archived_count = 0
+        errors = []
+
+        for integration in integrations:
+            try:
+                credentials = _get_valid_credentials(integration, session)
+                if credentials is None:
+                    _log_sync(
+                        "poll",
+                        None,
+                        "pending",
+                        "Token refresh failed transiently",
+                        organization_id=integration.organization_id,
+                    )
+                    continue
+                service = build("calendar", "v3", credentials=credentials)
+
+                updated_min = integration.last_synced_at or (datetime.now(timezone.utc) - timedelta(hours=24))
+
+                events_result = service.events().list(
+                    calendarId=integration.calendar_id,
+                    updatedMin=updated_min.isoformat() + "Z",
+                    showDeleted=True,
+                    pageSize=100,
+                ).execute()
+
+                events = events_result.get("items", [])
+                org_updated_count = 0
+                org_archived_count = 0
+
+                for google_event in events:
+                    try:
+                        result = _apply_google_event(session, integration, google_event)
+                        if result["action"] == "updated":
+                            org_updated_count += 1
+                        elif result["action"] == "archived":
+                            org_archived_count += 1
+                    except Exception as e:
+                        error_msg = f"[org={integration.organization_id}] Failed to apply event {google_event.get('id')}: {str(e)}"
+                        logger.error(error_msg)
+                        errors.append(error_msg)
+                        _log_sync(
+                            "poll",
+                            None,
+                            "error",
+                            error_msg,
+                            organization_id=integration.organization_id,
+                        )
+
+                integration.last_synced_at = datetime.now(timezone.utc)
+                session.add(integration)
+                session.commit()
+
+                total_updated_count += org_updated_count
+                total_archived_count += org_archived_count
+
+                logger.info(
+                    f"Poll completed for org {integration.organization_id}: "
+                    f"{org_updated_count} updated, {org_archived_count} archived"
+                )
+                _log_sync(
+                    "poll",
+                    None,
+                    "success",
+                    None,
+                    json.dumps({
+                        "updated": org_updated_count,
+                        "archived": org_archived_count,
+                        "errors": len(errors),
+                    }),
+                    organization_id=integration.organization_id,
+                )
+
+            except HttpError as e:
+                if e.resp.status == 401:
+                    logger.warning(
+                        f"Token expired during poll for org {integration.organization_id}, will retry next cycle"
+                    )
+                    _log_sync(
+                        "poll",
+                        None,
+                        "pending",
+                        "Token expired",
+                        organization_id=integration.organization_id,
+                    )
+                    errors.append(f"[org={integration.organization_id}] Token expired")
+                else:
+                    logger.error(
+                        f"Google API error during poll for org {integration.organization_id}: {e}"
+                    )
+                    _log_sync(
+                        "poll",
+                        None,
+                        "error",
+                        str(e),
+                        organization_id=integration.organization_id,
+                    )
+                    errors.append(f"[org={integration.organization_id}] {str(e)}")
+
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error during poll for org {integration.organization_id}: {str(e)}"
+                )
+                _log_sync(
+                    "poll",
+                    None,
+                    "error",
+                    str(e),
+                    organization_id=integration.organization_id,
+                )
+                errors.append(f"[org={integration.organization_id}] {str(e)}")
+
+        return {
+            "status": "success",
+            "updated_count": total_updated_count,
+            "archived_count": total_archived_count,
+            "errors": errors,
+            "orgs_processed": len(integrations),
+        }
 
 
 def _apply_google_event(session: Session, integration: CalendarIntegration, google_event: Dict[str, Any]) -> Dict[str, str]:
@@ -400,8 +460,11 @@ def _log_sync(
             organization_id = event.organization_id if event else None
 
         if organization_id is None:
-            org = session.exec(select(Organization).order_by(Organization.created_at)).first()
-            organization_id = org.id
+            logger.warning(
+                f"Skipping calendar sync log with no organization context "
+                f"(operation={operation}, event_id={event_id})"
+            )
+            return
 
         log = CalendarSyncLog(
             organization_id=organization_id,

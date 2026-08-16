@@ -343,6 +343,172 @@ class CalendarIntegration(SQLModel, table=True):
             return False
 
 
+class DistributionIntegrationTarget(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "channel_type",
+            "target_key",
+            name="uq_distributionintegrationtarget_org_channel_key",
+        ),
+        CheckConstraint(
+            "channel_type IN ('cms','analytics','crm','syndication')",
+            name="ck_distributionintegrationtarget_channel",
+        ),
+        CheckConstraint(
+            "delivery_mode IN ('manual','scheduled','webhook')",
+            name="ck_distributionintegrationtarget_delivery_mode",
+        ),
+        Index(
+            "idx_distributionintegrationtarget_org_channel",
+            "organization_id",
+            "channel_type",
+        ),
+    )
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
+    created_by_user_id: str
+
+    channel_type: str
+    target_key: str
+    display_name: str
+    endpoint_url: Optional[str] = None
+
+    delivery_mode: str = Field(default="scheduled")
+    enabled: bool = Field(default=True)
+    preferences_json: Optional[str] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ConversionTaxonomyDefinition(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "deliverable_id",
+            "event_key",
+            name="uq_conversiontaxonomy_org_deliverable_event",
+        ),
+        Index(
+            "idx_conversiontaxonomy_org_deliverable",
+            "organization_id",
+            "deliverable_id",
+        ),
+        Index("idx_conversiontaxonomy_org_content_type", "organization_id", "content_type"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
+    deliverable_id: int = Field(foreign_key="deliverable.id")
+    created_by_user_id: str
+
+    content_type: str
+    event_key: str
+    funnel_stage: str
+    definition: str
+    primary_cta: Optional[str] = None
+    success_metric: Optional[str] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DeliverableConversionOutcomeSnapshot(SQLModel, table=True):
+    __table_args__ = (
+        CheckConstraint(
+            "(conversion_rate IS NULL) OR (conversion_rate >= 0 AND conversion_rate <= 1)",
+            name="ck_deliverableconversionoutcome_rate",
+        ),
+        CheckConstraint(
+            "(visitors IS NULL) OR visitors >= 0",
+            name="ck_deliverableconversionoutcome_visitors",
+        ),
+        CheckConstraint(
+            "(conversions IS NULL) OR conversions >= 0",
+            name="ck_deliverableconversionoutcome_conversions",
+        ),
+        Index(
+            "idx_deliverableconversionoutcome_org_deliverable",
+            "organization_id",
+            "deliverable_id",
+        ),
+        Index(
+            "idx_deliverableconversionoutcome_org_recorded",
+            "organization_id",
+            "recorded_at",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
+    deliverable_id: int = Field(foreign_key="deliverable.id")
+    created_by_user_id: str
+
+    period_label: str
+    visitors: Optional[int] = None
+    conversions: Optional[int] = None
+    conversion_rate: Optional[float] = None
+    observed_outcome: Optional[str] = None
+    notes: Optional[str] = None
+
+    recorded_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DeliverableCTAExperiment(SQLModel, table=True):
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active','paused','completed')",
+            name="ck_deliverablectaexperiment_status",
+        ),
+        CheckConstraint(
+            "(conversion_rate IS NULL) OR (conversion_rate >= 0 AND conversion_rate <= 1)",
+            name="ck_deliverablectaexperiment_rate",
+        ),
+        CheckConstraint(
+            "(impressions IS NULL) OR impressions >= 0",
+            name="ck_deliverablectaexperiment_impressions",
+        ),
+        CheckConstraint(
+            "(conversions IS NULL) OR conversions >= 0",
+            name="ck_deliverablectaexperiment_conversions",
+        ),
+        UniqueConstraint(
+            "organization_id",
+            "deliverable_id",
+            "experiment_key",
+            "variant_label",
+            name="uq_deliverablectaexperiment_org_deliverable_variant",
+        ),
+        Index(
+            "idx_deliverablectaexperiment_org_deliverable",
+            "organization_id",
+            "deliverable_id",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
+    deliverable_id: int = Field(foreign_key="deliverable.id")
+    created_by_user_id: str
+
+    experiment_key: str
+    variant_label: str
+    hypothesis: Optional[str] = None
+    observed_outcome: Optional[str] = None
+    status: str = Field(default="active")
+    impressions: Optional[int] = None
+    conversions: Optional[int] = None
+    conversion_rate: Optional[float] = None
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class CalendarEvent(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint(
@@ -537,6 +703,45 @@ class UsageEvent(SQLModel, table=True):
     runtime: str
     cost_usd_estimate: Optional[float] = None
     occurred_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ContentEvalRun(SQLModel, table=True):
+    __table_args__ = (
+        CheckConstraint(
+            "workflow_type IN ('blog','launch','analyst')",
+            name="ck_contentevalrun_workflow_type",
+        ),
+        CheckConstraint("gate_status IN ('pass','fail')", name="ck_contentevalrun_gate_status"),
+        Index(
+            "idx_contentevalrun_org_workflow_artifact_created",
+            "organization_id",
+            "workflow_type",
+            "artifact_key",
+            "created_at",
+        ),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: str = Field(foreign_key="organization.id")
+    created_by_user_id: str
+
+    workflow_type: str
+    artifact_key: str = Field(default="adhoc")
+    artifact_text: str
+    prompt_version: Optional[str] = None
+    skill_version: Optional[str] = None
+
+    scores_json: str
+    overall_score: float
+    gate_status: str
+    failed_dimensions_json: Optional[str] = None
+
+    baseline_run_id: Optional[int] = None
+    deltas_json: Optional[str] = None
+    regression_failed: bool = Field(default=False)
+    is_baseline: bool = Field(default=False)
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class FeatureFlag(SQLModel, table=True):

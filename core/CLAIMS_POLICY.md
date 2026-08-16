@@ -28,6 +28,10 @@ Example: "Customer X reduced debugging time by 40%."
 The claim references third-party research, analyst commentary, rankings, or market data.
 Example: "Analysts expect agent observability to become a major category."
 
+### Needs benchmark/eval evidence
+The claim references benchmark results, evaluation outcomes, win rates, regression deltas, or quality scores.
+Example: "Our evaluator catches 35% more tool-use failures than baseline."
+
 ### Remove or soften
 The claim is too broad, too risky, or not supportable.
 Example: "Our platform guarantees agent reliability."
@@ -54,5 +58,15 @@ Every claims review should produce:
 - Claims needing product review
 - Claims needing legal review
 - Claims needing customer approval
+- Claims needing benchmark/eval evidence
 - Claims to remove or soften
 - Suggested safer language for flagged claims
+
+## Benchmark and evaluation claim guardrails
+
+Use these rules for any benchmark or evaluation claim:
+- Name the evaluation setup: dataset scope, metric definition, and baseline.
+- Include sample size and time window.
+- Clarify whether the result is internal, customer-specific, or third-party.
+- Require product review for implementation claims and legal review for public comparative claims.
+- Soften or remove claims when methodology cannot be shared.

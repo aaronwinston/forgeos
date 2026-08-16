@@ -171,6 +171,16 @@ pytest
 
 Tests are in `tests/` (if any exist).
 
+## Phased rollout readiness checker
+
+Run the deterministic go/no-go checker for the 12-month rollout:
+
+```bash
+python3 apps/api/scripts/check_phase_readiness.py
+```
+
+The checker validates required readiness signals across phase gates, including key context files, API components/endpoints, and phase-aligned test files. It exits with code `0` for GO and `1` for NO-GO.
+
 ## Instrumentation
 
 ForgeOS dogfoods Arize AX observability. Tracing is wired via `instrumentation.py`:
@@ -213,6 +223,7 @@ apps/api/
 └── scripts/                 # Utilities
     ├── validate_repo_structure.py
     └── lint_skill_files.py
+    └── check_phase_readiness.py
 ```
 
 ## Background Jobs
@@ -506,4 +517,3 @@ Default thresholds (in `monitoring.py`):
 - Slow Celery task: >10000ms (10 seconds)
 
 ---
-
