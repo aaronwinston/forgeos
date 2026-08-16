@@ -1,0 +1,19 @@
+{
+  "name": "forgeos",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd apps/web && npm run dev",
+    "build": "cd apps/web && npm ci --legacy-peer-deps && npm run build",
+    "start": "cd apps/web && npm start"
+  },
+  "dependencies": {
+    "next": "^15.5.23",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
