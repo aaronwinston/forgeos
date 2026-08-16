@@ -278,7 +278,7 @@ The roadmap moves in three directions. Not all at once.
  
 **Longer term.** Multi-tenancy. Auth. Team plans. Billing. The version of this that other people pay for.
  
-The PRDs that govern each of these live in the repo at `FORGEOS_PRD.md`, `FORGEOS_PHASE_PLAN.md`, and `FORGEOS_COMMERCIALIZATION_PRD.md`. Read them before opening a PR.
+The PRDs that govern each of these live in `docs/prd/` (`FORGEOS_PRD.md` and `FORGEOS_COMMERCIALIZATION_PRD.md`). Read them before opening a PR.
  
 ---
  

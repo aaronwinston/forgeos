@@ -182,7 +182,7 @@ grep "duration_ms>100" logs/api.log
 ## Performance Optimization Checklist
 
 - [ ] Database indexes created for frequently queried columns
-- [ ] Queries analyzed and optimized (see IMPROVEMENT_PLAN.md P4.1)
+- [ ] Queries analyzed and optimized (see docs/archive/implementation/IMPROVEMENT_PLAN.md P4.1)
 - [ ] Response caching implemented (redis)
 - [ ] API pagination implemented (limit/offset)
 - [ ] Images optimized (compression, CDN)
@@ -284,7 +284,7 @@ Every PR should:
 
 ## Related Documentation
 
-- **Query Optimization:** [IMPROVEMENT_PLAN.md P4.1](../IMPROVEMENT_PLAN.md#p41-database-query-optimization)
+- **Query Optimization:** [IMPROVEMENT_PLAN.md P4.1](../../../../docs/archive/implementation/IMPROVEMENT_PLAN.md#p41-database-query-optimization)
 - **Caching Strategy:** [CELERY_QUICKSTART.md](./CELERY_QUICKSTART.md)
 - **Monitoring Setup:** [README.md](./README.md)
-- **Security Testing:** [SECURITY.md](../SECURITY.md)
+- **Security Testing:** [SECURITY.md](../../../../SECURITY.md)

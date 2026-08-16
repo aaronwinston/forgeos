@@ -34,8 +34,17 @@ node_modules/
 # Build outputs
 dist/
 build/
+coverage/
+htmlcov/
+.coverage
+.coverage.*
 
 # Local drafts
 briefs/drafts/
 .vercel
 .env*.local
+
+# Local runtime logs/artifacts
+logs/
+*.log
+exports/
