@@ -1,5 +1,0 @@
-{
-  "buildCommand": "npm run build && cp -r apps/web/.next ./.next && cp apps/web/package.json ./",
-  "installCommand": "npm install --legacy-peer-deps",
-  "outputDirectory": ".next"
-}
