@@ -4,8 +4,12 @@ import WorkspaceLayout from '@/components/workspace/WorkspaceLayout';
 import { getApiBase } from '@/lib/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-export default function WorkspacePage({ params }: { params: { deliverableId: string } }) {
-  const deliverableId = parseInt(params.deliverableId);
+interface WorkspacePageProps {
+  params: Promise<{ deliverableId: string }>;
+}
+
+export default function WorkspacePage({ params }: WorkspacePageProps) {
+  const [deliverableId, setDeliverableId] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deliverable, setDeliverable] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +23,13 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Handle params Promise in Next.js 15
   useEffect(() => {
+    params.then(({ deliverableId: id }) => setDeliverableId(parseInt(id)));
+  }, [params]);
+
+  useEffect(() => {
+    if (deliverableId === null) return;
     const fetchData = async () => {
       try {
         setLoading(true);

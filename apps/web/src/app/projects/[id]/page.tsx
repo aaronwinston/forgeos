@@ -5,8 +5,12 @@ import { getApiBase } from '@/lib/api';
 import { apiGet, apiPost, apiPut } from '@/lib/apiClient';
 import CreateItemModal from '@/components/projects/CreateItemModal';
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
-  const projectId = parseInt(params.id);
+interface ProjectPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function ProjectPage({ params }: ProjectPageProps) {
+  const [projectId, setProjectId] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [folders, setFolders] = useState<any[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
@@ -39,7 +43,13 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   const [showDeliverableModal, setShowDeliverableModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Handle params Promise in Next.js 15
   useEffect(() => {
+    params.then(({ id }) => setProjectId(parseInt(id)));
+  }, [params]);
+
+  useEffect(() => {
+    if (projectId === null) return;
     setFoldersLoading(true);
     apiGet<unknown[]>(`/api/projects/${projectId}/folders`)
       .then(setFolders)
