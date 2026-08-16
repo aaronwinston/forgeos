@@ -65,6 +65,7 @@ class Project(SQLModel, table=True):
     user_id: str
     name: str
     description: Optional[str] = None
+    tracking_json: Optional[str] = None
     status: str = Field(default="active")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

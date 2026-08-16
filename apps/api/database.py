@@ -336,6 +336,22 @@ def run_migrations(database_url: Optional[str] = None) -> None:
             conn.executescript(sql_text)
             conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
             conn.execute("COMMIT")
+
+        # Migration 0007: Project tracking payload
+        version = "0007_project_tracking"
+        already = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE version=?", (version,)
+        ).fetchone()
+        if not already:
+            sql_path = migrations_dir / f"{version}.sql"
+            if not sql_path.exists():
+                raise FileNotFoundError(f"Missing migration file: {sql_path}")
+
+            conn.execute("BEGIN")
+            sql_text = sql_path.read_text(encoding="utf-8")
+            conn.executescript(sql_text)
+            conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
+            conn.execute("COMMIT")
     except Exception:
         conn.execute("ROLLBACK")
         raise

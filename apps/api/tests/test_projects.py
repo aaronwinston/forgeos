@@ -53,6 +53,44 @@ class TestProjectCreate:
         )
         assert response.status_code in [400, 422]
     
+    def test_create_project_with_tracking_metadata(self, client, test_token):
+        response = client.post(
+            "/api/projects",
+            headers={"Authorization": f"******"},
+            json={
+                "name": "Growth project",
+                "description": "Tracks SEO and AEO execution",
+                "tracking": {
+                    "sites": ["https://arize.com"],
+                    "keywords": ["agent observability", "llm tracing"],
+                    "competitors": ["langfuse.com", "weightsandbiases.com"],
+                    "seo_focus": ["comparison pages"],
+                    "aeo_questions": ["How to evaluate agents in production?"],
+                    "suggested_topics": [
+                        {
+                            "title": "Agent observability buyer guide",
+                            "type": "seo_article",
+                            "priority": "high",
+                            "status": "planned",
+                        }
+                    ],
+                    "work_items": [
+                        {
+                            "title": "Draft launch blog",
+                            "category": "launch_blog",
+                            "status": "backlog",
+                            "owner": "content-team",
+                        }
+                    ],
+                },
+            },
+        )
+        assert response.status_code in [200, 201]
+        data = response.json()
+        assert data["name"] == "Growth project"
+        assert data["tracking"]["sites"] == ["https://arize.com"]
+        assert data["tracking"]["keywords"][0] == "agent observability"
+
     def test_create_project_unauthorized(self, client):
         response = client.post(
             "/api/projects",

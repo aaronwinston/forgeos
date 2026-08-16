@@ -61,6 +61,32 @@ export interface Project {
   description?: string;
   status: string;
   created_at: string;
+  tracking?: ProjectTracking;
+}
+
+export interface SuggestedTopic {
+  title: string;
+  type: 'seo_article' | 'aeo_article' | 'launch_blog' | 'developer_comms' | 'landing_page' | 'case_study' | 'other';
+  priority: 'low' | 'medium' | 'high';
+  status: 'idea' | 'planned' | 'in_progress' | 'published';
+}
+
+export interface WorkTrackingItem {
+  title: string;
+  category: 'seo_article' | 'aeo_article' | 'launch_blog' | 'developer_comms' | 'web_page' | 'case_study' | 'campaign' | 'other';
+  status: 'backlog' | 'in_progress' | 'review' | 'done';
+  owner?: string;
+  due_date?: string;
+}
+
+export interface ProjectTracking {
+  sites: string[];
+  keywords: string[];
+  competitors: string[];
+  seo_focus: string[];
+  aeo_questions: string[];
+  suggested_topics: SuggestedTopic[];
+  work_items: WorkTrackingItem[];
 }
 
 export interface Deliverable {
@@ -273,7 +299,7 @@ export async function getEngineHealth(): Promise<Record<string, unknown> | ApiEr
 
 export const api = {
   getProjects: () => getProjects(),
-  createProject: (data: { name: string; description?: string }) =>
+  createProject: (data: { name: string; description?: string; status?: 'active' | 'archived'; tracking?: ProjectTracking }) =>
     apiFetch<Project>('/api/projects', { method: 'POST', body: JSON.stringify(data) }),
   deleteProject: (id: number) => apiFetch<unknown>(`/api/projects/${id}`, { method: 'DELETE' }),
   getFolders: (projectId: number) => apiFetch<unknown[]>(`/api/projects/${projectId}/folders`),

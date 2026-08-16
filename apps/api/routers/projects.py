@@ -13,7 +13,7 @@ from models import (
 )
 from middleware.auth import get_current_user, AuthContext
 from pydantic import BaseModel, validator
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 from datetime import datetime, timezone
 import json
 import re
@@ -23,9 +23,163 @@ from services.publishing import PublishPayload, build_publish_bundle
 
 router = APIRouter(prefix="/api", tags=["projects"])
 
+
+class SuggestedTopic(BaseModel):
+    title: str
+    type: str = "seo_article"
+    priority: str = "medium"
+    status: str = "idea"
+
+    @validator("title")
+    def validate_title(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("title is required")
+        return normalized
+
+    @validator("type")
+    def validate_type(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        allowed = {
+            "seo_article",
+            "aeo_article",
+            "launch_blog",
+            "developer_comms",
+            "landing_page",
+            "case_study",
+            "other",
+        }
+        if normalized not in allowed:
+            raise ValueError("invalid topic type")
+        return normalized
+
+    @validator("priority")
+    def validate_priority(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"low", "medium", "high"}:
+            raise ValueError("priority must be low, medium, or high")
+        return normalized
+
+    @validator("status")
+    def validate_status(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"idea", "planned", "in_progress", "published"}:
+            raise ValueError("status must be idea, planned, in_progress, or published")
+        return normalized
+
+
+class WorkTrackingItem(BaseModel):
+    title: str
+    category: str = "seo_article"
+    status: str = "backlog"
+    owner: Optional[str] = None
+    due_date: Optional[str] = None
+
+    @validator("title")
+    def validate_work_title(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("title is required")
+        return normalized
+
+    @validator("category")
+    def validate_category(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        allowed = {
+            "seo_article",
+            "aeo_article",
+            "launch_blog",
+            "developer_comms",
+            "web_page",
+            "case_study",
+            "campaign",
+            "other",
+        }
+        if normalized not in allowed:
+            raise ValueError("invalid work item category")
+        return normalized
+
+    @validator("status")
+    def validate_work_status(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"backlog", "in_progress", "review", "done"}:
+            raise ValueError("status must be backlog, in_progress, review, or done")
+        return normalized
+
+
+class ProjectTracking(BaseModel):
+    sites: List[str] = []
+    keywords: List[str] = []
+    competitors: List[str] = []
+    seo_focus: List[str] = []
+    aeo_questions: List[str] = []
+    suggested_topics: List[SuggestedTopic] = []
+    work_items: List[WorkTrackingItem] = []
+
+
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    status: str = "active"
+    tracking: Optional[ProjectTracking] = None
+
+    @validator("name")
+    def validate_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("name is required")
+        return normalized
+
+    @validator("status")
+    def validate_status(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"active", "archived"}:
+            raise ValueError("status must be active or archived")
+        return normalized
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    tracking: Optional[ProjectTracking] = None
+
+    @validator("status")
+    def validate_optional_status(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        normalized = value.strip().lower()
+        if normalized not in {"active", "archived"}:
+            raise ValueError("status must be active or archived")
+        return normalized
+
+
+def _serialize_project(project: Project) -> Dict[str, Any]:
+    tracking: Optional[Dict[str, Any]] = None
+    if project.tracking_json:
+        try:
+            parsed = json.loads(project.tracking_json)
+            if isinstance(parsed, dict):
+                tracking = parsed
+        except json.JSONDecodeError:
+            tracking = None
+
+    return {
+        "id": project.id,
+        "organization_id": project.organization_id,
+        "user_id": project.user_id,
+        "name": project.name,
+        "description": project.description,
+        "status": project.status,
+        "tracking": tracking,
+        "created_at": project.created_at,
+    }
+
+
+def _dump_model(model: BaseModel) -> Dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump()  # type: ignore[no-any-return]
+    return model.dict()  # type: ignore[no-any-return]
 
 @router.get("/projects")
 @trace_operation("list_projects")
@@ -40,7 +194,8 @@ def list_projects(
         pagination = PaginationParams(skip=skip, limit=limit)
         query = select(Project).where(Project.organization_id == auth.org_id)
         query = add_pagination(query, pagination)
-        return session.exec(query).all()
+        projects = session.exec(query).all()
+        return [_serialize_project(project) for project in projects]
 
 @router.post("/projects")
 def create_project(
@@ -48,16 +203,19 @@ def create_project(
     auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+    tracking_json = json.dumps(_dump_model(data.tracking)) if data.tracking else None
     p = Project(
         name=data.name,
         description=data.description,
+        tracking_json=tracking_json,
+        status=data.status,
         organization_id=auth.org_id,
         user_id=auth.user_id,
     )
     session.add(p)
     session.commit()
     session.refresh(p)
-    return p
+    return _serialize_project(p)
 
 @router.get("/projects/{project_id}")
 def get_project(
@@ -72,12 +230,12 @@ def get_project(
     ).first()
     if not p:
         raise HTTPException(status_code=404, detail="Project not found")
-    return p
+    return _serialize_project(p)
 
 @router.put("/projects/{project_id}")
 def update_project(
     project_id: int,
-    data: ProjectCreate,
+    data: ProjectUpdate,
     auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -88,13 +246,21 @@ def update_project(
     ).first()
     if not p:
         raise HTTPException(status_code=404, detail="Project not found")
-    p.name = data.name
+
+    if data.name is not None:
+        if not data.name.strip():
+            raise HTTPException(status_code=422, detail="name cannot be empty")
+        p.name = data.name.strip()
     if data.description is not None:
         p.description = data.description
+    if data.status is not None:
+        p.status = data.status
+    if data.tracking is not None:
+        p.tracking_json = json.dumps(_dump_model(data.tracking))
     session.add(p)
     session.commit()
     session.refresh(p)
-    return p
+    return _serialize_project(p)
 
 @router.delete("/projects/{project_id}")
 def delete_project(

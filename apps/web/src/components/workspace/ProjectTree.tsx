@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, isApiError } from '@/lib/api';
 import TreeItemModal from './TreeItemModal';
+import NewProjectModal from '@/components/projects/NewProjectModal';
 
 export interface Deliverable {
   id: number;
@@ -60,11 +61,12 @@ export default function ProjectTree() {
   const [searchTerm, setSearchTerm] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showProjectModal, setShowProjectModal] = useState(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    type: TreeItemType;
+    type: Exclude<TreeItemType, 'project'>;
     parentId?: number;
-  }>({ isOpen: false, type: 'project' });
+  }>({ isOpen: false, type: 'folder' });
 
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const treeRef = useRef<HTMLDivElement>(null);
@@ -326,6 +328,11 @@ export default function ProjectTree() {
   };
 
   const openCreateModal = (type: TreeItemType, parentId?: number) => {
+    if (type === 'project') {
+      setShowProjectModal(true);
+      setContextMenu(null);
+      return;
+    }
     setModalState({ isOpen: true, type, parentId });
     setContextMenu(null);
   };
@@ -336,9 +343,7 @@ export default function ProjectTree() {
     description?: string;
   }) => {
     try {
-      if (modalState.type === 'project') {
-        await api.createProject({ name: itemData.name, description: itemData.description });
-      } else if (modalState.type === 'folder' && modalState.parentId) {
+      if (modalState.type === 'folder' && modalState.parentId) {
         await api.createFolder({
           project_id: modalState.parentId,
           name: itemData.name,
@@ -362,7 +367,7 @@ export default function ProjectTree() {
       }
 
       await loadProjects();
-      setModalState({ isOpen: false, type: 'project' });
+      setModalState({ isOpen: false, type: 'folder' });
     } catch (error) {
       console.error('Error creating item:', error);
     }
@@ -648,8 +653,21 @@ export default function ProjectTree() {
       <TreeItemModal
         isOpen={modalState.isOpen}
         type={modalState.type}
-        onClose={() => setModalState({ isOpen: false, type: 'project' })}
+        onClose={() => setModalState({ isOpen: false, type: 'folder' })}
         onCreate={handleCreateItem}
+      />
+
+      <NewProjectModal
+        isOpen={showProjectModal}
+        onClose={() => setShowProjectModal(false)}
+        onCreate={async (payload) => {
+          const result = await api.createProject(payload);
+          if (isApiError(result)) {
+            throw new Error(result.details || 'Failed to create project');
+          }
+          await loadProjects();
+          setShowProjectModal(false);
+        }}
       />
     </div>
   );
