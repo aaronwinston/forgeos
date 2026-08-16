@@ -1,3 +1,5 @@
+'use client';
+
 import DOMPurify from 'dompurify';
 
 // Configure DOMPurify for safe HTML sanitization
