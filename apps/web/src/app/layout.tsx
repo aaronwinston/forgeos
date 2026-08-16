@@ -14,12 +14,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="dark">
-      <body>
+      <body suppressHydrationWarning={true}>
         <ErrorBoundary>
           <div className="flex h-screen bg-bg-primary overflow-hidden">
             <Sidebar />
             <main className="flex-1 overflow-auto">{children}</main>
-            <AgentTracker />
+            <ErrorBoundary>
+              <AgentTracker />
+            </ErrorBoundary>
           </div>
           <ThemeToggle />
           <CommandPalette />

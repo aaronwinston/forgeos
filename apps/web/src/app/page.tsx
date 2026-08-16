@@ -4,29 +4,36 @@ import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+  // Only run on client side
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (mounted) {
-      // Check if we're in a browser
-      if (typeof window !== 'undefined') {
-        // Give a small delay to ensure client-side routing
-        const timer = setTimeout(() => {
-          router.push('/dashboard');
-        }, 0);
-        return () => clearTimeout(timer);
-      }
+    if (isClient) {
+      // Redirect to dashboard
+      router.replace('/dashboard');
     }
-  }, [mounted, router]);
+  }, [isClient, router]);
+
+  if (!isClient) {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">ForgeOS</h1>
+          <p className="text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center justify-center h-screen w-screen bg-bg-primary">
-      <div className="text-center">
-        <p className="text-sm text-gray-500">Loading ForgeOS...</p>
+    <div className="flex items-center justify-center h-screen w-screen">
+      <div className="text-center space-y-4">
+        <h1 className="text-2xl font-bold">ForgeOS</h1>
+        <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
       </div>
     </div>
   );
