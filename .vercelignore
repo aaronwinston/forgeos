@@ -1,102 +1,13 @@
-# Dependencies
-node_modules/
-.npm
-.pnp
-.pnp.js
-
-# Testing
-coverage/
-.nyc_output/
-
-# Production
-.next/
-out/
-build/
-dist/
-
-# Misc
-.DS_Store
-*.pem
-.env
-.env.local
-.env.*.local
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Python/API
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-logs/
-*.log
-
-# Git
-.git/
-.gitignore
-
-# Docker
-Dockerfile*
-docker-compose.yml
-.dockerignore
-
-# CI/CD
-.github/
-.gitlab-ci.yml
-.travis.yml
-Jenkinsfile
-
-# Configuration
-.env.example
-.editorconfig
-.eslintrc*
-.prettierrc*
-
-# Project specific
-apps/api/
-briefs/
-playbooks/
-prompts/
-skills/
-context/
-core/
-rubrics/
-SECURITY.md
-DEPLOYMENT_*
+.env*
+.git
+.github
+apps/api
+docs
+core
+context
+skills
+playbooks
+rubrics
+briefs
+prompts
+*.md

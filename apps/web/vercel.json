@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm ci",
+  "buildCommand": "npm ci --legacy-peer-deps && npm run build",
+  "installCommand": "npm ci --legacy-peer-deps",
   "regions": ["sfo1"],
   "headers": [
     {
