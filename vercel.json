@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd apps/web && npm ci --legacy-peer-deps && npm run build",
+  "installCommand": null,
+  "outputDirectory": "apps/web/.next"
+}
