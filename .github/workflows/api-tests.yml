@@ -2,12 +2,12 @@ name: API Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ Main, main, develop ]
     paths:
       - 'apps/api/**'
       - '.github/workflows/api-tests.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ Main, main, develop ]
     paths:
       - 'apps/api/**'
   schedule:

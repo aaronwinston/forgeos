@@ -46,6 +46,11 @@
       "path": "skills/quality/claims-risk-reviewer/SKILL.md"
     },
     {
+      "name": "dev-campaign-reviewer",
+      "title": "dev-campaign-reviewer",
+      "path": "skills/quality/dev-campaign-reviewer/SKILL.md"
+    },
+    {
       "name": "final-publish-reviewer",
       "title": "final-publish-reviewer",
       "path": "skills/quality/final-publish-reviewer/SKILL.md"
@@ -74,6 +79,11 @@
       "name": "customer-story-producer",
       "title": "customer-story-producer",
       "path": "skills/specialization/customer-story-producer/SKILL.md"
+    },
+    {
+      "name": "dev-ad-writer",
+      "title": "dev-ad-writer",
+      "path": "skills/specialization/dev-ad-writer/SKILL.md"
     },
     {
       "name": "executive-comms-writer",
@@ -109,7 +119,17 @@
       "name": "technical-fact-checker",
       "title": "technical-fact-checker",
       "path": "skills/specialization/technical-fact-checker/SKILL.md"
+    },
+    {
+      "name": "workflow-extractor",
+      "title": "workflow-extractor",
+      "path": "skills/specialization/workflow-extractor/SKILL.md"
+    },
+    {
+      "name": "x-to-wordpress-scraper",
+      "title": "x-to-wordpress-scraper",
+      "path": "skills/specialization/x-to-wordpress-scraper/SKILL.md"
     }
   ],
-  "count": 22
+  "count": 26
 }
