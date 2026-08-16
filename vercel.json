@@ -1,8 +1,6 @@
 {
-  "buildCommand": "npm --prefix apps/web ci --legacy-peer-deps && npm --prefix apps/web run build",
-  "installCommand": "npm --prefix apps/web ci --legacy-peer-deps",
-  "outputDirectory": "apps/web/.next",
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "root": "apps/web",
+  "framework": "nextjs",
+  "buildCommand": "npm ci --legacy-peer-deps && npm run build",
+  "installCommand": "npm ci --legacy-peer-deps"
 }
