@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import OpportunitiesSection from '@/components/search/OpportunitiesSection';
 import DefendingPositionSection from '@/components/search/DefendingPositionSection';
 import ConversationalPulseSection from '@/components/search/ConversationalPulseSection';
+import ActionableRecommendationsSection from '@/components/search/ActionableRecommendationsSection';
 
 export default function SearchPage() {
   const [refreshing, setRefreshing] = useState(false);
@@ -47,6 +48,7 @@ export default function SearchPage() {
 
       <OpportunitiesSection />
       <DefendingPositionSection />
+      <ActionableRecommendationsSection />
       <ConversationalPulseSection />
     </div>
   );

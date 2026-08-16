@@ -102,9 +102,34 @@ export interface KeywordCluster {
   updated_at: string;
 }
 
+export interface SeoRecommendation {
+  recommendation_id: string;
+  insight_id: number;
+  topic: string;
+  trends_momentum: 'rising' | 'steady' | 'falling' | 'no_data';
+  recommendation_type: string;
+  serp_gap_summary: string;
+  recommended_action: string;
+  priority_score: number;
+  matched_keyword_cluster_id?: number;
+  matched_keyword?: string;
+  intent: {
+    intent_stage: string;
+    target_page_type: string;
+    cta_suggestion: string;
+  };
+  movement: {
+    baseline_position?: number;
+    current_position?: number;
+    position_delta?: number;
+    baseline_clicks?: number;
+    current_clicks?: number;
+    click_delta?: number;
+  };
+}
+
 export const CONTENT_TYPES = [
   'blog', 'email', 'press_release', 'analyst_briefing',
   'social_post', 'case_study', 'launch_copy', 'lifecycle_email',
   'newsletter', 'thought_leadership', 'other'
 ] as const;
-

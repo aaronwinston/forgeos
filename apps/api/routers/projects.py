@@ -1,14 +1,25 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlmodel import Session, select
 from database import get_session
-from models import Project, Folder, Deliverable, Brief, ScrapeItem
+from models import (
+    Project,
+    Folder,
+    Deliverable,
+    Brief,
+    ScrapeItem,
+    ConversionTaxonomyDefinition,
+    DeliverableConversionOutcomeSnapshot,
+    DeliverableCTAExperiment,
+)
 from middleware.auth import get_current_user, AuthContext
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, validator
+from typing import Optional, Any, Dict
 from datetime import datetime, timezone
 import json
+import re
 from monitoring import time_operation, trace_operation
 from services.query_optimization import PaginationParams, add_pagination
+from services.publishing import PublishPayload, build_publish_bundle
 
 router = APIRouter(prefix="/api", tags=["projects"])
 
@@ -198,6 +209,179 @@ class DeliverableUpdate(BaseModel):
     title: Optional[str] = None
     status: Optional[str] = None
     body_md: Optional[str] = None
+    metadata_json: Optional[str] = None
+
+
+class PublishBundleResponse(BaseModel):
+    platform: str
+    deliverable_id: int
+    payload: PublishPayload
+    adapter_payload: Dict[str, Any]
+
+
+EVENT_KEY_RE = re.compile(r"^[a-z0-9:_-]+$")
+CTA_VARIANT_RE = re.compile(r"^[A-Za-z0-9 _-]+$")
+
+
+class ConversionTaxonomyCreate(BaseModel):
+    event_key: str
+    funnel_stage: str
+    definition: str
+    primary_cta: Optional[str] = None
+    success_metric: Optional[str] = None
+
+    @validator("event_key")
+    def validate_event_key(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not EVENT_KEY_RE.match(normalized):
+            raise ValueError("event_key must use lowercase letters, numbers, colon, dash, or underscore")
+        return normalized
+
+    @validator("funnel_stage", "definition")
+    def validate_required_text(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("value cannot be empty")
+        return value.strip()
+
+
+class ConversionOutcomeSnapshotCreate(BaseModel):
+    period_label: str
+    visitors: Optional[int] = None
+    conversions: Optional[int] = None
+    conversion_rate: Optional[float] = None
+    observed_outcome: Optional[str] = None
+    notes: Optional[str] = None
+    recorded_at: Optional[datetime] = None
+
+    @validator("period_label")
+    def validate_period_label(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError("period_label is required")
+        return value.strip()
+
+    @validator("visitors", "conversions")
+    def validate_non_negative_int(cls, value: Optional[int]) -> Optional[int]:
+        if value is not None and value < 0:
+            raise ValueError("value must be non-negative")
+        return value
+
+    @validator("conversion_rate")
+    def validate_conversion_rate(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and (value < 0 or value > 1):
+            raise ValueError("conversion_rate must be between 0 and 1")
+        return value
+
+
+class DeliverableCTAExperimentCreate(BaseModel):
+    experiment_key: str
+    variant_label: str
+    hypothesis: Optional[str] = None
+    observed_outcome: Optional[str] = None
+    status: str = "active"
+    impressions: Optional[int] = None
+    conversions: Optional[int] = None
+    conversion_rate: Optional[float] = None
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+
+    @validator("experiment_key")
+    def validate_experiment_key(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not EVENT_KEY_RE.match(normalized):
+            raise ValueError("experiment_key must use lowercase letters, numbers, colon, dash, or underscore")
+        return normalized
+
+    @validator("variant_label")
+    def validate_variant_label(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("variant_label is required")
+        if not CTA_VARIANT_RE.match(normalized):
+            raise ValueError("variant_label has unsupported characters")
+        return normalized
+
+    @validator("status")
+    def validate_status(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"active", "paused", "completed"}:
+            raise ValueError("status must be active, paused, or completed")
+        return normalized
+
+    @validator("impressions", "conversions")
+    def validate_non_negative_metrics(cls, value: Optional[int]) -> Optional[int]:
+        if value is not None and value < 0:
+            raise ValueError("value must be non-negative")
+        return value
+
+    @validator("conversion_rate")
+    def validate_experiment_conversion_rate(cls, value: Optional[float]) -> Optional[float]:
+        if value is not None and (value < 0 or value > 1):
+            raise ValueError("conversion_rate must be between 0 and 1")
+        return value
+
+
+def _get_org_deliverable(
+    session: Session,
+    org_id: str,
+    deliverable_id: int,
+) -> Deliverable:
+    deliverable = session.exec(
+        select(Deliverable).where(
+            (Deliverable.id == deliverable_id) & (Deliverable.organization_id == org_id)
+        )
+    ).first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail="Deliverable not found")
+    return deliverable
+
+
+def _serialize_taxonomy(item: ConversionTaxonomyDefinition) -> Dict[str, Any]:
+    return {
+        "id": item.id,
+        "deliverable_id": item.deliverable_id,
+        "content_type": item.content_type,
+        "event_key": item.event_key,
+        "funnel_stage": item.funnel_stage,
+        "definition": item.definition,
+        "primary_cta": item.primary_cta,
+        "success_metric": item.success_metric,
+        "created_at": item.created_at.isoformat(),
+        "updated_at": item.updated_at.isoformat(),
+    }
+
+
+def _serialize_snapshot(item: DeliverableConversionOutcomeSnapshot) -> Dict[str, Any]:
+    return {
+        "id": item.id,
+        "deliverable_id": item.deliverable_id,
+        "period_label": item.period_label,
+        "visitors": item.visitors,
+        "conversions": item.conversions,
+        "conversion_rate": item.conversion_rate,
+        "observed_outcome": item.observed_outcome,
+        "notes": item.notes,
+        "recorded_at": item.recorded_at.isoformat(),
+        "created_at": item.created_at.isoformat(),
+    }
+
+
+def _serialize_cta_experiment(item: DeliverableCTAExperiment) -> Dict[str, Any]:
+    return {
+        "id": item.id,
+        "deliverable_id": item.deliverable_id,
+        "experiment_key": item.experiment_key,
+        "variant_label": item.variant_label,
+        "hypothesis": item.hypothesis,
+        "observed_outcome": item.observed_outcome,
+        "status": item.status,
+        "impressions": item.impressions,
+        "conversions": item.conversions,
+        "conversion_rate": item.conversion_rate,
+        "started_at": item.started_at.isoformat() if item.started_at else None,
+        "ended_at": item.ended_at.isoformat() if item.ended_at else None,
+        "created_at": item.created_at.isoformat(),
+        "updated_at": item.updated_at.isoformat(),
+    }
 
 @router.get("/folders/{folder_id}/deliverables")
 def list_deliverables(
@@ -276,6 +460,7 @@ def create_deliverable(
         title=data.title,
         status=data.status,
         body_md=data.body_md,
+        metadata_json=data.metadata_json,
     )
     session.add(d)
     session.commit()
@@ -296,6 +481,180 @@ def get_deliverable(
     if not d:
         raise HTTPException(status_code=404, detail="Deliverable not found")
     return d
+
+
+@router.get("/deliverables/{deliverable_id}/conversion-loop")
+def get_deliverable_conversion_loop(
+    deliverable_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+
+    taxonomy = session.exec(
+        select(ConversionTaxonomyDefinition)
+        .where(
+            (ConversionTaxonomyDefinition.organization_id == auth.org_id)
+            & (ConversionTaxonomyDefinition.deliverable_id == deliverable.id)
+        )
+        .order_by(ConversionTaxonomyDefinition.created_at.desc())
+    ).all()
+    snapshots = session.exec(
+        select(DeliverableConversionOutcomeSnapshot)
+        .where(
+            (DeliverableConversionOutcomeSnapshot.organization_id == auth.org_id)
+            & (DeliverableConversionOutcomeSnapshot.deliverable_id == deliverable.id)
+        )
+        .order_by(DeliverableConversionOutcomeSnapshot.recorded_at.desc())
+    ).all()
+    experiments = session.exec(
+        select(DeliverableCTAExperiment)
+        .where(
+            (DeliverableCTAExperiment.organization_id == auth.org_id)
+            & (DeliverableCTAExperiment.deliverable_id == deliverable.id)
+        )
+        .order_by(DeliverableCTAExperiment.created_at.desc())
+    ).all()
+
+    return {
+        "deliverable_id": deliverable.id,
+        "content_type": deliverable.content_type,
+        "taxonomy_definitions": [_serialize_taxonomy(row) for row in taxonomy],
+        "conversion_outcomes": [_serialize_snapshot(row) for row in snapshots],
+        "cta_experiments": [_serialize_cta_experiment(row) for row in experiments],
+    }
+
+
+@router.post("/deliverables/{deliverable_id}/conversion-taxonomy")
+def create_conversion_taxonomy_definition(
+    deliverable_id: int,
+    payload: ConversionTaxonomyCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+    row = ConversionTaxonomyDefinition(
+        organization_id=auth.org_id,
+        deliverable_id=deliverable.id,
+        created_by_user_id=auth.user_id,
+        content_type=deliverable.content_type,
+        event_key=payload.event_key,
+        funnel_stage=payload.funnel_stage,
+        definition=payload.definition,
+        primary_cta=payload.primary_cta.strip() if payload.primary_cta else None,
+        success_metric=payload.success_metric.strip() if payload.success_metric else None,
+        updated_at=datetime.now(timezone.utc),
+    )
+    session.add(row)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Conversion taxonomy event_key already exists for this deliverable",
+        ) from exc
+    session.refresh(row)
+    return _serialize_taxonomy(row)
+
+
+@router.post("/deliverables/{deliverable_id}/conversion-outcomes")
+def create_conversion_outcome_snapshot(
+    deliverable_id: int,
+    payload: ConversionOutcomeSnapshotCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+    row = DeliverableConversionOutcomeSnapshot(
+        organization_id=auth.org_id,
+        deliverable_id=deliverable.id,
+        created_by_user_id=auth.user_id,
+        period_label=payload.period_label,
+        visitors=payload.visitors,
+        conversions=payload.conversions,
+        conversion_rate=payload.conversion_rate,
+        observed_outcome=payload.observed_outcome.strip() if payload.observed_outcome else None,
+        notes=payload.notes.strip() if payload.notes else None,
+        recorded_at=payload.recorded_at or datetime.now(timezone.utc),
+    )
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return _serialize_snapshot(row)
+
+
+@router.get("/deliverables/{deliverable_id}/conversion-outcomes")
+def list_conversion_outcome_snapshots(
+    deliverable_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+    rows = session.exec(
+        select(DeliverableConversionOutcomeSnapshot)
+        .where(
+            (DeliverableConversionOutcomeSnapshot.organization_id == auth.org_id)
+            & (DeliverableConversionOutcomeSnapshot.deliverable_id == deliverable.id)
+        )
+        .order_by(DeliverableConversionOutcomeSnapshot.recorded_at.desc())
+    ).all()
+    return [_serialize_snapshot(row) for row in rows]
+
+
+@router.post("/deliverables/{deliverable_id}/cta-experiments")
+def create_deliverable_cta_experiment(
+    deliverable_id: int,
+    payload: DeliverableCTAExperimentCreate,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+    row = DeliverableCTAExperiment(
+        organization_id=auth.org_id,
+        deliverable_id=deliverable.id,
+        created_by_user_id=auth.user_id,
+        experiment_key=payload.experiment_key,
+        variant_label=payload.variant_label,
+        hypothesis=payload.hypothesis.strip() if payload.hypothesis else None,
+        observed_outcome=payload.observed_outcome.strip() if payload.observed_outcome else None,
+        status=payload.status,
+        impressions=payload.impressions,
+        conversions=payload.conversions,
+        conversion_rate=payload.conversion_rate,
+        started_at=payload.started_at,
+        ended_at=payload.ended_at,
+        updated_at=datetime.now(timezone.utc),
+    )
+    session.add(row)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="CTA experiment variant already exists for this deliverable",
+        ) from exc
+    session.refresh(row)
+    return _serialize_cta_experiment(row)
+
+
+@router.get("/deliverables/{deliverable_id}/cta-experiments")
+def list_deliverable_cta_experiments(
+    deliverable_id: int,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    deliverable = _get_org_deliverable(session, auth.org_id, deliverable_id)
+    rows = session.exec(
+        select(DeliverableCTAExperiment)
+        .where(
+            (DeliverableCTAExperiment.organization_id == auth.org_id)
+            & (DeliverableCTAExperiment.deliverable_id == deliverable.id)
+        )
+        .order_by(DeliverableCTAExperiment.created_at.desc())
+    ).all()
+    return [_serialize_cta_experiment(row) for row in rows]
 
 @router.put("/deliverables/{deliverable_id}")
 def update_deliverable(
@@ -336,6 +695,36 @@ def delete_deliverable(
     session.delete(d)
     session.commit()
     return {"ok": True}
+
+
+@router.get("/deliverables/{deliverable_id}/publish-bundle", response_model=PublishBundleResponse)
+def get_deliverable_publish_bundle(
+    deliverable_id: int,
+    platform: str = Query("wordpress"),
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    deliverable = session.exec(
+        select(Deliverable).where(
+            (Deliverable.id == deliverable_id) & (Deliverable.organization_id == auth.org_id)
+        )
+    ).first()
+    if not deliverable:
+        raise HTTPException(status_code=404, detail="Deliverable not found")
+
+    try:
+        bundle = build_publish_bundle(deliverable, platform=platform)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Deliverable metadata_json must be valid JSON")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return PublishBundleResponse(
+        platform=bundle.platform,
+        deliverable_id=bundle.deliverable_id,
+        payload=bundle.payload,
+        adapter_payload=bundle.adapter_payload,
+    )
 
 class BriefCreate(BaseModel):
     project_id: Optional[int] = None

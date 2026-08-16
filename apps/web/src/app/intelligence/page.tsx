@@ -4,14 +4,95 @@ import { Button } from '@/components/ui/Button';
 import { getApiBase } from '@/lib/api';
 import { getHeadersWithCSRF } from '@/lib/csrf';
 
+interface PlanningQueueItem {
+  item_id: number;
+  title: string;
+  source: string;
+  source_url: string;
+  rank_score: number;
+  score_signal: number;
+  recency_signal: number;
+  strategic_fit_signal: number;
+  strategic_fit_reasons: string[];
+  linkage: {
+    suggested_content_type: string;
+    suggested_playbook: string;
+    suggested_lifecycle_state: string;
+    owner_placeholder: string;
+  };
+}
+
+interface ConversionTaxonomyDefinition {
+  id: number;
+  event_key: string;
+  funnel_stage: string;
+  definition: string;
+  primary_cta: string | null;
+  success_metric: string | null;
+}
+
+interface ConversionOutcomeSnapshot {
+  id: number;
+  period_label: string;
+  visitors: number | null;
+  conversions: number | null;
+  conversion_rate: number | null;
+  observed_outcome: string | null;
+}
+
+interface DeliverableCTAExperiment {
+  id: number;
+  experiment_key: string;
+  variant_label: string;
+  status: string;
+  conversion_rate: number | null;
+  observed_outcome: string | null;
+}
+
+interface ConversionLoopData {
+  deliverable_id: number;
+  content_type: string;
+  taxonomy_definitions: ConversionTaxonomyDefinition[];
+  conversion_outcomes: ConversionOutcomeSnapshot[];
+  cta_experiments: DeliverableCTAExperiment[];
+}
+
 export default function IntelligencePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [items, setItems] = useState<any[]>([]);
+  const [planningQueue, setPlanningQueue] = useState<PlanningQueueItem[]>([]);
+  const [planningError, setPlanningError] = useState<string | null>(null);
+  const [conversionLoop, setConversionLoop] = useState<ConversionLoopData | null>(null);
+  const [conversionError, setConversionError] = useState<string | null>(null);
+  const [deliverableIdInput, setDeliverableIdInput] = useState('');
+  const [loadingConversion, setLoadingConversion] = useState(false);
+  const [taxonomyForm, setTaxonomyForm] = useState({
+    event_key: '',
+    funnel_stage: '',
+    definition: '',
+    primary_cta: '',
+    success_metric: '',
+  });
+  const [outcomeForm, setOutcomeForm] = useState({
+    period_label: '',
+    visitors: '',
+    conversions: '',
+    conversion_rate: '',
+    observed_outcome: '',
+    notes: '',
+  });
+  const [ctaForm, setCtaForm] = useState({
+    experiment_key: '',
+    variant_label: 'A',
+    status: 'active',
+    conversion_rate: '',
+    observed_outcome: '',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadItems = async () => {
+  const loadItems = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -36,7 +117,40 @@ export default function IntelligencePage() {
     }
   };
 
-  useEffect(() => { loadItems(); }, []);
+  const loadPlanningQueue = async (): Promise<void> => {
+    try {
+      setPlanningError(null);
+      const response = await fetch(`${getApiBase()}/api/intelligence/planning/queue?limit=10`);
+      if (!response.ok) throw new Error(`Planning queue API error: ${response.status}`);
+      const data = await response.json();
+      setPlanningQueue(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('[Intelligence] Planning queue load error:', err);
+      setPlanningError('Unable to load the weekly planning queue right now.');
+      setPlanningQueue([]);
+    }
+  };
+
+  const loadConversionLoop = async (deliverableId: number): Promise<void> => {
+    try {
+      setLoadingConversion(true);
+      setConversionError(null);
+      const response = await fetch(`${getApiBase()}/api/deliverables/${deliverableId}/conversion-loop`);
+      if (!response.ok) throw new Error(`Conversion loop API error: ${response.status}`);
+      const data = await response.json();
+      setConversionLoop(data);
+    } catch (err) {
+      console.error('[Intelligence] Conversion loop load error:', err);
+      setConversionLoop(null);
+      setConversionError('Unable to load conversion loop artifacts for this deliverable.');
+    } finally {
+      setLoadingConversion(false);
+    }
+  };
+
+  useEffect(() => {
+    void Promise.all([loadItems(), loadPlanningQueue()]);
+  }, []);
 
   const dismiss = async (id: number) => {
     try {
@@ -78,7 +192,7 @@ export default function IntelligencePage() {
       }
       console.debug('[Intelligence] Scrape initiated, waiting for results...');
       await new Promise(resolve => setTimeout(resolve, 3000));
-      await loadItems();
+      await Promise.all([loadItems(), loadPlanningQueue()]);
     } catch (err) {
       const userMessage = err instanceof Error && err.message.includes('Scrape failed')
         ? 'Failed to start intelligence scrape. Check the API and try again.'
@@ -88,6 +202,61 @@ export default function IntelligencePage() {
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleLoadConversionLoop = async () => {
+    const parsedId = parseInt(deliverableIdInput, 10);
+    if (!Number.isFinite(parsedId) || parsedId <= 0) {
+      setConversionError('Enter a valid deliverable ID.');
+      return;
+    }
+    await loadConversionLoop(parsedId);
+  };
+
+  const saveTaxonomyDefinition = async () => {
+    if (!conversionLoop) return;
+    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/conversion-taxonomy`, {
+      method: 'POST',
+      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(taxonomyForm),
+    });
+    if (!response.ok) throw new Error('Failed to save conversion taxonomy');
+    setTaxonomyForm({ event_key: '', funnel_stage: '', definition: '', primary_cta: '', success_metric: '' });
+    await loadConversionLoop(conversionLoop.deliverable_id);
+  };
+
+  const saveConversionOutcome = async () => {
+    if (!conversionLoop) return;
+    const payload = {
+      ...outcomeForm,
+      visitors: outcomeForm.visitors ? Number(outcomeForm.visitors) : null,
+      conversions: outcomeForm.conversions ? Number(outcomeForm.conversions) : null,
+      conversion_rate: outcomeForm.conversion_rate ? Number(outcomeForm.conversion_rate) : null,
+    };
+    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/conversion-outcomes`, {
+      method: 'POST',
+      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Failed to save conversion outcome');
+    setOutcomeForm({ period_label: '', visitors: '', conversions: '', conversion_rate: '', observed_outcome: '', notes: '' });
+    await loadConversionLoop(conversionLoop.deliverable_id);
+  };
+
+  const saveCtaExperiment = async () => {
+    if (!conversionLoop) return;
+    const payload = {
+      ...ctaForm,
+      conversion_rate: ctaForm.conversion_rate ? Number(ctaForm.conversion_rate) : null,
+    };
+    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/cta-experiments`, {
+      method: 'POST',
+      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Failed to save CTA experiment');
+    setCtaForm({ experiment_key: '', variant_label: 'A', status: 'active', conversion_rate: '', observed_outcome: '' });
+    await loadConversionLoop(conversionLoop.deliverable_id);
   };
 
   return (
@@ -153,7 +322,132 @@ export default function IntelligencePage() {
           ))}
         </div>
       )}
+
+      <div className="pt-4">
+        <div className="mb-2">
+          <h2 className="text-xl font-semibold">Weekly publishing queue</h2>
+          <p className="text-sm text-fg-secondary">Ranked by score, recency, and strategic fit</p>
+        </div>
+
+        {planningError && (
+          <div className="border border-red-300 rounded-card p-4 bg-red-50">
+            <p className="text-sm text-red-800 mb-2">{planningError}</p>
+            <Button size="sm" onClick={loadPlanningQueue} variant="secondary">Retry queue</Button>
+          </div>
+        )}
+
+        {!planningError && planningQueue.length === 0 && (
+          <div className="border rounded-card p-6 text-center">
+            <p className="text-sm text-gray-700">No ranked planning items yet.</p>
+            <p className="text-xs text-gray-500 mt-1">Run refresh and add keyword/insight signals to generate the weekly queue.</p>
+          </div>
+        )}
+
+        {!planningError && planningQueue.length > 0 && (
+          <div className="space-y-2">
+            {planningQueue.map((queueItem, index) => (
+              <div key={queueItem.item_id} className="border rounded-card p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-fg-secondary">#{index + 1} · rank {queueItem.rank_score.toFixed(2)}</p>
+                    <a href={queueItem.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">
+                      {queueItem.title}
+                    </a>
+                    <p className="text-xs text-fg-secondary mt-1">
+                      {queueItem.linkage.suggested_content_type} · {queueItem.linkage.suggested_playbook} · {queueItem.linkage.suggested_lifecycle_state} · {queueItem.linkage.owner_placeholder}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      score {queueItem.score_signal.toFixed(1)} · recency {queueItem.recency_signal.toFixed(1)} · strategic fit {queueItem.strategic_fit_signal.toFixed(1)}
+                    </p>
+                  </div>
+                  <span className="inline-block border rounded px-2 py-1 text-xs">{queueItem.source}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-4 space-y-3">
+        <div>
+          <h2 className="text-xl font-semibold">Conversion feedback loop</h2>
+          <p className="text-sm text-fg-secondary">Track taxonomy, outcomes, and CTA tests by deliverable.</p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            className="border rounded px-2 py-1 text-sm w-56"
+            value={deliverableIdInput}
+            onChange={(e) => setDeliverableIdInput(e.target.value)}
+            placeholder="Deliverable ID"
+          />
+          <Button size="sm" onClick={handleLoadConversionLoop} loading={loadingConversion}>Load</Button>
+        </div>
+        {conversionError && <p className="text-sm text-red-700">{conversionError}</p>}
+
+        {conversionLoop && (
+          <div className="space-y-3">
+            <p className="text-xs text-fg-secondary">
+              Deliverable {conversionLoop.deliverable_id} · {conversionLoop.content_type}
+            </p>
+
+            <div className="border rounded-card p-3 space-y-2">
+              <p className="text-sm font-medium">Taxonomy definitions</p>
+              <div className="grid gap-2 md:grid-cols-5">
+                <input className="border rounded px-2 py-1 text-xs" placeholder="event_key" value={taxonomyForm.event_key} onChange={(e) => setTaxonomyForm((prev) => ({ ...prev, event_key: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="funnel_stage" value={taxonomyForm.funnel_stage} onChange={(e) => setTaxonomyForm((prev) => ({ ...prev, funnel_stage: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="definition" value={taxonomyForm.definition} onChange={(e) => setTaxonomyForm((prev) => ({ ...prev, definition: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="primary_cta" value={taxonomyForm.primary_cta} onChange={(e) => setTaxonomyForm((prev) => ({ ...prev, primary_cta: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="success_metric" value={taxonomyForm.success_metric} onChange={(e) => setTaxonomyForm((prev) => ({ ...prev, success_metric: e.target.value }))} />
+              </div>
+              <Button size="sm" onClick={() => void saveTaxonomyDefinition().catch(() => setConversionError('Failed to save taxonomy definition.'))}>Add taxonomy</Button>
+              <div className="space-y-1">
+                {conversionLoop.taxonomy_definitions.map((item) => (
+                  <p key={item.id} className="text-xs text-fg-secondary">{item.event_key} · {item.funnel_stage} · {item.definition}</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="border rounded-card p-3 space-y-2">
+              <p className="text-sm font-medium">Conversion outcomes</p>
+              <div className="grid gap-2 md:grid-cols-6">
+                <input className="border rounded px-2 py-1 text-xs" placeholder="period_label" value={outcomeForm.period_label} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, period_label: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="visitors" value={outcomeForm.visitors} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, visitors: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="conversions" value={outcomeForm.conversions} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, conversions: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="rate(0-1)" value={outcomeForm.conversion_rate} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, conversion_rate: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="observed_outcome" value={outcomeForm.observed_outcome} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, observed_outcome: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="notes" value={outcomeForm.notes} onChange={(e) => setOutcomeForm((prev) => ({ ...prev, notes: e.target.value }))} />
+              </div>
+              <Button size="sm" onClick={() => void saveConversionOutcome().catch(() => setConversionError('Failed to save conversion outcome.'))}>Add outcome</Button>
+              <div className="space-y-1">
+                {conversionLoop.conversion_outcomes.map((item) => (
+                  <p key={item.id} className="text-xs text-fg-secondary">{item.period_label} · rate {item.conversion_rate ?? 'n/a'} · {item.observed_outcome ?? 'No notes'}</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="border rounded-card p-3 space-y-2">
+              <p className="text-sm font-medium">CTA experiments</p>
+              <div className="grid gap-2 md:grid-cols-5">
+                <input className="border rounded px-2 py-1 text-xs" placeholder="experiment_key" value={ctaForm.experiment_key} onChange={(e) => setCtaForm((prev) => ({ ...prev, experiment_key: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="variant_label" value={ctaForm.variant_label} onChange={(e) => setCtaForm((prev) => ({ ...prev, variant_label: e.target.value }))} />
+                <select className="border rounded px-2 py-1 text-xs" value={ctaForm.status} onChange={(e) => setCtaForm((prev) => ({ ...prev, status: e.target.value }))}>
+                  <option value="active">active</option>
+                  <option value="paused">paused</option>
+                  <option value="completed">completed</option>
+                </select>
+                <input className="border rounded px-2 py-1 text-xs" placeholder="rate(0-1)" value={ctaForm.conversion_rate} onChange={(e) => setCtaForm((prev) => ({ ...prev, conversion_rate: e.target.value }))} />
+                <input className="border rounded px-2 py-1 text-xs" placeholder="observed_outcome" value={ctaForm.observed_outcome} onChange={(e) => setCtaForm((prev) => ({ ...prev, observed_outcome: e.target.value }))} />
+              </div>
+              <Button size="sm" onClick={() => void saveCtaExperiment().catch(() => setConversionError('Failed to save CTA experiment.'))}>Add CTA experiment</Button>
+              <div className="space-y-1">
+                {conversionLoop.cta_experiments.map((item) => (
+                  <p key={item.id} className="text-xs text-fg-secondary">{item.experiment_key} · {item.variant_label} · {item.status} · rate {item.conversion_rate ?? 'n/a'}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

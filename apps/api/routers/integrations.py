@@ -1,16 +1,19 @@
 import logging
 import json
 from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
-from database import engine
-from models import CalendarIntegration
+from pydantic import BaseModel, Field as PydanticField
+from database import get_session
+from models import CalendarIntegration, DistributionIntegrationTarget
 from middleware.auth import get_current_user, AuthContext
 from config import settings
 import secrets
 import uuid
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 try:
     from google.auth.transport.requests import Request
@@ -34,6 +37,19 @@ CALENDAR_NAME = "ForgeOS — Content"
 # Store OAuth states in user home directory (not /tmp for security)
 STATE_CACHE_DIR = Path.home() / ".forgeos" / "oauth_states"
 STATE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_CHANNELS = {"cms", "analytics", "crm", "syndication"}
+ALLOWED_DELIVERY_MODES = {"manual", "scheduled", "webhook"}
+
+
+class IntegrationTargetPayload(BaseModel):
+    channel_type: str
+    target_key: str
+    display_name: str
+    endpoint_url: Optional[str] = None
+    delivery_mode: str = "scheduled"
+    enabled: bool = True
+    preferences: dict[str, Any] = PydanticField(default_factory=dict)
 
 
 def store_oauth_state(state: str, ttl_seconds: int = 600):
@@ -66,9 +82,150 @@ def validate_oauth_state(state: str) -> bool:
         return False
 
 
-def get_db():
-    with Session(engine) as session:
-        yield session
+def _get_org_integration(session: Session, org_id: str) -> Optional[CalendarIntegration]:
+    return session.exec(
+        select(CalendarIntegration).where(CalendarIntegration.organization_id == org_id)
+    ).first()
+
+
+def _validate_endpoint_url(endpoint_url: str) -> bool:
+    parsed = urlparse(endpoint_url)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _validate_integration_payload(payload: IntegrationTargetPayload) -> None:
+    if payload.channel_type not in ALLOWED_CHANNELS:
+        raise HTTPException(status_code=422, detail="Unsupported channel_type")
+
+    if payload.delivery_mode not in ALLOWED_DELIVERY_MODES:
+        raise HTTPException(status_code=422, detail="Unsupported delivery_mode")
+
+    if not payload.target_key or not all(
+        c.islower() or c.isdigit() or c in {"-", "_"} for c in payload.target_key
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="target_key must use lowercase letters, numbers, dashes, or underscores",
+        )
+
+    if payload.channel_type in {"cms", "crm"}:
+        if not payload.endpoint_url:
+            raise HTTPException(
+                status_code=422,
+                detail=f"endpoint_url is required for {payload.channel_type} targets",
+            )
+        if not _validate_endpoint_url(payload.endpoint_url):
+            raise HTTPException(
+                status_code=422,
+                detail="endpoint_url must be a valid http(s) URL",
+            )
+
+    required_preferences_by_channel = {
+        "cms": ("publish_path", "content_format"),
+        "crm": ("object_type", "pipeline_stage"),
+    }
+    required = required_preferences_by_channel.get(payload.channel_type, ())
+    missing = [field for field in required if not payload.preferences.get(field)]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Missing required preferences for {payload.channel_type}: {', '.join(missing)}",
+        )
+
+
+def _serialize_target(target: DistributionIntegrationTarget) -> dict[str, Any]:
+    preferences = json.loads(target.preferences_json) if target.preferences_json else {}
+    return {
+        "id": target.id,
+        "organization_id": target.organization_id,
+        "channel_type": target.channel_type,
+        "target_key": target.target_key,
+        "display_name": target.display_name,
+        "endpoint_url": target.endpoint_url,
+        "delivery_mode": target.delivery_mode,
+        "enabled": target.enabled,
+        "preferences": preferences,
+        "created_at": target.created_at.isoformat(),
+        "updated_at": target.updated_at.isoformat(),
+    }
+
+
+@router.get("/targets")
+def list_distribution_targets(
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    targets = session.exec(
+        select(DistributionIntegrationTarget)
+        .where(DistributionIntegrationTarget.organization_id == auth.org_id)
+        .order_by(DistributionIntegrationTarget.created_at.desc())
+    ).all()
+    return [_serialize_target(target) for target in targets]
+
+
+@router.post("/targets")
+def create_distribution_target(
+    payload: IntegrationTargetPayload,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    _validate_integration_payload(payload)
+
+    target = DistributionIntegrationTarget(
+        organization_id=auth.org_id,
+        created_by_user_id=auth.user_id,
+        channel_type=payload.channel_type,
+        target_key=payload.target_key,
+        display_name=payload.display_name.strip(),
+        endpoint_url=payload.endpoint_url,
+        delivery_mode=payload.delivery_mode,
+        enabled=payload.enabled,
+        preferences_json=json.dumps(payload.preferences),
+    )
+    session.add(target)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Integration target already exists for this organization/channel/key",
+        ) from exc
+
+    session.refresh(target)
+    return _serialize_target(target)
+
+
+@router.put("/targets/{target_id}")
+def update_distribution_target(
+    target_id: str,
+    payload: IntegrationTargetPayload,
+    auth: AuthContext = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    _validate_integration_payload(payload)
+
+    target = session.exec(
+        select(DistributionIntegrationTarget).where(
+            DistributionIntegrationTarget.id == target_id,
+            DistributionIntegrationTarget.organization_id == auth.org_id,
+        )
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Integration target not found")
+
+    target.channel_type = payload.channel_type
+    target.target_key = payload.target_key
+    target.display_name = payload.display_name.strip()
+    target.endpoint_url = payload.endpoint_url
+    target.delivery_mode = payload.delivery_mode
+    target.enabled = payload.enabled
+    target.preferences_json = json.dumps(payload.preferences)
+    target.updated_at = datetime.now(timezone.utc)
+    session.add(target)
+    session.commit()
+    session.refresh(target)
+    return _serialize_target(target)
 
 
 def create_google_oauth_flow():
@@ -94,7 +251,7 @@ def create_google_oauth_flow():
 
 
 @router.post("/google/authorize")
-def authorize_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def authorize_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     Step 1: Generate authorization URL to send user to Google consent screen.
     Returns URL that frontend should redirect user to.
@@ -117,7 +274,7 @@ def authorize_google_calendar(auth: AuthContext = Depends(get_current_user), ses
 
 
 @router.get("/google/callback")
-def google_callback(code: str, state: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def google_callback(code: str, state: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     Step 2: Google redirects user back here with authorization code.
     Validate state parameter to prevent CSRF, then exchange code for access token.
@@ -238,15 +395,13 @@ def _create_or_get_calendar(service):
 
 
 @router.delete("/google/disconnect")
-def disconnect_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def disconnect_google_calendar(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     Revoke Google Calendar access and remove stored credentials.
     User data (calendar events) remain in the database for potential reconnect.
     """
     try:
-        integration = session.exec(
-            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
-        ).first()
+        integration = _get_org_integration(session, auth.org_id)
         
         if not integration:
             raise HTTPException(status_code=404, detail="No Google Calendar integration found")
@@ -278,11 +433,9 @@ def disconnect_google_calendar(auth: AuthContext = Depends(get_current_user), se
 
 
 @router.get("/google/status")
-def get_google_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def get_google_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """Get current Google Calendar integration status."""
-    integration = session.exec(
-        select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
-    ).first()
+    integration = _get_org_integration(session, auth.org_id)
     
     if not integration:
         return {
@@ -301,13 +454,11 @@ def get_google_status(auth: AuthContext = Depends(get_current_user), session: Se
 
 
 @router.get("/google/sync-status")
-def get_sync_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def get_sync_status(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """Get calendar sync status and pending events."""
     from models import CalendarEvent, CalendarSyncLog
     
-    integration = session.exec(
-        select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
-    ).first()
+    integration = _get_org_integration(session, auth.org_id)
     
     if not integration:
         return {
@@ -326,7 +477,10 @@ def get_sync_status(auth: AuthContext = Depends(get_current_user), session: Sess
     
     recent_errors = session.exec(
         select(CalendarSyncLog)
-        .where(CalendarSyncLog.status == "error")
+        .where(
+            (CalendarSyncLog.organization_id == auth.org_id)
+            & (CalendarSyncLog.status == "error")
+        )
         .order_by(CalendarSyncLog.created_at.desc())
     ).first()
     
@@ -348,12 +502,12 @@ def get_sync_status(auth: AuthContext = Depends(get_current_user), session: Sess
 
 
 @router.post("/google/sync-now")
-def sync_now(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def sync_now(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """Manually trigger a calendar sync from Google."""
     from services.calendar import poll_from_google
     
     try:
-        result = poll_from_google()
+        result = poll_from_google(organization_id=auth.org_id)
         return {
             "status": "success",
             "result": result,
@@ -383,7 +537,7 @@ def _refresh_credentials_if_needed(integration: CalendarIntegration):
 
 
 @router.post("/google/gsc/authorize")
-def authorize_google_gsc(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def authorize_google_gsc(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     Step 1 (GSC): Generate authorization URL for Google Search Console.
     Uses same OAuth flow as Calendar (webmasters.readonly scope already in GOOGLE_SCOPES).
@@ -405,15 +559,13 @@ def authorize_google_gsc(auth: AuthContext = Depends(get_current_user), session:
 
 
 @router.get("/google/gsc/properties")
-def get_gsc_properties(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def get_gsc_properties(auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     Get list of verified GSC properties for user to select from.
     Requires active Google OAuth integration.
     """
     try:
-        integration = session.exec(
-            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
-        ).first()
+        integration = _get_org_integration(session, auth.org_id)
         
         if not integration or not integration.access_token:
             raise HTTPException(
@@ -447,15 +599,13 @@ def get_gsc_properties(auth: AuthContext = Depends(get_current_user), session: S
 
 
 @router.post("/google/gsc/select-property")
-def select_gsc_property(property_url: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_db)):
+def select_gsc_property(property_url: str, auth: AuthContext = Depends(get_current_user), session: Session = Depends(get_session)):
     """
     User selects which GSC property to track.
     Stores in CalendarIntegration for now (could extend model later).
     """
     try:
-        integration = session.exec(
-            select(CalendarIntegration).where(CalendarIntegration.user_id == "aaron")
-        ).first()
+        integration = _get_org_integration(session, auth.org_id)
         
         if not integration:
             raise HTTPException(status_code=401, detail="Google OAuth not connected")
