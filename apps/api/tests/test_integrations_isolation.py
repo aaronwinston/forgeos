@@ -1,6 +1,9 @@
+import pytest
 from datetime import datetime, timedelta, timezone
 
 from models import CalendarIntegration, CalendarSyncLog, Membership, Organization
+
+pytestmark = pytest.mark.integration
 
 
 def _auth_headers(token: str) -> dict[str, str]:

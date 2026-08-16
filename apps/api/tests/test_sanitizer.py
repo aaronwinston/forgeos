@@ -13,6 +13,8 @@ from utils.sanitizer import (
     sanitize_json_string,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestSanitizeString:
     """Tests for string sanitization."""

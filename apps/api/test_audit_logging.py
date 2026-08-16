@@ -8,6 +8,7 @@ from main import app
 from database import engine
 from models import AuditLog, Organization, Membership
 
+pytestmark = pytest.mark.integration
 
 client = TestClient(app)
 

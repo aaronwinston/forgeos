@@ -25,6 +25,8 @@ from monitoring import (
 )
 from main import app
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def cleanup_metrics():

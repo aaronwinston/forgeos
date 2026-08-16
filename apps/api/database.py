@@ -321,8 +321,8 @@ def run_migrations(database_url: Optional[str] = None) -> None:
             conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (version,))
             conn.execute("COMMIT")
 
-        # Migration 0005: Conversion feedback loop artifacts
-        version = "0005_conversion_feedback_loop"
+        # Migration 0006: Conversion feedback loop artifacts
+        version = "0006_conversion_feedback_loop"
         already = conn.execute(
             "SELECT 1 FROM schema_migrations WHERE version=?", (version,)
         ).fetchone()
@@ -348,7 +348,10 @@ def create_db_and_tables():
     # Import all models to ensure they're registered (and for create_all fallback)
     import models  # noqa: F401
 
-    # Prefer Alembic when it is actually managing schema.
+    # Prefer Alembic when it is managing schema. If Alembic succeeds it is the
+    # sole authority — do not also run the legacy runner, as that could apply
+    # duplicate or conflicting changes. Only fall back to the legacy SQL runner
+    # when Alembic itself raises, so existing installs without alembic.ini still work.
     try:
         from migration_runner import run_pending_migrations
 
@@ -360,10 +363,7 @@ def create_db_and_tables():
         logger.warning(
             f"Alembic migration failed, falling back to legacy migrations: {e}"
         )
-        run_migrations()
-    else:
-        # Ensure legacy SQL migrations are applied (covers base schema + incremental additions
-        # like AuditLog). For now, Alembic migrations in this repo are effectively no-op.
+        # Legacy runner handles the full schema + all incremental SQL migrations.
         run_migrations()
     
     # In personal mode, ensure the personal org and user exist

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { CONTENT_TYPES } from '@/lib/types';
 import { getApiBase } from '@/lib/api';
+import { apiGet, apiPost, apiPut } from '@/lib/apiClient';
 import CreateItemModal from '@/components/projects/CreateItemModal';
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
@@ -40,25 +41,20 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     setFoldersLoading(true);
-    fetch(`${getApiBase()}/api/projects/${projectId}/folders`)
-      .then(r => r.json())
+    apiGet<unknown[]>(`/api/projects/${projectId}/folders`)
       .then(setFolders)
       .catch(console.error)
       .finally(() => setFoldersLoading(false));
-    fetch(`${getApiBase()}/api/chat/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_id: projectId }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }).then(r => r.json()).then((s: any) => setSessionId(s.id)).catch(console.error);
+    apiPost<{ id: number }>('/api/chat/session', { project_id: projectId })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((s: any) => setSessionId(s.id)).catch(console.error);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   useEffect(() => {
     if (selectedFolder) {
       setDeliverablesLoading(true);
-      fetch(`${getApiBase()}/api/folders/${selectedFolder.id}/deliverables`)
-        .then(r => r.json())
+      apiGet<unknown[]>(`/api/folders/${selectedFolder.id}/deliverables`)
         .then(setDeliverables)
         .catch(console.error)
         .finally(() => setDeliverablesLoading(false));
@@ -79,6 +75,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     const aiMsgId = Date.now() + 1;
     setMessages(prev => [...prev, { role: 'assistant', content: '', id: aiMsgId }]);
     try {
+      // TODO: migrate — streaming response requires raw fetch (response.body reader)
       const response = await fetch(`${getApiBase()}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,7 +197,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                 <div className="flex items-center justify-between">
                   <h2 className="font-medium">{selectedDeliverable.title}</h2>
                   <button className="px-3 py-1 bg-black text-white rounded text-sm" onClick={async () => {
-                    await fetch(`${getApiBase()}/api/deliverables/${selectedDeliverable.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body_md: selectedDeliverable.body_md }) });
+                    await apiPut(`/api/deliverables/${selectedDeliverable.id}`, { body_md: selectedDeliverable.body_md });
                   }}>Save</button>
                 </div>
                 <textarea className="flex-1 font-mono text-sm resize-none border rounded p-3"
@@ -217,10 +214,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             <button onClick={async () => {
               if (!input) return alert('Enter a prompt in the chat tab first.');
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const result: any = await fetch(`${getApiBase()}/api/chat/brief`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_id: projectId, user_prompt: input, content_type: toggles.content_type, toggles }),
-              }).then(r => r.json());
+              const result: any = await apiPost(`/api/chat/brief`, { project_id: projectId, user_prompt: input, content_type: toggles.content_type, toggles });
               setMessages(prev => [...prev, { role: 'assistant', content: result.brief_md, id: Date.now() }]);
               setActiveTab('chat');
             }} className="px-4 py-2 bg-black text-white rounded text-sm">Generate brief from prompt</button>
@@ -269,13 +263,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         type="folder"
         onClose={() => setShowFolderModal(false)}
         onCreate={async (data) => {
-          const response = await fetch(`${getApiBase()}/api/folders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ project_id: projectId, name: data.name }),
-          });
-          if (!response.ok) throw new Error('Failed to create folder');
-          fetch(`${getApiBase()}/api/projects/${projectId}/folders`).then(r => r.json()).then(setFolders);
+          await apiPost(`/api/folders`, { project_id: projectId, name: data.name });
+          apiGet<unknown[]>(`/api/projects/${projectId}/folders`).then(setFolders).catch(console.error);
         }}
       />
 
@@ -287,17 +276,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         onClose={() => setShowDeliverableModal(false)}
         onCreate={async (data) => {
           if (!selectedFolder) throw new Error('Select a folder first');
-          const response = await fetch(`${getApiBase()}/api/deliverables`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              folder_id: selectedFolder.id,
-              content_type: data.contentType || toggles.content_type,
-              title: data.name,
-            }),
+          await apiPost(`/api/deliverables`, {
+            folder_id: selectedFolder.id,
+            content_type: data.contentType || toggles.content_type,
+            title: data.name,
           });
-          if (!response.ok) throw new Error('Failed to create deliverable');
-          fetch(`${getApiBase()}/api/folders/${selectedFolder.id}/deliverables`).then(r => r.json()).then(setDeliverables);
+          apiGet<unknown[]>(`/api/folders/${selectedFolder.id}/deliverables`).then(setDeliverables).catch(console.error);
         }}
       />
     </div>

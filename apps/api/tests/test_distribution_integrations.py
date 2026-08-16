@@ -1,4 +1,8 @@
+import pytest
+
 from models import DistributionIntegrationTarget, Membership, Organization
+
+pytestmark = pytest.mark.integration
 
 
 def _auth_headers(token: str) -> dict[str, str]:

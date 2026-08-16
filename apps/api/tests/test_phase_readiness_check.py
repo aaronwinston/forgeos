@@ -1,9 +1,13 @@
+import pytest
+
 from scripts.check_phase_readiness import (
     PHASE_SIGNALS,
     REPO_ROOT,
     ReadinessSignal,
     evaluate_readiness,
 )
+
+pytestmark = pytest.mark.integration
 
 
 def test_phase_readiness_signals_pass_for_current_repo():

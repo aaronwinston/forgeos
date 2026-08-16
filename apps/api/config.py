@@ -1,4 +1,5 @@
 from pathlib import Path
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from cryptography.fernet import Fernet
 import os
@@ -87,23 +88,46 @@ class Settings(BaseSettings):
     CACHE_ENABLED: bool = True
     CACHE_TTL_SECONDS: int = 3600
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")
     
     def __init__(self, **data):
         super().__init__(**data)
-        # If ENCRYPTION_KEY not provided, generate one (should warn in production)
+        import logging
+        import base64
+        logger = logging.getLogger(__name__)
+
+        _encryption_key_from_env = os.environ.get("ENCRYPTION_KEY", "")
+        _llm_key_from_env = os.environ.get("LLM_KEY_ENCRYPTION_SECRET", "")
+        _jwt_key_from_env = os.environ.get("JWT_SECRET_KEY", "")
+
         if not self.ENCRYPTION_KEY:
-            self.ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", Fernet.generate_key().decode())
-        
-        # If LLM_KEY_ENCRYPTION_SECRET not provided, generate one
+            self.ENCRYPTION_KEY = Fernet.generate_key().decode()
+            logger.warning("ENCRYPTION_KEY not set — using ephemeral random value. All encrypted data will be unreadable after restart.")
+
         if not self.LLM_KEY_ENCRYPTION_SECRET:
-            import base64
             self.LLM_KEY_ENCRYPTION_SECRET = base64.b64encode(os.urandom(32)).decode()
-        
-        # If JWT_SECRET_KEY not provided, generate one
+            logger.warning("LLM_KEY_ENCRYPTION_SECRET not set — using ephemeral random value.")
+
         if not self.JWT_SECRET_KEY:
-            import base64
             self.JWT_SECRET_KEY = base64.b64encode(os.urandom(32)).decode()
+            logger.warning("JWT_SECRET_KEY not set — using ephemeral random value. All sessions will be invalidated on restart.")
+
+        self._encryption_key_from_env = _encryption_key_from_env
+        self._llm_key_from_env = _llm_key_from_env
+        self._jwt_key_from_env = _jwt_key_from_env
+        self.validate_for_production()
+
+    def validate_for_production(self):
+        if self.FORGEOS_MODE == "multi_tenant":
+            missing = [k for k, v in [
+                ("ENCRYPTION_KEY", self._encryption_key_from_env),
+                ("LLM_KEY_ENCRYPTION_SECRET", self._llm_key_from_env),
+                ("JWT_SECRET_KEY", self._jwt_key_from_env),
+            ] if not v]
+            if missing:
+                raise RuntimeError(
+                    f"FORGEOS_MODE=multi_tenant but required secrets are not set: {', '.join(missing)}. "
+                    "Set these in your .env file before starting in multi-tenant mode."
+                )
 
 settings = Settings()

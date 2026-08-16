@@ -211,7 +211,7 @@ Click refresh on the dashboard. Or hit `POST /api/intelligence/scrape`. The synt
 ---
  
 ## Architecture
- 
+
 ```
 forgeos/
 ├── core/                       Voice, style, claims, editorial principles
@@ -233,22 +233,38 @@ forgeos/
 ├── rubrics/                    Scoring rubrics
 ├── briefs/                     Intake templates
 ├── prompts/                    Composable prompt fragments
+├── docs/                       Documentation (see docs/README.md)
+│   ├── prd/                    Product requirement docs
+│   ├── deployment/             Vercel deployment guide
+│   └── archive/                Legacy status and review docs
 └── apps/
-    ├── api/                    FastAPI backend
+    ├── api/                    FastAPI backend (deployment: separate cloud host)
     │   ├── main.py             Entry, router registration, scheduler
     │   ├── routers/            chat, projects, sessions, intelligence, files
     │   ├── services/           generation, scraping, scoring, file_engine
     │   ├── models.py           Project, Folder, Deliverable, Brief, ScrapeItem
     │   ├── database.py         SQLite via SQLModel
     │   └── instrumentation.py  Arize AX (OpenTelemetry)
-    └── web/                    Next.js 14
+    └── web/                    Next.js 14 frontend (canonical: Vercel deployment)
+        ├── vercel.json         Vercel config (canonical deployment settings)
         └── src/
             ├── app/            Routes
             ├── components/     UI, layout, dashboard, workspace
             └── lib/            API client, types, utilities
 ```
+
+### Deployment architecture
+
+- **Frontend:** `apps/web` (Next.js 14 dynamic runtime) → **Vercel**
+- **Backend:** `apps/api` (FastAPI) → separate cloud host
+- **Database:** SQLite with Alembic + legacy migrations
+- **Configuration:** See [`docs/deployment/VERCEL_DEPLOYMENT.md`](./docs/deployment/VERCEL_DEPLOYMENT.md)
+
+Local development runs all layers on `localhost`. Production deployment references are in the deployment docs.
  
-No cloud database. No auth service. No Redis. No Vercel. SQLite on disk. Static frontend. One API key. One person can run it.
+Local development: SQLite on disk, runs on localhost.
+
+Production deployment: `apps/web` deploys to Vercel with dynamic Next.js runtime. `apps/api` (FastAPI) deploys separately. Single API key. See [`docs/deployment/VERCEL_DEPLOYMENT.md`](./docs/deployment/VERCEL_DEPLOYMENT.md) for details.
  
 ---
  
@@ -278,7 +294,12 @@ The roadmap moves in three directions. Not all at once.
  
 **Longer term.** Multi-tenancy. Auth. Team plans. Billing. The version of this that other people pay for.
  
-The PRDs that govern each of these live in `docs/prd/` (`FORGEOS_PRD.md` and `FORGEOS_COMMERCIALIZATION_PRD.md`). Read them before opening a PR.
+The roadmap is documented in `docs/prd/`:
+
+- `FORGEOS_PRD.md` — core product roadmap
+- `FORGEOS_COMMERCIALIZATION_PRD.md` — commercialization and team planning
+
+Read them before opening a PR.
  
 ---
  

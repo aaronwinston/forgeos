@@ -4,6 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.integration
 class TestProjectList:

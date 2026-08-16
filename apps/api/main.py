@@ -59,9 +59,6 @@ from middleware.request_logging import RequestLoggingMiddleware
 from middleware.csrf import CSRFMiddleware
 from personal_mode import is_personal
 from services.briefing_aggregation import run_weekly_aggregation
-from middleware.request_logging import RequestLoggingMiddleware
-from middleware.csrf import CSRFMiddleware
-from personal_mode import is_personal
 from routers import (
     projects,
     chat,
@@ -179,21 +176,36 @@ async def startup():
     logger = logging.getLogger(__name__)
 
     async def scheduled_scrape():
+        from personal_mode import is_personal, PERSONAL_ORG_ID
+
         items = await run_all_scrapers()
         scored = score_items_batch(items)
         with Session(engine) as session:
             from models import Organization
 
-            default_org = session.exec(select(Organization).order_by(Organization.created_at)).first()
+            if is_personal():
+                org_id_to_use = PERSONAL_ORG_ID
+            else:
+                logger.warning(
+                    "scheduled_scrape: multi-tenant mode — assigning scrape items to first org. "
+                    "TODO: implement per-org scrape dispatch."
+                )
+                default_org = session.exec(select(Organization).order_by(Organization.created_at)).first()
+                org_id_to_use = default_org.id if default_org else None
+
+            if org_id_to_use is None:
+                logger.error("scheduled_scrape: no org found, skipping insert loop.")
+                return
+
             for item_data in scored:
                 existing = session.exec(
                     select(ScrapeItem)
-                    .where(ScrapeItem.organization_id == default_org.id)
+                    .where(ScrapeItem.organization_id == org_id_to_use)
                     .where(ScrapeItem.source_url == item_data.get("source_url", ""))
                 ).first()
                 if not existing and item_data.get("source_url"):
                     payload = {k: v for k, v in item_data.items() if k in ScrapeItem.__fields__}
-                    payload.setdefault("organization_id", default_org.id)
+                    payload.setdefault("organization_id", org_id_to_use)
                     item = ScrapeItem(**payload)
                     session.add(item)
             session.commit()

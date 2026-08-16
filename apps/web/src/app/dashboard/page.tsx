@@ -11,6 +11,7 @@ import LetsBuildModal from '@/components/LetsBuildModal';
 import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface DeliverableResult {
   id?: number;
@@ -31,7 +32,29 @@ export default function DashboardPage() {
     }
   };
 
+  const dashboardFallback = (error: Error, reset: () => void) => (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-8">
+      <h2 className="text-xl font-semibold text-red-600">Dashboard failed to load</h2>
+      <p className="text-sm text-gray-500">{error.message}</p>
+      <div className="flex gap-3">
+        <button
+          onClick={reset}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Try again
+        </button>
+        <a
+          href="/dashboard"
+          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+        >
+          Reload dashboard
+        </a>
+      </div>
+    </div>
+  );
+
   return (
+    <ErrorBoundary fallback={dashboardFallback}>
     <div className="p-6 max-w-6xl mx-auto space-y-8">
       {/* Welcome banner */}
       <WelcomeBanner />
@@ -80,5 +103,6 @@ export default function DashboardPage() {
         />
       )}
     </div>
+    </ErrorBoundary>
   );
 }

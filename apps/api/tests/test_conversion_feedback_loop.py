@@ -14,6 +14,8 @@ from routers.projects import (
     get_deliverable_conversion_loop,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _create_deliverable(test_session, organization_id: str, user_id: str, title: str) -> Deliverable:
     project = Project(user_id=user_id, organization_id=organization_id, name=f"Project {title}")

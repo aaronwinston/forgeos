@@ -1,5 +1,5 @@
 import { validateConfig } from './config';
-import { getHeadersWithCSRF } from './csrf';
+import { getHeadersWithCSRF, getCSRFToken } from './csrf';
 
 // Validate configuration on module load
 if (typeof window !== 'undefined') {

@@ -1,3 +1,5 @@
+import pytest
+
 from middleware.auth import AuthContext
 from routers.evals import EvalRunRequest, get_content_eval_run, run_content_eval
 from services.evaluation_harness import (
@@ -28,6 +30,7 @@ review deltas, inspect trace evidence, and decide whether the prompt change impr
 """.strip()
 
 
+@pytest.mark.unit
 def test_evaluate_workflow_artifact_blog_dimensions_and_gate_passes():
     result = evaluate_workflow_artifact("blog", _strong_blog_artifact())
 
@@ -36,6 +39,7 @@ def test_evaluate_workflow_artifact_blog_dimensions_and_gate_passes():
     assert all(score.score >= 4 for score in result.dimension_scores)
 
 
+@pytest.mark.unit
 def test_evaluate_workflow_artifact_launch_flags_claims_risk():
     risky_launch_text = (
         "Our revolutionary launch is the best in the market and 70% faster than alternatives. "
@@ -50,6 +54,7 @@ def test_evaluate_workflow_artifact_launch_flags_claims_risk():
     assert "claims_risk" in result.failed_dimensions
 
 
+@pytest.mark.unit
 def test_evaluate_workflow_artifact_regression_detection():
     baseline_result = evaluate_workflow_artifact("blog", _strong_blog_artifact())
     baseline = BaselineSnapshot(run_id=10, dimension_scores=baseline_result.dimension_scores)
@@ -62,6 +67,7 @@ def test_evaluate_workflow_artifact_regression_detection():
     assert any(delta.delta <= -1 for delta in result.regression_deltas)
 
 
+@pytest.mark.integration
 def test_run_content_eval_persists_and_compares_with_baseline(test_session, test_user):
     user_id, org_id = test_user
     auth = AuthContext(user_id=user_id, org_id=org_id, role="member")

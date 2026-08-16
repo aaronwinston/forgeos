@@ -2,6 +2,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.integration
 class TestIntelligenceOperations:

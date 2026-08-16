@@ -6,7 +6,7 @@ export const emailSchema = z.string().email('Invalid email address');
 export function validateEmail(email: string): { valid: boolean; error?: string } {
   const result = emailSchema.safeParse(email);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }
@@ -27,7 +27,7 @@ export const urlSchema = z.string().url('Invalid URL').refine(
 export function validateUrl(url: string): { valid: boolean; error?: string } {
   const result = urlSchema.safeParse(url);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }
@@ -38,7 +38,7 @@ export const textSchema = z.string().max(5000, 'Text must be 5000 characters or 
 export function validateTextLength(text: string, maxLength = 5000): { valid: boolean; error?: string } {
   const result = textSchema.max(maxLength).safeParse(text);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }
@@ -57,7 +57,7 @@ export const phoneSchema = z.string().refine(
 export function validatePhoneNumber(phone: string): { valid: boolean; error?: string } {
   const result = phoneSchema.safeParse(phone);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }
@@ -82,7 +82,7 @@ export const passwordSchema = z
 export function validatePassword(password: string): { valid: boolean; error?: string } {
   const result = passwordSchema.safeParse(password);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }
@@ -93,7 +93,7 @@ export const orgNameSchema = z.string().min(1, 'Organization name is required').
 export function validateOrgName(name: string): { valid: boolean; error?: string } {
   const result = orgNameSchema.safeParse(name);
   if (!result.success) {
-    return { valid: false, error: result.error.errors[0]?.message };
+    return { valid: false, error: result.error.issues[0]?.message };
   }
   return { valid: true };
 }

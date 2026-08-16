@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timedelta, timezone
 
 from models import KeywordCluster, ScrapeItem, SearchInsight
@@ -5,6 +6,7 @@ from middleware.auth import AuthContext
 from routers.intelligence import _build_planning_queue, get_planning_queue
 
 
+@pytest.mark.unit
 def test_build_planning_queue_combines_score_recency_and_strategic_fit():
     now = datetime.now(timezone.utc)
     items = [
@@ -42,6 +44,7 @@ def test_build_planning_queue_combines_score_recency_and_strategic_fit():
     assert queue[0].linkage.suggested_playbook.startswith("playbooks/")
 
 
+@pytest.mark.integration
 def test_get_planning_queue_returns_ranked_items(test_session, test_user):
     user_id, org_id = test_user
     now = datetime.now(timezone.utc)
@@ -102,6 +105,7 @@ def test_get_planning_queue_returns_ranked_items(test_session, test_user):
     assert data[0].linkage.owner_placeholder == "unassigned-content-owner"
 
 
+@pytest.mark.integration
 def test_get_planning_queue_empty_state(test_session, test_user):
     user_id, org_id = test_user
     data = get_planning_queue(

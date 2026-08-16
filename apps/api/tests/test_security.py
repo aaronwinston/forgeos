@@ -14,6 +14,8 @@ from database import engine
 from models import Organization, Membership, Project
 from config import settings
 
+pytestmark = pytest.mark.integration
+
 client = TestClient(app)
 
 # ===== Test Fixtures =====

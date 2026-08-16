@@ -57,8 +57,8 @@ def store_oauth_state(state: str, ttl_seconds: int = 600):
     state_file = STATE_CACHE_DIR / f"{state}.json"
     state_file.write_text(json.dumps({
         "state": state,
-        "created_at": datetime.utcnow(timezone.utc).isoformat(),
-        "expires_at": (datetime.utcnow(timezone.utc) + timedelta(seconds=ttl_seconds)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)).isoformat(),
     }))
 
 
@@ -72,7 +72,7 @@ def validate_oauth_state(state: str) -> bool:
     try:
         data = json.loads(state_file.read_text())
         expires_at = datetime.fromisoformat(data["expires_at"])
-        if datetime.utcnow(timezone.utc) > expires_at:
+        if datetime.now(timezone.utc) > expires_at:
             state_file.unlink()  # Clean up expired state
             return False
         state_file.unlink()  # Clean up used state

@@ -7,6 +7,8 @@ from middleware.auth import AuthContext
 from models import KeywordCluster, Organization, SearchInsight
 from routers.intelligence import get_search_recommendations, seed_brief_from_search_recommendation
 
+pytestmark = pytest.mark.integration
+
 
 def test_search_recommendations_include_intent_and_movement(test_session, test_user):
     user_id, org_id = test_user

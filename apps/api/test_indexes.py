@@ -7,6 +7,8 @@ test suite.
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 pytest.skip("manual index verification script", allow_module_level=True)
 
 import sqlite3

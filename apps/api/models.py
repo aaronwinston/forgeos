@@ -33,8 +33,8 @@ class Organization(SQLModel, table=True):
     current_period_end: Optional[datetime] = None
     onboarding_completed_steps: Optional[str] = None  # JSON array
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Membership(SQLModel, table=True):
@@ -49,7 +49,7 @@ class Membership(SQLModel, table=True):
     user_id: str
     organization_id: str = Field(foreign_key="organization.id")
     role: str = Field(default="member")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Project(SQLModel, table=True):
@@ -66,7 +66,7 @@ class Project(SQLModel, table=True):
     name: str
     description: Optional[str] = None
     status: str = Field(default="active")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Folder(SQLModel, table=True):
@@ -86,7 +86,7 @@ class Folder(SQLModel, table=True):
     project_id: int = Field(foreign_key="project.id")
     parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
     name: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Deliverable(SQLModel, table=True):
@@ -109,8 +109,8 @@ class Deliverable(SQLModel, table=True):
     status: str = Field(default="draft")
     body_md: Optional[str] = None
     metadata_json: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Brief(SQLModel, table=True):
@@ -135,8 +135,8 @@ class Brief(SQLModel, table=True):
     skills_json: Optional[str] = None
     intelligence_items_json: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ChatSession(SQLModel, table=True):
@@ -149,7 +149,7 @@ class ChatSession(SQLModel, table=True):
     project_id: Optional[int] = Field(default=None, foreign_key="project.id")
     folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
     deliverable_id: Optional[int] = Field(default=None, foreign_key="deliverable.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ChatMessage(SQLModel, table=True):
@@ -167,7 +167,7 @@ class ChatMessage(SQLModel, table=True):
     role: str
     content: str
     metadata_json: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ScrapeItem(SQLModel, table=True):
@@ -187,8 +187,8 @@ class ScrapeItem(SQLModel, table=True):
     author: Optional[str] = None
     published_at: Optional[datetime] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    fetched_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     raw_json: Optional[str] = None
 
     score: Optional[float] = Field(default=None)
@@ -212,7 +212,7 @@ class BriefingFeedback(SQLModel, table=True):
     briefing_item_id: int = Field(foreign_key="scrapeitem.id")
     user_id: str  # No FK; users are external (Clerk)
     feedback_type: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class PipelineRun(SQLModel, table=True):
@@ -242,8 +242,8 @@ class PipelineRun(SQLModel, table=True):
     deleted: bool = Field(default=False)
     started_at: Optional[datetime] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class PipelineStep(SQLModel, table=True):
@@ -259,7 +259,7 @@ class PipelineStep(SQLModel, table=True):
     agent_name: str
     input_text: str
     output_text: str
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
     tokens_used: Optional[int] = None
 
@@ -281,8 +281,8 @@ class CalendarIntegration(SQLModel, table=True):
     expires_at: datetime
     calendar_id: str
     last_synced_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def access_token(self) -> Optional[str]:
@@ -379,8 +379,8 @@ class DistributionIntegrationTarget(SQLModel, table=True):
     enabled: bool = Field(default=True)
     preferences_json: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ConversionTaxonomyDefinition(SQLModel, table=True):
@@ -411,8 +411,8 @@ class ConversionTaxonomyDefinition(SQLModel, table=True):
     primary_cta: Optional[str] = None
     success_metric: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class DeliverableConversionOutcomeSnapshot(SQLModel, table=True):
@@ -453,8 +453,8 @@ class DeliverableConversionOutcomeSnapshot(SQLModel, table=True):
     observed_outcome: Optional[str] = None
     notes: Optional[str] = None
 
-    recorded_at: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class DeliverableCTAExperiment(SQLModel, table=True):
@@ -505,8 +505,8 @@ class DeliverableCTAExperiment(SQLModel, table=True):
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CalendarEvent(SQLModel, table=True):
@@ -549,8 +549,8 @@ class CalendarEvent(SQLModel, table=True):
     last_synced_at: Optional[datetime] = None
     synced_to_google_at: Optional[datetime] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CalendarSyncLog(SQLModel, table=True):
@@ -570,7 +570,7 @@ class CalendarSyncLog(SQLModel, table=True):
     status: str
     error_message: Optional[str] = None
     details_json: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class KeywordCluster(SQLModel, table=True):
@@ -590,8 +590,8 @@ class KeywordCluster(SQLModel, table=True):
     region: str = Field(default="US")
     active: bool = Field(default=True)
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class GscQuery(SQLModel, table=True):
@@ -613,7 +613,7 @@ class GscQuery(SQLModel, table=True):
     position: float
     date_range_start: str
     date_range_end: str
-    fetched_at: datetime = Field(default_factory=datetime.utcnow)
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TrendsData(SQLModel, table=True):
@@ -630,7 +630,7 @@ class TrendsData(SQLModel, table=True):
     region: str = Field(default="US")
     interest_over_time_json: Optional[str] = None
     related_queries_json: Optional[str] = None
-    fetched_at: datetime = Field(default_factory=datetime.utcnow)
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class SearchInsight(SQLModel, table=True):
@@ -653,7 +653,7 @@ class SearchInsight(SQLModel, table=True):
     our_gsc_clicks: Optional[int] = None
     trends_momentum: str = Field(default="no_data")
     insight_text: str
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class RuntimeCredential(SQLModel, table=True):
@@ -676,7 +676,7 @@ class RuntimeCredential(SQLModel, table=True):
     key_hash: str
     is_valid: bool = Field(default=False)
     last_validated_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class UsageEvent(SQLModel, table=True):
@@ -702,7 +702,7 @@ class UsageEvent(SQLModel, table=True):
     tokens_output: int = Field(default=0)
     runtime: str
     cost_usd_estimate: Optional[float] = None
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ContentEvalRun(SQLModel, table=True):
@@ -741,7 +741,7 @@ class ContentEvalRun(SQLModel, table=True):
     regression_failed: bool = Field(default=False)
     is_baseline: bool = Field(default=False)
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class FeatureFlag(SQLModel, table=True):
@@ -754,7 +754,7 @@ class FeatureFlag(SQLModel, table=True):
     flag_name: str
     enabled: bool = Field(default=False)
     expires_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AuditLog(SQLModel, table=True):
@@ -782,7 +782,7 @@ class AuditLog(SQLModel, table=True):
     request_method: Optional[str] = None
     request_path: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AuditEvent(SQLModel, table=True):
@@ -802,7 +802,7 @@ class AuditEvent(SQLModel, table=True):
     resource_type: str
     resource_id: Optional[str] = None
     details_json: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class DoctrineVersion(SQLModel, table=True):
@@ -823,4 +823,4 @@ class DoctrineVersion(SQLModel, table=True):
     content: str
     saved_by_user_id: str
     locked_by_user_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

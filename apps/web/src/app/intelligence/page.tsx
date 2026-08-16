@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { getApiBase } from '@/lib/api';
-import { getHeadersWithCSRF } from '@/lib/csrf';
+import { apiGet, apiPost } from '@/lib/apiClient';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface PlanningQueueItem {
   item_id: number;
@@ -97,11 +97,7 @@ export default function IntelligencePage() {
       setLoading(true);
       setError(null);
       console.debug('[Intelligence] Loading items...');
-      const response = await fetch(`${getApiBase()}/api/intelligence/items`);
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await apiGet<unknown[]>('/api/intelligence/items');
       setItems(data);
       console.debug('[Intelligence] Loaded', data.length, 'items');
     } catch (err) {
@@ -120,9 +116,7 @@ export default function IntelligencePage() {
   const loadPlanningQueue = async (): Promise<void> => {
     try {
       setPlanningError(null);
-      const response = await fetch(`${getApiBase()}/api/intelligence/planning/queue?limit=10`);
-      if (!response.ok) throw new Error(`Planning queue API error: ${response.status}`);
-      const data = await response.json();
+      const data = await apiGet<PlanningQueueItem[]>('/api/intelligence/planning/queue?limit=10');
       setPlanningQueue(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('[Intelligence] Planning queue load error:', err);
@@ -135,9 +129,7 @@ export default function IntelligencePage() {
     try {
       setLoadingConversion(true);
       setConversionError(null);
-      const response = await fetch(`${getApiBase()}/api/deliverables/${deliverableId}/conversion-loop`);
-      if (!response.ok) throw new Error(`Conversion loop API error: ${response.status}`);
-      const data = await response.json();
+      const data = await apiGet<ConversionLoopData>(`/api/deliverables/${deliverableId}/conversion-loop`);
       setConversionLoop(data);
     } catch (err) {
       console.error('[Intelligence] Conversion loop load error:', err);
@@ -154,11 +146,7 @@ export default function IntelligencePage() {
 
   const dismiss = async (id: number) => {
     try {
-      const response = await fetch(`${getApiBase()}/api/intelligence/items/${id}/dismiss`, { 
-        method: 'POST',
-        headers: getHeadersWithCSRF(),
-      });
-      if (!response.ok) throw new Error('Failed to dismiss item');
+      await apiPost(`/api/intelligence/items/${id}/dismiss`);
       loadItems();
     } catch (err) {
       console.error('Dismiss failed:', err);
@@ -167,11 +155,7 @@ export default function IntelligencePage() {
 
   const markAsContext = async (id: number) => {
     try {
-      const response = await fetch(`${getApiBase()}/api/intelligence/items/${id}/use-as-context`, { 
-        method: 'POST',
-        headers: getHeadersWithCSRF(),
-      });
-      if (!response.ok) throw new Error('Failed to mark item');
+      await apiPost(`/api/intelligence/items/${id}/use-as-context`);
       alert('Item marked for context use.');
     } catch (err) {
       console.error('Mark failed:', err);
@@ -183,13 +167,7 @@ export default function IntelligencePage() {
     setRefreshing(true);
     try {
       console.debug('[Intelligence] Starting intelligence scrape...');
-      const response = await fetch(`${getApiBase()}/api/intelligence/scrape`, { 
-        method: 'POST',
-        headers: getHeadersWithCSRF(),
-      });
-      if (!response.ok) {
-        throw new Error(`Scrape failed: ${response.status}`);
-      }
+      await apiPost(`/api/intelligence/scrape`);
       console.debug('[Intelligence] Scrape initiated, waiting for results...');
       await new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.all([loadItems(), loadPlanningQueue()]);
@@ -215,12 +193,7 @@ export default function IntelligencePage() {
 
   const saveTaxonomyDefinition = async () => {
     if (!conversionLoop) return;
-    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/conversion-taxonomy`, {
-      method: 'POST',
-      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(taxonomyForm),
-    });
-    if (!response.ok) throw new Error('Failed to save conversion taxonomy');
+    await apiPost(`/api/deliverables/${conversionLoop.deliverable_id}/conversion-taxonomy`, taxonomyForm);
     setTaxonomyForm({ event_key: '', funnel_stage: '', definition: '', primary_cta: '', success_metric: '' });
     await loadConversionLoop(conversionLoop.deliverable_id);
   };
@@ -233,12 +206,7 @@ export default function IntelligencePage() {
       conversions: outcomeForm.conversions ? Number(outcomeForm.conversions) : null,
       conversion_rate: outcomeForm.conversion_rate ? Number(outcomeForm.conversion_rate) : null,
     };
-    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/conversion-outcomes`, {
-      method: 'POST',
-      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error('Failed to save conversion outcome');
+    await apiPost(`/api/deliverables/${conversionLoop.deliverable_id}/conversion-outcomes`, payload);
     setOutcomeForm({ period_label: '', visitors: '', conversions: '', conversion_rate: '', observed_outcome: '', notes: '' });
     await loadConversionLoop(conversionLoop.deliverable_id);
   };
@@ -249,17 +217,34 @@ export default function IntelligencePage() {
       ...ctaForm,
       conversion_rate: ctaForm.conversion_rate ? Number(ctaForm.conversion_rate) : null,
     };
-    const response = await fetch(`${getApiBase()}/api/deliverables/${conversionLoop.deliverable_id}/cta-experiments`, {
-      method: 'POST',
-      headers: getHeadersWithCSRF({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error('Failed to save CTA experiment');
+    await apiPost(`/api/deliverables/${conversionLoop.deliverable_id}/cta-experiments`, payload);
     setCtaForm({ experiment_key: '', variant_label: 'A', status: 'active', conversion_rate: '', observed_outcome: '' });
     await loadConversionLoop(conversionLoop.deliverable_id);
   };
 
+  const intelligenceFallback = (error: Error, reset: () => void) => (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-8">
+      <h2 className="text-xl font-semibold text-red-600">Intelligence feed failed to load</h2>
+      <p className="text-sm text-gray-500">{error.message}</p>
+      <div className="flex gap-3">
+        <button
+          onClick={reset}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Try again
+        </button>
+        <a
+          href="/dashboard"
+          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+        >
+          Back to dashboard
+        </a>
+      </div>
+    </div>
+  );
+
   return (
+    <ErrorBoundary fallback={intelligenceFallback}>
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Intelligence feed</h1>
@@ -449,5 +434,6 @@ export default function IntelligencePage() {
         )}
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

@@ -11,7 +11,7 @@ import logging
 from contextlib import contextmanager
 from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 import json
 
@@ -78,7 +78,7 @@ class OperationMetrics:
     """Metrics for a timed operation."""
     name: str
     duration_ms: float
-    start_time: datetime = field(default_factory=datetime.utcnow)
+    start_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
     success: bool = True
     error: Optional[str] = None

@@ -8,6 +8,8 @@ from sqlmodel import Session, create_engine
 import database
 from models import Organization, Project
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def constraint_db_engine():

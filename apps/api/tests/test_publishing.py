@@ -9,6 +9,7 @@ from routers.projects import get_deliverable_publish_bundle
 from services.publishing import build_publish_payload
 
 
+@pytest.mark.unit
 def test_build_publish_payload_is_deterministic_and_normalized():
     deliverable = Deliverable(
         id=42,
@@ -37,6 +38,7 @@ def test_build_publish_payload_is_deterministic_and_normalized():
     assert first["cta_blocks"] == [{"label": "Try now", "url": "https://arize.com"}]
 
 
+@pytest.mark.integration
 def test_publish_bundle_endpoint_reflects_approval_gates(test_session, test_user):
     user_id, org_id = test_user
     auth = AuthContext(user_id=user_id, org_id=org_id, role="member")
@@ -92,6 +94,7 @@ def test_publish_bundle_endpoint_reflects_approval_gates(test_session, test_user
     assert data["adapter_payload"]["content"] == "Body for publishing"
 
 
+@pytest.mark.integration
 def test_publish_bundle_endpoint_rejects_unknown_platform(test_session, test_user):
     user_id, org_id = test_user
     auth = AuthContext(user_id=user_id, org_id=org_id, role="member")

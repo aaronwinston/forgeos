@@ -12,6 +12,8 @@ from utils.validation import (
     validate_json_field,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestValidateEmail:
     """Tests for email validation."""

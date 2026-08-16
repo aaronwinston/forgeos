@@ -37,6 +37,8 @@ from services.query_optimization import (
     count_items,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def db():

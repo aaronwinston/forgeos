@@ -19,6 +19,8 @@ from utils.helpers import (
     safe_get,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestIdGeneration:
     """Tests for ID generation utilities."""

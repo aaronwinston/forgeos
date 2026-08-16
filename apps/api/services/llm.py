@@ -1,6 +1,6 @@
 """LLM Provider abstraction layer for pluggable AI backends."""
 
-from typing import AsyncGenerator, Protocol, Optional, Union, Dict
+from typing import AsyncGenerator, Protocol, Optional, Dict
 from config import settings
 import anthropic
 
@@ -92,56 +92,21 @@ class AnthropicProvider:
         return response.content[0].text
 
 
-class OpenAIProvider:
-    """OpenAI provider stub. Not yet implemented."""
-
-    def __init__(self, api_key: str, default_model: str = "gpt-4"):
-        self.api_key = api_key
-        self.default_model = default_model
-
-    async def stream_message(
-        self,
-        system: str,
-        messages: list[dict],
-        model: Optional[str] = None,
-        max_tokens: int = 4096,
-    ) -> AsyncGenerator[str, None]:
-        """OpenAI streaming not yet implemented."""
-        raise NotImplementedError(
-            "OpenAI provider is not yet implemented. "
-            "Use AnthropicProvider or contribute support."
-        )
-        yield  # Make this an async generator
-
-    async def create_message(
-        self,
-        system: str,
-        messages: list[dict],
-        model: Optional[str] = None,
-        max_tokens: int = 4096,
-    ) -> str:
-        """OpenAI non-streaming not yet implemented."""
-        raise NotImplementedError(
-            "OpenAI provider is not yet implemented. "
-            "Use AnthropicProvider or contribute support."
-        )
-
-
 # Global provider cache
-_providers: Dict[str, Union[AnthropicProvider, OpenAIProvider]] = {}
+_providers: Dict[str, AnthropicProvider] = {}
 
 
-def get_provider(name: str = "anthropic") -> Union[AnthropicProvider, OpenAIProvider]:
+def get_provider(name: str = "anthropic") -> AnthropicProvider:
     """Get or create an LLM provider by name.
     
     Args:
-        name: Provider name ("anthropic" or "openai")
+        name: Provider name ("anthropic")
         
     Returns:
         Provider instance
         
     Raises:
-        ValueError: If provider name is not recognized
+        ValueError: If provider name is not recognized or not implemented
     """
     if name in _providers:
         return _providers[name]
@@ -151,13 +116,12 @@ def get_provider(name: str = "anthropic") -> Union[AnthropicProvider, OpenAIProv
             api_key=settings.ANTHROPIC_API_KEY,
             default_model=settings.MODEL_GENERATION,
         )
-    elif name == "openai":
-        provider = OpenAIProvider(
-            api_key=settings.OPENAI_API_KEY,
-            default_model="gpt-4",
-        )
     else:
-        raise ValueError(f"Unknown LLM provider: {name}")
+        raise ValueError(
+            f"Unknown or unimplemented LLM provider: '{name}'. "
+            "Supported providers: 'anthropic'. "
+            "To add a new provider, implement the LLMProvider protocol in services/llm.py."
+        )
 
     _providers[name] = provider
     return provider

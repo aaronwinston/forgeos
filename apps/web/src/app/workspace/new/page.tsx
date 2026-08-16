@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { getApiBase } from '@/lib/api';
+import { apiPost } from '@/lib/apiClient';
 
 function WorkspaceNewInner() {
   const router = useRouter();
@@ -23,22 +23,14 @@ function WorkspaceNewInner() {
 
     async function createAndNavigate() {
       try {
-        const res = await fetch(`${getApiBase()}/api/workspace/from-briefing-item`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const data = await apiPost<{ deliverable_id: number }>(
+          '/api/workspace/from-briefing-item',
+          {
             scrape_item_id: parseInt(contextItemId!),
             title: decodeURIComponent(title),
             content_type: 'blog',
-          }),
-        });
-
-        if (!res.ok) {
-          const msg = await res.text();
-          throw new Error(`API error ${res.status}: ${msg}`);
-        }
-
-        const data = await res.json();
+          },
+        );
         router.replace(`/workspace/${data.deliverable_id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to create workspace');

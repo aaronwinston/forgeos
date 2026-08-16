@@ -1,8 +1,11 @@
 import httpx
 import json
+import logging
 import feedparser
 from datetime import datetime
 import asyncio
+
+logger = logging.getLogger(__name__)
 
 async def scrape_hackernews(keywords: list[str] = None, min_points: int = 50) -> list[dict]:
     results = []
@@ -24,8 +27,8 @@ async def scrape_hackernews(keywords: list[str] = None, min_points: int = 50) ->
                             "published_at": datetime.utcfromtimestamp(hit.get("created_at_i", 0)) if hit.get("created_at_i") else None,
                             "raw_json": json.dumps(hit),
                         })
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"scrape_hackernews keyword='{kw}': {e}")
         try:
             r = await client.get("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30")
             for hit in r.json().get("hits", []):
@@ -39,8 +42,8 @@ async def scrape_hackernews(keywords: list[str] = None, min_points: int = 50) ->
                         "published_at": datetime.utcfromtimestamp(hit.get("created_at_i", 0)) if hit.get("created_at_i") else None,
                         "raw_json": json.dumps(hit),
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"scrape_hackernews front_page: {e}")
     return results
 
 DEFAULT_SUBREDDITS = [
@@ -68,8 +71,8 @@ async def scrape_reddit(subreddits: list[str] = None) -> list[dict]:
                         "published_at": datetime.utcfromtimestamp(p.get("created_utc", 0)) if p.get("created_utc") else None,
                         "raw_json": json.dumps({"subreddit": sub, "score": p.get("score"), "num_comments": p.get("num_comments")}),
                     })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"scrape_reddit r/{sub}: {e}")
     return results
 
 GITHUB_TOPICS = ["ai", "llm", "agents", "observability", "llm-evaluation", "mlops"]
@@ -96,8 +99,8 @@ async def scrape_github_trending(topics: list[str] = None) -> list[dict]:
                         "raw_json": json.dumps({"stars": repo.get("stargazers_count"), "topic": topic}),
                     })
                 await asyncio.sleep(1)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"scrape_github_trending topic='{topic}': {e}")
     return results
 
 ARXIV_FEEDS = [
@@ -122,8 +125,8 @@ async def scrape_arxiv(feeds: list[str] = None) -> list[dict]:
                     "published_at": datetime(*entry.published_parsed[:6]) if hasattr(entry, "published_parsed") and entry.published_parsed else None,
                     "raw_json": None,
                 })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"scrape_arxiv feed='{feed_url}': {e}")
     return results
 
 DEFAULT_RSS_FEEDS = [
@@ -154,8 +157,8 @@ async def scrape_rss(feeds: list[str] = None) -> list[dict]:
                     "published_at": datetime(*entry.published_parsed[:6]) if hasattr(entry, "published_parsed") and entry.published_parsed else None,
                     "raw_json": json.dumps({"feed": feed_url}),
                 })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"scrape_rss feed='{feed_url}': {e}")
     return results
 
 async def scrape_twitter_stub() -> list[dict]:
@@ -183,4 +186,15 @@ async def run_all_scrapers(config: dict = None) -> list[dict]:
     for r in results:
         if isinstance(r, list):
             all_results.extend(r)
-    return all_results
+
+    # Dedup by source_url (first occurrence wins)
+    seen_urls = set()
+    deduped = []
+    for item in all_results:
+        url = item.get("source_url", "")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            deduped.append(item)
+        elif not url:
+            deduped.append(item)
+    return deduped

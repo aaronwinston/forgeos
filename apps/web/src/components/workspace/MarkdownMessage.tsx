@@ -26,6 +26,7 @@ export default function MarkdownMessage({ content }: MarkdownMessageProps) {
     marked.setOptions({
       breaks: true,
       gfm: true,
+      async: false,
     });
 
     // Create a custom renderer for code blocks with syntax highlighting
@@ -55,7 +56,7 @@ export default function MarkdownMessage({ content }: MarkdownMessageProps) {
 
     marked.setOptions({ renderer });
 
-    return marked(content);
+    return marked.parseInline(content) as string;
   }, [content]);
 
   // Extract and replace skill/playbook references

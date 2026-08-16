@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import WorkspaceLayout from '@/components/workspace/WorkspaceLayout';
 import { getApiBase } from '@/lib/api';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function WorkspacePage({ params }: { params: { deliverableId: string } }) {
   const deliverableId = parseInt(params.deliverableId);
@@ -90,13 +91,36 @@ export default function WorkspacePage({ params }: { params: { deliverableId: str
     );
   }
 
+  const workspaceFallback = (error: Error, reset: () => void) => (
+    <div className="flex flex-col items-center justify-center h-screen gap-4 p-8">
+      <h2 className="text-xl font-semibold text-red-600">Workspace failed to load</h2>
+      <p className="text-sm text-gray-500">{error.message}</p>
+      <div className="flex gap-3">
+        <button
+          onClick={reset}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Try again
+        </button>
+        <a
+          href="/dashboard"
+          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+        >
+          Back to dashboard
+        </a>
+      </div>
+    </div>
+  );
+
   return (
-    <WorkspaceLayout
-      deliverable={deliverable}
-      brief={brief}
-      projects={projects}
-      folder={folder}
-      project={project}
-    />
+    <ErrorBoundary fallback={workspaceFallback}>
+      <WorkspaceLayout
+        deliverable={deliverable}
+        brief={brief}
+        projects={projects}
+        folder={folder}
+        project={project}
+      />
+    </ErrorBoundary>
   );
 }

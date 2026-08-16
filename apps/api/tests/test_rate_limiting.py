@@ -11,6 +11,8 @@ from database import engine
 from main import app
 from models import Membership, Organization
 
+pytestmark = pytest.mark.rate_limit
+
 
 @pytest.mark.rate_limit
 class TestRateLimitingBasics:

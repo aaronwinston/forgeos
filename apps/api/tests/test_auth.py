@@ -7,6 +7,8 @@ from database import get_session
 from main import app
 from models import Organization, Membership
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.integration
 class TestAuthSignup:

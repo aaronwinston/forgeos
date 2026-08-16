@@ -7,6 +7,8 @@ from sqlmodel import Session, select
 import jwt
 import uuid
 
+pytestmark = pytest.mark.integration
+
 client = TestClient(app)
 
 def create_test_org(org_name: str) -> tuple[str, str]:
