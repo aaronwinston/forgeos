@@ -1,10 +1,24 @@
 """Integration tests for projects endpoints."""
 
 import pytest
+import personal_mode as _personal_mode
 from fastapi.testclient import TestClient
 from sqlmodel import Session
+from config import settings
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True, scope="module")
+def enable_multi_tenant_mode():
+    """Force multi-tenant mode so JWT auth is enforced in all project tests."""
+    original_mode = settings.FORGEOS_MODE
+    original_fn = _personal_mode.is_personal
+    settings.FORGEOS_MODE = "multi_tenant"
+    _personal_mode.is_personal = lambda: False
+    yield
+    settings.FORGEOS_MODE = original_mode
+    _personal_mode.is_personal = original_fn
 
 
 @pytest.mark.integration
@@ -56,7 +70,7 @@ class TestProjectCreate:
     def test_create_project_with_tracking_metadata(self, client, test_token):
         response = client.post(
             "/api/projects",
-            headers={"Authorization": f"******"},
+            headers={"Authorization": f"Bearer {test_token}"},
             json={
                 "name": "Growth project",
                 "description": "Tracks SEO and AEO execution",
@@ -162,7 +176,7 @@ class TestProjectRead:
     
     def test_get_nonexistent_project(self, client, test_token):
         response = client.get(
-            "/api/projects/nonexistent",
+            "/api/projects/999999",
             headers={"Authorization": f"Bearer {test_token}"}
         )
         assert response.status_code == 404

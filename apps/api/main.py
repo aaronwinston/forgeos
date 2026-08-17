@@ -1,4 +1,5 @@
 # instrumentation must be imported and called before any Anthropic clients are created
+import os
 import instrumentation
 instrumentation.setup_tracing()
 
@@ -97,6 +98,19 @@ def is_personal_mode() -> bool:
 app = FastAPI(title="ForgeOS API", version="1.0.0")
 
 setup_rate_limiting(app)
+
+# Security headers middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Performance monitoring middleware (logs slow endpoints)
 from middleware.performance import PerformanceMonitoringMiddleware
@@ -295,11 +309,13 @@ async def startup():
     scheduler.add_job(scheduled_cross_reference, 'cron', hour=9, minute=30, id='cross_ref_pass', replace_existing=True)  # 30 min after trends
     scheduler.add_job(scheduled_briefing_aggregation, 'cron', day_of_week='6', hour=23, minute=59, id='briefing_aggregation', replace_existing=True)  # Sunday 23:59
     scheduler.add_job(scheduled_briefing_email, 'cron', hour=7, minute=0, id='briefing_email', replace_existing=True)  # Daily at 7 AM
-    scheduler.start()
+    if not os.environ.get("TESTING"):
+        scheduler.start()
 
 @app.on_event("shutdown")
 async def shutdown():
-    scheduler.shutdown()
+    if scheduler.running:
+        scheduler.shutdown()
 
 @app.get("/api/health")
 @limiter.limit(settings.RATE_LIMIT_PUBLIC)

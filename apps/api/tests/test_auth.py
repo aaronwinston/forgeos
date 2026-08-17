@@ -9,6 +9,23 @@ from models import Organization, Membership
 
 pytestmark = pytest.mark.integration
 
+import personal_mode as _personal_mode_test_auth
+from config import settings as _settings_test_auth
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _enable_multi_tenant_test_auth():
+    """Force multi-tenant mode so JWT auth is enforced."""
+    original_mode = _settings_test_auth.FORGEOS_MODE
+    original_fn = _personal_mode_test_auth.is_personal
+    _settings_test_auth.FORGEOS_MODE = "multi_tenant"
+    _personal_mode_test_auth.is_personal = lambda: False
+    yield
+    _settings_test_auth.FORGEOS_MODE = original_mode
+    _personal_mode_test_auth.is_personal = original_fn
+
+
+
 
 @pytest.mark.integration
 class TestAuthSignup:
@@ -116,7 +133,7 @@ class TestAuthAuthorization:
         # Token with exp in the past
         import jwt
         from config import settings
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         
         expired_payload = {
             "sub": "test-user",

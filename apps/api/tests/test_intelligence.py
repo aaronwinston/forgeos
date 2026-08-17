@@ -4,6 +4,23 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+import personal_mode as _personal_mode_test_intelligence
+from config import settings as _settings_test_intelligence
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _enable_multi_tenant_test_intelligence():
+    """Force multi-tenant mode so JWT auth is enforced."""
+    original_mode = _settings_test_intelligence.FORGEOS_MODE
+    original_fn = _personal_mode_test_intelligence.is_personal
+    _settings_test_intelligence.FORGEOS_MODE = "multi_tenant"
+    _personal_mode_test_intelligence.is_personal = lambda: False
+    yield
+    _settings_test_intelligence.FORGEOS_MODE = original_mode
+    _personal_mode_test_intelligence.is_personal = original_fn
+
+
+
 
 @pytest.mark.integration
 class TestIntelligenceOperations:
@@ -30,7 +47,7 @@ class TestIntelligenceOperations:
     
     def test_intelligence_unauthorized(self, client):
         """Test that unauthorized access is denied."""
-        response = client.get("/api/intelligence")
+        response = client.get("/api/intelligence/feed")
         assert response.status_code == 401
 
 

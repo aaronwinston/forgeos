@@ -12,7 +12,7 @@ from models import (
     DeliverableCTAExperiment,
 )
 from middleware.auth import get_current_user, AuthContext
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, Any, Dict, List
 from datetime import datetime, timezone
 import json
@@ -30,14 +30,16 @@ class SuggestedTopic(BaseModel):
     priority: str = "medium"
     status: str = "idea"
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def validate_title(cls, value: str) -> str:
         normalized = value.strip()
         if not normalized:
             raise ValueError("title is required")
         return normalized
 
-    @validator("type")
+    @field_validator("type")
+    @classmethod
     def validate_type(cls, value: str) -> str:
         normalized = value.strip().lower()
         allowed = {
@@ -53,14 +55,16 @@ class SuggestedTopic(BaseModel):
             raise ValueError("invalid topic type")
         return normalized
 
-    @validator("priority")
+    @field_validator("priority")
+    @classmethod
     def validate_priority(cls, value: str) -> str:
         normalized = value.strip().lower()
         if normalized not in {"low", "medium", "high"}:
             raise ValueError("priority must be low, medium, or high")
         return normalized
 
-    @validator("status")
+    @field_validator("status")
+    @classmethod
     def validate_status(cls, value: str) -> str:
         normalized = value.strip().lower()
         if normalized not in {"idea", "planned", "in_progress", "published"}:
@@ -75,14 +79,16 @@ class WorkTrackingItem(BaseModel):
     owner: Optional[str] = None
     due_date: Optional[str] = None
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def validate_work_title(cls, value: str) -> str:
         normalized = value.strip()
         if not normalized:
             raise ValueError("title is required")
         return normalized
 
-    @validator("category")
+    @field_validator("category")
+    @classmethod
     def validate_category(cls, value: str) -> str:
         normalized = value.strip().lower()
         allowed = {
@@ -99,7 +105,8 @@ class WorkTrackingItem(BaseModel):
             raise ValueError("invalid work item category")
         return normalized
 
-    @validator("status")
+    @field_validator("status")
+    @classmethod
     def validate_work_status(cls, value: str) -> str:
         normalized = value.strip().lower()
         if normalized not in {"backlog", "in_progress", "review", "done"}:
@@ -123,14 +130,26 @@ class ProjectCreate(BaseModel):
     status: str = "active"
     tracking: Optional[ProjectTracking] = None
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def validate_name(cls, value: str) -> str:
         normalized = value.strip()
         if not normalized:
             raise ValueError("name is required")
-        return normalized
+        # Strip HTML tags to prevent XSS leakage in HTML contexts
+        clean = re.sub(r'<[^>]+>', '', normalized)
+        return clean
 
-    @validator("status")
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        # Strip HTML tags to prevent XSS leakage in HTML contexts
+        return re.sub(r'<[^>]+>', '', value)
+
+    @field_validator("status")
+    @classmethod
     def validate_status(cls, value: str) -> str:
         normalized = value.strip().lower()
         if normalized not in {"active", "archived"}:
@@ -144,7 +163,8 @@ class ProjectUpdate(BaseModel):
     status: Optional[str] = None
     tracking: Optional[ProjectTracking] = None
 
-    @validator("status")
+    @field_validator("status")
+    @classmethod
     def validate_optional_status(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return value
@@ -268,6 +288,8 @@ def delete_project(
     auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+    if auth.role not in {"owner", "admin"}:
+        raise HTTPException(status_code=403, detail="Only owners and admins can delete projects")
     p = session.exec(
         select(Project).where(
             (Project.id == project_id) & (Project.organization_id == auth.org_id)
@@ -396,14 +418,16 @@ class ConversionTaxonomyCreate(BaseModel):
     primary_cta: Optional[str] = None
     success_metric: Optional[str] = None
 
-    @validator("event_key")
+    @field_validator("event_key")
+    @classmethod
     def validate_event_key(cls, value: str) -> str:
         normalized = value.strip().lower()
         if not EVENT_KEY_RE.match(normalized):
             raise ValueError("event_key must use lowercase letters, numbers, colon, dash, or underscore")
         return normalized
 
-    @validator("funnel_stage", "definition")
+    @field_validator("funnel_stage", "definition")
+    @classmethod
     def validate_required_text(cls, value: str) -> str:
         if not value or not value.strip():
             raise ValueError("value cannot be empty")
@@ -419,19 +443,22 @@ class ConversionOutcomeSnapshotCreate(BaseModel):
     notes: Optional[str] = None
     recorded_at: Optional[datetime] = None
 
-    @validator("period_label")
+    @field_validator("period_label")
+    @classmethod
     def validate_period_label(cls, value: str) -> str:
         if not value or not value.strip():
             raise ValueError("period_label is required")
         return value.strip()
 
-    @validator("visitors", "conversions")
+    @field_validator("visitors", "conversions")
+    @classmethod
     def validate_non_negative_int(cls, value: Optional[int]) -> Optional[int]:
         if value is not None and value < 0:
             raise ValueError("value must be non-negative")
         return value
 
-    @validator("conversion_rate")
+    @field_validator("conversion_rate")
+    @classmethod
     def validate_conversion_rate(cls, value: Optional[float]) -> Optional[float]:
         if value is not None and (value < 0 or value > 1):
             raise ValueError("conversion_rate must be between 0 and 1")
@@ -450,14 +477,16 @@ class DeliverableCTAExperimentCreate(BaseModel):
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
 
-    @validator("experiment_key")
+    @field_validator("experiment_key")
+    @classmethod
     def validate_experiment_key(cls, value: str) -> str:
         normalized = value.strip().lower()
         if not EVENT_KEY_RE.match(normalized):
             raise ValueError("experiment_key must use lowercase letters, numbers, colon, dash, or underscore")
         return normalized
 
-    @validator("variant_label")
+    @field_validator("variant_label")
+    @classmethod
     def validate_variant_label(cls, value: str) -> str:
         normalized = value.strip()
         if not normalized:
@@ -466,20 +495,23 @@ class DeliverableCTAExperimentCreate(BaseModel):
             raise ValueError("variant_label has unsupported characters")
         return normalized
 
-    @validator("status")
+    @field_validator("status")
+    @classmethod
     def validate_status(cls, value: str) -> str:
         normalized = value.strip().lower()
         if normalized not in {"active", "paused", "completed"}:
             raise ValueError("status must be active, paused, or completed")
         return normalized
 
-    @validator("impressions", "conversions")
+    @field_validator("impressions", "conversions")
+    @classmethod
     def validate_non_negative_metrics(cls, value: Optional[int]) -> Optional[int]:
         if value is not None and value < 0:
             raise ValueError("value must be non-negative")
         return value
 
-    @validator("conversion_rate")
+    @field_validator("conversion_rate")
+    @classmethod
     def validate_experiment_conversion_rate(cls, value: Optional[float]) -> Optional[float]:
         if value is not None and (value < 0 or value > 1):
             raise ValueError("conversion_rate must be between 0 and 1")

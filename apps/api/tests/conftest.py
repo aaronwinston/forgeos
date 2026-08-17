@@ -3,6 +3,9 @@ import tempfile
 import sqlite3
 from pathlib import Path
 
+# Must be set before importing the app so scheduler.start() is skipped at startup
+os.environ.setdefault("TESTING", "1")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine

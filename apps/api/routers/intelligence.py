@@ -274,6 +274,7 @@ async def trigger_scrape(
     request: Request,
     response: Response,
     background_tasks: BackgroundTasks,
+    auth: AuthContext = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     session_bind = session.bind

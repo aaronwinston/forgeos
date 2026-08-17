@@ -4,6 +4,23 @@ from models import DistributionIntegrationTarget, Membership, Organization
 
 pytestmark = pytest.mark.integration
 
+import personal_mode as _personal_mode_test_distribution_integrations
+from config import settings as _settings_test_distribution_integrations
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _enable_multi_tenant_test_distribution_integrations():
+    """Force multi-tenant mode so JWT auth is enforced."""
+    original_mode = _settings_test_distribution_integrations.FORGEOS_MODE
+    original_fn = _personal_mode_test_distribution_integrations.is_personal
+    _settings_test_distribution_integrations.FORGEOS_MODE = "multi_tenant"
+    _personal_mode_test_distribution_integrations.is_personal = lambda: False
+    yield
+    _settings_test_distribution_integrations.FORGEOS_MODE = original_mode
+    _personal_mode_test_distribution_integrations.is_personal = original_fn
+
+
+
 
 def _auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
